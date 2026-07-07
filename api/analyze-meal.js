@@ -1,0 +1,131 @@
+function json(res, status, payload) {
+  res.statusCode = status;
+  res.setHeader("content-type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(payload));
+}
+
+import { generateGeminiContent } from "./gemini.js";
+
+function normalizeError(error) {
+  if (error instanceof Error) return { message: error.message, name: error.name };
+  if (error && typeof error === "object") return { message: error.message || error.error || JSON.stringify(error), status: error.status };
+  return { message: String(error) };
+}
+
+async function readJson(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+  if (typeof req.body === "string") return JSON.parse(req.body);
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const body = Buffer.concat(chunks).toString("utf8");
+  return body ? JSON.parse(body) : {};
+}
+
+function parseDataUrl(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:(.*?);base64,(.+)$/);
+  if (!match) throw new Error("照片格式不正确。");
+  return { mimeType: match[1] || "image/jpeg", data: match[2] };
+}
+
+function extractJson(text) {
+  const raw = String(text || "").trim();
+  if (!raw) throw new Error("Gemini 没有返回分析结果。");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Gemini 返回结果不是 JSON。");
+    return JSON.parse(match[0]);
+  }
+}
+
+function number(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeAnalysis(payload) {
+  const total = payload.total || {};
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  return {
+    dishName: String(payload.dishName || items.map((item) => item.name).filter(Boolean).slice(0, 3).join("、") || "AI 识别餐食"),
+    confidence: Math.max(0, Math.min(1, Number(payload.confidence || 0.6))),
+    total: {
+      grams: number(total.grams),
+      calories: number(total.calories),
+      protein: number(total.protein),
+      carbs: number(total.carbs),
+      fat: number(total.fat),
+      fiber: number(total.fiber),
+    },
+    items: items.map((item) => ({
+      name: String(item.name || "未知食物"),
+      grams: number(item.grams),
+      calories: number(item.calories),
+      protein: number(item.protein),
+      carbs: number(item.carbs),
+      fat: number(item.fat),
+      fiber: number(item.fiber),
+      reasoning: String(item.reasoning || ""),
+    })),
+    notes: String(payload.notes || "照片估算结果，仅供饮食记录参考。"),
+  };
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.setHeader("allow", "POST");
+    return json(res, 405, { error: "Method not allowed." });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return json(res, 500, { error: "GEMINI_API_KEY is not configured." });
+
+  try {
+    const payload = await readJson(req);
+    const photos = Array.isArray(payload.photos) ? payload.photos.slice(0, 3) : [];
+    const hint = String(payload.hint || payload.description || payload.note || "").trim();
+    if (!photos.length) return json(res, 400, { error: "请先上传至少一张照片。" });
+
+    const prompt = [
+      "你是一个严谨的饮食营养估算助手。请根据照片估算这顿饭的食物组成、可食重量、热量和营养成分。",
+      hint ? `用户补充说明：${hint}` : "",
+      "要求：",
+      "1. 用中文输出。",
+      "2. 如果无法确定，请给保守估算，并在 notes 说明不确定因素。",
+      "3. total 必须是整顿饭合计。",
+      "4. items 尽量按食物拆分，例如米饭、咖喱酱、鸡肉、蔬菜、饮料等。",
+      "5. 所有数值使用克或 kcal，不要带单位字符串。",
+      "6. 只返回 JSON，不要 Markdown。",
+      "",
+      "JSON 结构：",
+      "{",
+      '  "dishName": "简短餐名",',
+      '  "confidence": 0.0 到 1.0,',
+      '  "total": {"grams": 0, "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0},',
+      '  "items": [{"name": "食物名", "grams": 0, "calories": 0, "protein": 0, "carbs": 0, "fat": 0, "fiber": 0, "reasoning": "估算依据"}],',
+      '  "notes": "整体说明"',
+      "}",
+    ].join("\n");
+
+    const parts = [{ text: prompt }];
+    for (const photo of photos) {
+      const parsed = parseDataUrl(photo.dataUrl);
+      parts.push({ inlineData: { mimeType: photo.contentType || parsed.mimeType, data: parsed.data } });
+    }
+
+    const { model, payload: result } = await generateGeminiContent(apiKey, {
+      contents: [{ role: "user", parts }],
+      generationConfig: {
+        temperature: 0.15,
+        responseMimeType: "application/json",
+      },
+    });
+
+    const text = result.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
+    return json(res, 200, { ok: true, model, analysis: normalizeAnalysis(extractJson(text)) });
+  } catch (error) {
+    const normalized = normalizeError(error);
+    return json(res, error.status || 500, { error: normalized.message, details: error.details || normalized });
+  }
+}

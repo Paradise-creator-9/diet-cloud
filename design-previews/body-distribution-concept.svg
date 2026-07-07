@@ -1,0 +1,127 @@
+<svg width="1800" height="1050" viewBox="0 0 1800 1050" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pageBg" x1="0" y1="0" x2="1800" y2="1050" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7FBFF"/>
+      <stop offset="0.52" stop-color="#EEF6FF"/>
+      <stop offset="1" stop-color="#F5F2FF"/>
+    </linearGradient>
+    <linearGradient id="cardBg" x1="95" y1="65" x2="1710" y2="965" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.92"/>
+      <stop offset="0.52" stop-color="#F9FCFF" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#F2F8FF" stop-opacity="0.66"/>
+    </linearGradient>
+    <linearGradient id="panelBg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="white" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#F4FAFF" stop-opacity="0.68"/>
+    </linearGradient>
+    <linearGradient id="bodyFill" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FBFEFF"/>
+      <stop offset="0.55" stop-color="#EAF8FF"/>
+      <stop offset="1" stop-color="#F8F2FF"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#58DFF2"/>
+      <stop offset="1" stop-color="#16A8D4"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#63B5FF"/>
+      <stop offset="1" stop-color="#2F7FEA"/>
+    </linearGradient>
+    <filter id="softShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="22" stdDeviation="34" flood-color="#4B6E97" flood-opacity="0.13"/>
+    </filter>
+    <filter id="bodyGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#3AB8E8" flood-opacity="0.22"/>
+    </filter>
+    <filter id="dotGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#19B8D8" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect width="1800" height="1050" rx="48" fill="url(#pageBg)"/>
+  <rect x="58" y="58" width="1684" height="934" rx="46" fill="url(#cardBg)" stroke="white" stroke-width="2.2" filter="url(#softShadow)"/>
+  <path d="M130 245C392 125 642 145 868 250C1100 358 1340 236 1645 150" stroke="#FFFFFF" stroke-width="1.5" opacity="0.48"/>
+  <path d="M155 875C420 738 670 760 930 842C1162 916 1385 800 1640 710" stroke="#FFFFFF" stroke-width="1.5" opacity="0.52"/>
+
+  <text x="118" y="132" fill="#1D1D1F" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="38" font-weight="850">身体分布图</text>
+  <text x="118" y="180" fill="#5C6674" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="24" font-weight="650">蓝色为脂肪率，青色为肌肉量</text>
+  <rect x="1515" y="96" width="178" height="60" rx="30" fill="#E4F1FF"/>
+  <text x="1540" y="136" fill="#0066CC" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif" font-size="26" font-weight="850">20.8% 体脂</text>
+
+  <ellipse cx="900" cy="535" rx="220" ry="338" fill="#BFEFFF" opacity="0.23"/>
+  <ellipse cx="900" cy="535" rx="150" ry="274" fill="#87DAFF" opacity="0.13"/>
+
+  <g filter="url(#bodyGlow)" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="900" cy="300" r="53" fill="url(#bodyFill)" stroke="#70D0F7" stroke-width="7"/>
+    <path d="M812 422C812 354 846 332 900 332C954 332 988 354 988 422V595C988 643 954 676 900 676C846 676 812 643 812 595V422Z" fill="url(#bodyFill)" stroke="#70D0F7" stroke-width="7"/>
+    <path d="M790 417C742 430 715 470 708 532L683 738C677 790 707 830 752 832C792 834 817 804 824 752L852 524C860 466 840 428 790 417Z" fill="url(#bodyFill)" stroke="#70D0F7" stroke-width="7"/>
+    <path d="M1010 417C1058 430 1085 470 1092 532L1117 738C1123 790 1093 830 1048 832C1008 834 983 804 976 752L948 524C940 466 960 428 1010 417Z" fill="url(#bodyFill)" stroke="#70D0F7" stroke-width="7"/>
+    <path d="M850 665C823 681 807 712 805 758L797 886C794 939 821 965 860 960C894 956 907 922 909 878L914 700C898 684 876 672 850 665Z" fill="url(#bodyFill)" stroke="#C7A7F6" stroke-width="7"/>
+    <path d="M950 665C977 681 993 712 995 758L1003 886C1006 939 979 965 940 960C906 956 893 922 891 878L886 700C902 684 924 672 950 665Z" fill="url(#bodyFill)" stroke="#C7A7F6" stroke-width="7"/>
+  </g>
+
+  <g filter="url(#dotGlow)">
+    <circle cx="900" cy="515" r="27" fill="white" opacity="0.92"/>
+    <circle cx="900" cy="515" r="18" fill="url(#cyan)"/>
+    <circle cx="790" cy="505" r="25" fill="white" opacity="0.92"/>
+    <circle cx="790" cy="505" r="17" fill="url(#cyan)"/>
+    <circle cx="1010" cy="505" r="25" fill="white" opacity="0.92"/>
+    <circle cx="1010" cy="505" r="17" fill="url(#cyan)"/>
+    <circle cx="856" cy="820" r="25" fill="white" opacity="0.92"/>
+    <circle cx="856" cy="820" r="17" fill="url(#cyan)"/>
+    <circle cx="944" cy="820" r="25" fill="white" opacity="0.92"/>
+    <circle cx="944" cy="820" r="17" fill="url(#cyan)"/>
+  </g>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <g transform="translate(175 395)">
+      <rect width="390" height="185" rx="32" fill="url(#panelBg)" stroke="white" stroke-width="2" filter="url(#softShadow)"/>
+      <text x="28" y="58" fill="#1D1D1F" font-size="29" font-weight="850">左手</text>
+      <circle cx="36" cy="100" r="9" fill="url(#blue)"/>
+      <text x="62" y="109" fill="#1D1D1F" font-size="27" font-weight="850">15.51%</text>
+      <circle cx="36" cy="143" r="9" fill="url(#cyan)"/>
+      <text x="62" y="152" fill="#1D1D1F" font-size="27" font-weight="850">2.76 kg</text>
+    </g>
+    <g transform="translate(175 625)">
+      <rect width="390" height="185" rx="32" fill="url(#panelBg)" stroke="white" stroke-width="2" filter="url(#softShadow)"/>
+      <text x="28" y="58" fill="#1D1D1F" font-size="29" font-weight="850">左腿</text>
+      <circle cx="36" cy="100" r="9" fill="url(#blue)"/>
+      <text x="62" y="109" fill="#1D1D1F" font-size="27" font-weight="850">19.87%</text>
+      <circle cx="36" cy="143" r="9" fill="url(#cyan)"/>
+      <text x="62" y="152" fill="#1D1D1F" font-size="27" font-weight="850">10.26 kg</text>
+    </g>
+
+    <g transform="translate(1240 285)">
+      <rect width="390" height="170" rx="32" fill="url(#panelBg)" stroke="white" stroke-width="2" filter="url(#softShadow)"/>
+      <text x="28" y="57" fill="#1D1D1F" font-size="29" font-weight="850">躯干</text>
+      <circle cx="36" cy="99" r="9" fill="url(#blue)"/>
+      <text x="62" y="108" fill="#1D1D1F" font-size="27" font-weight="850">22.49%</text>
+      <circle cx="36" cy="140" r="9" fill="url(#cyan)"/>
+      <text x="62" y="149" fill="#1D1D1F" font-size="27" font-weight="850">28.86 kg</text>
+    </g>
+    <g transform="translate(1240 510)">
+      <rect width="390" height="170" rx="32" fill="url(#panelBg)" stroke="white" stroke-width="2" filter="url(#softShadow)"/>
+      <text x="28" y="57" fill="#1D1D1F" font-size="29" font-weight="850">右手</text>
+      <circle cx="36" cy="99" r="9" fill="url(#blue)"/>
+      <text x="62" y="108" fill="#1D1D1F" font-size="27" font-weight="850">15.50%</text>
+      <circle cx="36" cy="140" r="9" fill="url(#cyan)"/>
+      <text x="62" y="149" fill="#1D1D1F" font-size="27" font-weight="850">2.82 kg</text>
+    </g>
+    <g transform="translate(1240 735)">
+      <rect width="390" height="170" rx="32" fill="url(#panelBg)" stroke="white" stroke-width="2" filter="url(#softShadow)"/>
+      <text x="28" y="57" fill="#1D1D1F" font-size="29" font-weight="850">右腿</text>
+      <circle cx="36" cy="99" r="9" fill="url(#blue)"/>
+      <text x="62" y="108" fill="#1D1D1F" font-size="27" font-weight="850">19.94%</text>
+      <circle cx="36" cy="140" r="9" fill="url(#cyan)"/>
+      <text x="62" y="149" fill="#1D1D1F" font-size="27" font-weight="850">10.31 kg</text>
+    </g>
+  </g>
+
+  <g transform="translate(735 898)" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <rect width="330" height="58" rx="29" fill="white" opacity="0.78" stroke="white" stroke-width="2" filter="url(#softShadow)"/>
+    <circle cx="45" cy="29" r="8" fill="url(#blue)"/>
+    <text x="66" y="38" fill="#536171" font-size="22" font-weight="780">脂肪率 %</text>
+    <circle cx="200" cy="29" r="8" fill="url(#cyan)"/>
+    <text x="221" y="38" fill="#536171" font-size="22" font-weight="780">肌肉量 kg</text>
+  </g>
+</svg>

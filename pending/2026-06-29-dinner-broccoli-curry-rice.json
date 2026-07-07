@@ -1,0 +1,61 @@
+{
+  "date": "2026-06-29",
+  "meal": "dinner",
+  "title": "西兰花和咖喱饭",
+  "createdAt": "2026-06-29T20:24:00+09:00",
+  "photoPath": "pending/photos/2026-06-29-dinner-broccoli-curry-rice.jpg",
+  "items": [
+    {
+      "id": "assistant-2026-06-29-dinner-broccoli",
+      "name": "西兰花",
+      "grams": 240,
+      "calories": 120,
+      "protein": 7,
+      "carbs": 17,
+      "fat": 4,
+      "fiber": 8,
+      "note": "按一碗熟西兰花约 240g 估算；看起来有少量调味和油。"
+    },
+    {
+      "id": "assistant-2026-06-29-dinner-rice",
+      "name": "米饭",
+      "grams": 230,
+      "calories": 360,
+      "protein": 6,
+      "carbs": 82,
+      "fat": 1,
+      "fiber": 1,
+      "note": "按一碗熟米饭约 230g 估算。"
+    },
+    {
+      "id": "assistant-2026-06-29-dinner-curry",
+      "name": "咖喱酱汁、肉块、土豆和蔬菜",
+      "grams": 320,
+      "calories": 430,
+      "protein": 20,
+      "carbs": 35,
+      "fat": 22,
+      "fiber": 4,
+      "note": "按照片中的咖喱酱、肉块和少量土豆/蔬菜估算；酱汁和肉块是主要热量来源。"
+    }
+  ],
+  "totals": {
+    "grams": 790,
+    "calories": 910,
+    "protein": 33,
+    "carbs": 134,
+    "fat": 27,
+    "fiber": 13
+  },
+  "analysis": {
+    "good": [
+      "这餐有一整碗西兰花，膳食纤维和蔬菜体积明显比前几餐更好。",
+      "蛋白质来自咖喱里的肉块，有一定基础。",
+      "没有额外甜饮或甜点。"
+    ],
+    "watch": [
+      "米饭加咖喱酱的碳水偏高，如果今天总热量紧张，晚餐主食可以减少一些。",
+      "咖喱酱脂肪和钠通常不低，后续加餐建议清淡。"
+    ]
+  }
+}

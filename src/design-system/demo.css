@@ -1,0 +1,109 @@
+/* Demo-page-only layout. Not part of the reusable design system —
+   the system itself is tokens.css + base.css + components.css. */
+
+html,
+body {
+  margin: 0;
+  background: var(--lg-bg);
+}
+
+.lg-demo {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.lg-demo__bg {
+  position: fixed;
+  z-index: 0;
+}
+
+.lg-demo__content {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--lg-space-8) var(--lg-space-5) var(--lg-space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-8);
+}
+
+.lg-demo__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--lg-space-5);
+  flex-wrap: wrap;
+}
+
+.lg-demo__eyebrow {
+  margin: 0 0 var(--lg-space-2);
+  font-size: var(--lg-text-sm);
+  font-weight: var(--lg-weight-semibold);
+  color: var(--lg-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lg-demo__title {
+  margin: 0 0 var(--lg-space-3);
+  font-size: var(--lg-text-2xl);
+  font-weight: var(--lg-weight-bold);
+  line-height: var(--lg-leading-tight);
+  max-width: 640px;
+}
+
+.lg-demo__lede {
+  margin: 0;
+  max-width: 560px;
+  font-size: var(--lg-text-base);
+  color: var(--lg-text-2);
+  line-height: var(--lg-leading-base);
+}
+
+.lg-demo__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lg-space-4);
+}
+
+.lg-demo__sectionTitle {
+  margin: 0;
+  font-size: var(--lg-text-lg);
+  font-weight: var(--lg-weight-semibold);
+}
+
+.lg-demo__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--lg-space-4);
+}
+
+.lg-demo__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lg-space-3);
+}
+
+.lg-demo__panel {
+  max-width: 420px;
+}
+
+.lg-demo__footer {
+  padding: var(--lg-space-6) 0 var(--lg-space-4);
+  text-align: center;
+  color: var(--lg-text-3);
+  font-size: var(--lg-text-sm);
+}
+
+body.lg-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .lg-demo__title {
+    font-size: 26px;
+  }
+}

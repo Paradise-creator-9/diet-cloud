@@ -1,40 +1,67 @@
 /* ==========================================================================
-   Diet Cloud · Design System "Quiet Health"
+   Diet Cloud · Design System "Liquid Health" (iOS 27 Liquid Glass)
    --------------------------------------------------------------------------
-   1. Tokens          颜色 / 圆角 / 阴影 / 玻璃材质
-   2. Base            reset · 排版 · 表单控件 · 焦点
+   三层视觉栈:
+   L0 Aurora   动态渐变背景(body::before/::after,只动 transform)
+   L1 Surface  半透明内容面板(不做 blur,靠透出 Aurora 建立层次)
+   L2 Glass    Liquid Glass 悬浮层(导航/工具栏/弹层/Toast,同屏 blur ≤ 5)
+   --------------------------------------------------------------------------
+   1. Tokens          颜色 / Aurora / 圆角 / 阴影三档 / 玻璃材质
+   2. Base            reset · Aurora 背景 · 排版 · 表单控件 · 焦点
    3. Primitives      卡片 · 按钮 · 芯片 · 区块标题
    4. App shell       头部大标题 · 内容列 · 底部悬浮玻璃 Tab Bar
    5. Auth
-   6. Overview        今日卡 · 四餐列表 · 常吃食物 · 右侧信息栏
+   6. Overview        今日 Hero 卡 · 四餐列表 · 常吃食物 · 右侧信息栏
    7. Detail          分组账本
    8. Trend           复盘与图表
    9. Photos          照片库
    10. Body           身体数据
    11. Exercise       运动数据
-   12. Dialogs        弹层 · 表单 · AI 分析
+   12. Dialogs        玻璃弹层 · 表单 · AI 分析
    13. Toast
    14. Responsive
    --------------------------------------------------------------------------
    规则:所有颜色必须来自 token;字重只用 400/500/600/700;
-   圆角 10/16/22/999;阴影两档;玻璃材质只用于悬浮层。
+   圆角 12/20/28/999;阴影三档;玻璃配方 = blur+saturate+brightness
+   + 渐变厚度 + 内高光边 + 内阴影底;动效只用 transform/opacity。
    ========================================================================== */
 
 /* ---------- 1. Tokens ---------- */
 
 :root {
   color-scheme: light;
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --surface-2: #f2f2f4;
-  --surface-3: #e9e9ec;
-  --text: #1d1d1f;
-  --text-2: #6e6e73;
-  --text-3: #aeaeb4;
-  --sep: rgba(0, 0, 0, 0.07);
-  --sep-strong: rgba(0, 0, 0, 0.12);
-  --accent: #007aff;
-  --accent-tint: rgba(0, 122, 255, 0.1);
+  --bg: #eef1f5;
+
+  /* Aurora 动态背景色斑(L0 背景层) */
+  --aurora-a: rgba(0, 205, 182, 0.55);
+  --aurora-b: rgba(70, 150, 255, 0.46);
+  --aurora-c: rgba(188, 118, 255, 0.38);
+  --aurora-d: rgba(255, 172, 70, 0.4);
+
+  /* 旧表面 token:仅剩表单控件、芯片等小控件在用 */
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-2: rgba(118, 118, 128, 0.1);
+  --surface-3: rgba(118, 118, 128, 0.16);
+  --surface-strong: rgba(255, 255, 255, 0.92);
+  --card-stroke: rgba(255, 255, 255, 0.6);
+
+  /* Liquid Glass 卡片材质(L1):折射基底 / 动态染色 / 边缘反光 / 厚度 */
+  --glass-card-bg: rgba(255, 255, 255, 0.38);
+  --glass-card-tint: rgba(0, 170, 150, 0.07);
+  --glass-gloss: rgba(255, 255, 255, 0.32);
+  --glass-rim-bright: rgba(255, 255, 255, 0.95);
+  --glass-rim-soft: rgba(255, 255, 255, 0.45);
+  --glass-inner-shade: rgba(8, 32, 36, 0.16);
+
+  --text: #16181c;
+  --text-2: #5e646d;
+  --text-3: #989ea8;
+  --sep: rgba(18, 30, 40, 0.08);
+  --sep-strong: rgba(18, 30, 40, 0.14);
+
+  --accent: #009486;
+  --accent-strong: #007a6e;
+  --accent-tint: rgba(0, 148, 134, 0.12);
   --on-accent: #ffffff;
   --danger: #ff3b30;
   --danger-tint: rgba(255, 59, 48, 0.1);
@@ -42,76 +69,103 @@
   /* 数据色:只用于数据标记(环、条、点),禁止做卡片底色 */
   --d-cal: #ff9500;
   --d-cal-tint: rgba(255, 149, 0, 0.12);
-  --d-protein: #007aff;
-  --d-protein-tint: rgba(0, 122, 255, 0.1);
+  --d-protein: #0a7cff;
+  --d-protein-tint: rgba(10, 124, 255, 0.1);
   --d-carbs: #e5b800;
   --d-carbs-tint: rgba(229, 184, 0, 0.14);
   --d-fat: #af52de;
   --d-fat-tint: rgba(175, 82, 222, 0.1);
   --d-fiber: #34c759;
   --d-fiber-tint: rgba(52, 199, 89, 0.12);
-  --d-body: #30b0c7;
-  --d-body-tint: rgba(48, 176, 199, 0.12);
+  --d-body: #32ade6;
+  --d-body-tint: rgba(50, 173, 230, 0.12);
   --d-heart: #ff2d55;
   --d-heart-tint: rgba(255, 45, 85, 0.1);
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-float: 0 12px 32px rgba(0, 0, 0, 0.16);
+  /* 阴影三档:静置 / 抬起 / 悬浮 */
+  --shadow-card: 0 1px 1px rgba(22, 38, 44, 0.03), 0 4px 16px rgba(22, 38, 44, 0.06);
+  --shadow-raised: 0 2px 4px rgba(22, 38, 44, 0.05), 0 10px 28px rgba(22, 38, 44, 0.1);
+  --shadow-float: 0 2px 6px rgba(22, 38, 44, 0.08), 0 16px 48px rgba(22, 38, 44, 0.18);
 
-  /* Liquid Glass:仅用于底部导航、Toast、弹层背板等悬浮层 */
-  --glass-bg: rgba(252, 252, 253, 0.66);
-  --glass-stroke: rgba(255, 255, 255, 0.72);
-  --glass-highlight: rgba(255, 255, 255, 0.9);
-  --backdrop: rgba(28, 28, 32, 0.32);
+  /* Liquid Glass(L2 悬浮层):导航、工具栏、弹层、Toast */
+  --glass-bg: rgba(255, 255, 255, 0.4);
+  --glass-bg-strong: rgba(252, 253, 254, 0.72);
+  --glass-stroke: rgba(255, 255, 255, 0.75);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-shade: rgba(18, 40, 50, 0.05);
+  --backdrop: rgba(18, 26, 36, 0.36);
 
-  --r-sm: 10px;
-  --r-md: 16px;
-  --r-lg: 22px;
+  --r-sm: 12px;
+  --r-md: 20px;
+  --r-lg: 28px;
 
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
     "Hiragino Sans GB", "Segoe UI", system-ui, sans-serif;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-gentle: cubic-bezier(0.3, 1.25, 0.5, 1);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #000000;
-  --surface: #1c1c1e;
-  --surface-2: #2c2c2e;
-  --surface-3: #3a3a3c;
-  --text: #f5f5f7;
-  --text-2: #98989e;
-  --text-3: #636369;
-  --sep: rgba(255, 255, 255, 0.1);
+  --bg: #05070c;
+
+  --aurora-a: rgba(0, 218, 192, 0.3);
+  --aurora-b: rgba(62, 132, 255, 0.28);
+  --aurora-c: rgba(172, 102, 255, 0.22);
+  --aurora-d: rgba(255, 152, 62, 0.16);
+
+  --surface: rgba(30, 33, 40, 0.72);
+  --surface-2: rgba(122, 128, 142, 0.14);
+  --surface-3: rgba(122, 128, 142, 0.22);
+  --surface-strong: rgba(32, 35, 42, 0.94);
+  --card-stroke: rgba(255, 255, 255, 0.08);
+
+  --glass-card-bg: rgba(20, 24, 32, 0.42);
+  --glass-card-tint: rgba(46, 211, 189, 0.06);
+  --glass-gloss: rgba(255, 255, 255, 0.07);
+  --glass-rim-bright: rgba(255, 255, 255, 0.32);
+  --glass-rim-soft: rgba(255, 255, 255, 0.1);
+  --glass-inner-shade: rgba(0, 0, 0, 0.45);
+
+  --text: #f2f4f8;
+  --text-2: #9aa1ac;
+  --text-3: #656d79;
+  --sep: rgba(255, 255, 255, 0.09);
   --sep-strong: rgba(255, 255, 255, 0.16);
-  --accent: #0a84ff;
-  --accent-tint: rgba(10, 132, 255, 0.16);
+
+  --accent: #2ed3bd;
+  --accent-strong: #5ce0ce;
+  --accent-tint: rgba(46, 211, 189, 0.16);
+  --on-accent: #06312b;
   --danger: #ff453a;
   --danger-tint: rgba(255, 69, 58, 0.16);
 
   --d-cal: #ff9f0a;
   --d-cal-tint: rgba(255, 159, 10, 0.16);
-  --d-protein: #0a84ff;
-  --d-protein-tint: rgba(10, 132, 255, 0.16);
+  --d-protein: #3d95ff;
+  --d-protein-tint: rgba(61, 149, 255, 0.16);
   --d-carbs: #ffd60a;
   --d-carbs-tint: rgba(255, 214, 10, 0.14);
   --d-fat: #bf5af2;
   --d-fat-tint: rgba(191, 90, 242, 0.16);
   --d-fiber: #30d158;
   --d-fiber-tint: rgba(48, 209, 88, 0.16);
-  --d-body: #40c8e0;
-  --d-body-tint: rgba(64, 200, 224, 0.16);
+  --d-body: #4cc2f0;
+  --d-body-tint: rgba(76, 194, 240, 0.16);
   --d-heart: #ff375f;
   --d-heart-tint: rgba(255, 55, 95, 0.16);
 
-  --shadow-card: none;
-  --shadow-float: 0 16px 40px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.45), 0 18px 52px rgba(0, 0, 0, 0.6);
 
-  --glass-bg: rgba(24, 24, 27, 0.6);
-  --glass-stroke: rgba(255, 255, 255, 0.14);
-  --glass-highlight: rgba(255, 255, 255, 0.08);
-  --backdrop: rgba(0, 0, 0, 0.52);
+  --glass-bg: rgba(22, 25, 32, 0.45);
+  --glass-bg-strong: rgba(26, 29, 36, 0.78);
+  --glass-stroke: rgba(255, 255, 255, 0.13);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-shade: rgba(0, 0, 0, 0.3);
+  --backdrop: rgba(0, 0, 0, 0.55);
 }
 
 /* ---------- 2. Base ---------- */
@@ -133,6 +187,44 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Aurora 动态渐变背景:两层色斑反向漂移,只动 transform(GPU 合成) */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: -35%;
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform;
+}
+
+body::before {
+  background:
+    radial-gradient(42% 36% at 22% 26%, var(--aurora-a), transparent 70%),
+    radial-gradient(38% 34% at 80% 18%, var(--aurora-b), transparent 70%),
+    radial-gradient(44% 40% at 74% 82%, var(--aurora-c), transparent 70%);
+  animation: auroraDriftA 64s var(--ease) infinite alternate;
+}
+
+body::after {
+  background:
+    radial-gradient(36% 32% at 16% 78%, var(--aurora-d), transparent 70%),
+    radial-gradient(30% 28% at 52% 48%, var(--aurora-a), transparent 72%);
+  animation: auroraDriftB 84s var(--ease) infinite alternate;
+}
+
+@keyframes auroraDriftA {
+  from { transform: translate3d(-4%, -3%, 0) rotate(0deg) scale(1); }
+  50% { transform: translate3d(3%, 4%, 0) rotate(6deg) scale(1.12); }
+  to { transform: translate3d(-2%, 5%, 0) rotate(-5deg) scale(1.04); }
+}
+
+@keyframes auroraDriftB {
+  from { transform: translate3d(3%, 4%, 0) rotate(0deg) scale(1.08); }
+  50% { transform: translate3d(-4%, -2%, 0) rotate(-7deg) scale(1); }
+  to { transform: translate3d(4%, -4%, 0) rotate(5deg) scale(1.14); }
 }
 
 body.modal-open {
@@ -181,8 +273,8 @@ button {
   justify-content: center;
   gap: 6px;
   cursor: pointer;
-  transition: background 0.15s var(--ease), opacity 0.15s var(--ease),
-    transform 0.15s var(--ease);
+  transition: background 0.18s var(--ease), opacity 0.18s var(--ease),
+    box-shadow 0.25s var(--ease), transform 0.35s var(--ease-spring);
 }
 
 button:hover {
@@ -190,7 +282,9 @@ button:hover {
 }
 
 button:active {
-  transform: scale(0.97);
+  /* 液态挤压:横向略保持、纵向压扁,像按进果冻 */
+  transform: scale3d(0.97, 0.93, 1);
+  transition-duration: 0.18s, 0.18s, 0.25s, 0.08s;
 }
 
 button:disabled {
@@ -297,9 +391,42 @@ tr:last-child td {
   }
 }
 
+/* 降低透明度偏好:表面转不透明,关闭玻璃折射 */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --surface: #ffffff;
+    --surface-strong: #ffffff;
+    --glass-bg: rgba(252, 252, 253, 0.96);
+    --glass-bg-strong: #fcfcfd;
+    --glass-card-bg: #ffffff;
+    --glass-card-tint: transparent;
+    --glass-gloss: transparent;
+  }
+
+  :root[data-theme="dark"] {
+    --surface: #1e2128;
+    --surface-strong: #20232a;
+    --glass-bg: rgba(24, 27, 34, 0.97);
+    --glass-bg-strong: #1a1d24;
+    --glass-card-bg: #1e2128;
+    --glass-card-tint: transparent;
+    --glass-gloss: transparent;
+  }
+
+  body::before,
+  body::after {
+    display: none;
+  }
+}
+
 /* ---------- 3. Primitives ---------- */
 
-/* 卡片:所有内容容器共用一种表面 */
+/* 卡片:Liquid Glass 材质
+   折射   backdrop blur+saturate+brightness+contrast(取样并弯折 Aurora)
+   染色   高饱和取样 + 顶部主色 radial 染色层
+   镜面   115° 斜向光泽 + 顶部亮缘
+   反光   偏移内阴影:左上亮缘(负 spread 收进)/右下暗缘,模拟边缘弯折光
+   厚度   底部内阴影 + 贴地/环境双层投影 */
 .todayCard,
 .mealList,
 .favoriteFoodsPanel,
@@ -329,10 +456,21 @@ tr:last-child td {
 .syncDiagnosticsCard,
 .appleHealthPanel,
 .photoCard {
-  background: var(--surface);
-  border: 1px solid var(--sep);
+  background-color: var(--glass-card-bg);
+  background-image:
+    radial-gradient(130% 90% at 50% -12%, var(--glass-card-tint), transparent 58%),
+    linear-gradient(115deg, var(--glass-gloss) 0%, rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, var(--glass-gloss), rgba(255, 255, 255, 0) 22%);
+  border: none;
   border-radius: var(--r-md);
-  box-shadow: var(--shadow-card);
+  -webkit-backdrop-filter: blur(20px) saturate(2) brightness(1.06) contrast(1.04);
+  backdrop-filter: blur(20px) saturate(2) brightness(1.06) contrast(1.04);
+  box-shadow:
+    inset 0 0 0 1px var(--glass-rim-soft),
+    inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
+    inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
+    inset 0 -8px 14px -10px var(--glass-inner-shade),
+    var(--shadow-card);
 }
 
 /* 区块小标题(eyebrow) */
@@ -349,7 +487,7 @@ tr:last-child td {
   color: var(--text-3);
 }
 
-/* 主按钮:胶囊蓝 */
+/* 主按钮:液态青绿胶囊(渐变厚度 + 内高光 + 主色投影) */
 .aiAnalyzeButton,
 .newEntryButton,
 .entryActions button[type="submit"],
@@ -358,9 +496,11 @@ tr:last-child td {
   font-size: 14px;
   font-weight: 600;
   color: var(--on-accent);
-  background: var(--accent);
+  background-color: var(--accent);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%);
   padding: 10px 18px;
   min-height: 40px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 18px var(--accent-tint);
 }
 
 .aiAnalyzeButton:hover,
@@ -368,8 +508,61 @@ tr:last-child td {
 .entryActions button[type="submit"]:hover,
 .authForm button:hover,
 .bodyEmpty > button:hover {
-  background: var(--accent);
-  opacity: 0.85;
+  background-color: var(--accent-strong);
+}
+
+/* Specular Sweep:按下主按钮/玻璃按钮时一道镜面高光扫过 */
+.aiAnalyzeButton,
+.newEntryButton,
+.entryActions button[type="submit"],
+.authForm button,
+.bodyEmpty > button,
+.glassButton {
+  position: relative;
+  overflow: hidden;
+}
+
+.aiAnalyzeButton::after,
+.newEntryButton::after,
+.entryActions button[type="submit"]::after,
+.authForm button::after,
+.bodyEmpty > button::after,
+.glassButton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.55) 48%, transparent 64%);
+  transform: translateX(-130%);
+}
+
+.aiAnalyzeButton:active::after,
+.newEntryButton:active::after,
+.entryActions button[type="submit"]:active::after,
+.authForm button:active::after,
+.bodyEmpty > button:active::after,
+.glassButton:active::after {
+  animation: specularSweep 0.6s var(--ease);
+}
+
+@keyframes specularSweep {
+  to {
+    transform: translateX(130%);
+  }
+}
+
+/* Floating Glass:可悬停设备上玻璃控件轻浮起 */
+@media (hover: hover) {
+  .glassButton:hover,
+  .headerToolbar .iconButton:hover {
+    transform: translateY(-1px);
+  }
+
+  .aiAnalyzeButton:hover,
+  .newEntryButton:hover {
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 10px 26px var(--accent-tint);
+  }
 }
 
 /* 次按钮:主色 tint */
@@ -388,19 +581,17 @@ tr:last-child td {
   font-size: 14px;
   font-weight: 600;
   color: var(--on-accent);
-  background: var(--accent);
+  background-color: var(--accent);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%);
   padding: 10px 18px;
   min-height: 40px;
   position: relative;
   overflow: hidden;
-  -webkit-backdrop-filter: saturate(1.6);
-  backdrop-filter: saturate(1.6);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 18px var(--accent-tint);
 }
 
 .primaryGlassButton:hover {
-  background: var(--accent);
-  opacity: 0.88;
+  background-color: var(--accent-strong);
 }
 
 /* 图标按钮(头部浮动工具栏内):透明,材质由 .headerToolbar 承担 */
@@ -423,20 +614,25 @@ tr:last-child td {
   color: var(--accent);
 }
 
-/* 玻璃次按钮(浮动控件层,如运动页的分段操作) */
+/* 玻璃次按钮(浮动控件层,如运动页的分段操作)
+   Liquid Glass 配方:blur+saturate+brightness 折射 / 渐变厚度 / 内高光边 / 内阴影底 */
 .glassButton {
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
-  background: var(--glass-bg);
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 62%);
   border: 1px solid var(--glass-stroke);
-  box-shadow: inset 0 1px 0 var(--glass-highlight);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: inset 1.5px 2.5px 1px -2px var(--glass-rim-bright),
+    inset -1px -1.5px 1px -1.5px var(--glass-rim-soft),
+    inset 0 -4px 8px -6px var(--glass-inner-shade), var(--shadow-card);
+  -webkit-backdrop-filter: blur(24px) saturate(2.1) brightness(1.08) contrast(1.04);
+  backdrop-filter: blur(24px) saturate(2.1) brightness(1.08) contrast(1.04);
 }
 
 .glassButton:hover {
-  background: var(--accent-tint);
+  background-color: var(--accent-tint);
   color: var(--accent);
 }
 
@@ -447,11 +643,15 @@ tr:last-child td {
   gap: 6px;
   padding: 6px;
   border-radius: 999px;
-  background: var(--glass-bg);
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 62%);
   border: 1px solid var(--glass-stroke);
-  box-shadow: var(--shadow-card), inset 0 1px 0 var(--glass-highlight);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
+    inset -1.5px -2px 1px -2px var(--glass-rim-soft),
+    inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-raised);
+  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
 }
 
 .segmentedGlass .glassButton {
@@ -463,19 +663,18 @@ tr:last-child td {
 }
 
 .segmentedGlass .glassButton:hover {
-  background: var(--accent-tint);
+  background-color: var(--accent-tint);
   color: var(--accent);
 }
 
 .segmentedGlass .primaryGlassButton {
-  background: var(--accent);
+  background-color: var(--accent);
   color: var(--on-accent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .segmentedGlass .primaryGlassButton:hover {
-  background: var(--accent);
-  opacity: 0.88;
+  background-color: var(--accent-strong);
   color: var(--on-accent);
 }
 
@@ -486,11 +685,15 @@ tr:last-child td {
   gap: 2px;
   padding: 4px;
   border-radius: 999px;
-  background: var(--glass-bg);
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 62%);
   border: 1px solid var(--glass-stroke);
-  box-shadow: var(--shadow-float), inset 0 1px 0 var(--glass-highlight);
-  -webkit-backdrop-filter: blur(24px) saturate(1.7);
-  backdrop-filter: blur(24px) saturate(1.7);
+  box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
+    inset -1.5px -2px 1px -2px var(--glass-rim-soft),
+    inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-float);
+  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
 }
 
 /* 通用区块头(标题 + 说明 + 右侧动作) */
@@ -547,8 +750,8 @@ tr:last-child td {
 .appHeader--scrolled {
   background: var(--glass-bg);
   border-bottom-color: var(--sep);
-  -webkit-backdrop-filter: blur(20px) saturate(1.8);
-  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8) brightness(1.04);
+  backdrop-filter: blur(24px) saturate(1.8) brightness(1.04);
 }
 
 .appEyebrow {
@@ -599,24 +802,30 @@ tr:last-child td {
   gap: 2px;
   padding: 6px;
   border-radius: 999px;
-  background: var(--glass-bg);
+  background-color: var(--glass-bg);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 62%);
   border: 1px solid var(--glass-stroke);
-  box-shadow: var(--shadow-float), inset 0 1px 0 var(--glass-highlight);
-  -webkit-backdrop-filter: blur(24px) saturate(1.7);
-  backdrop-filter: blur(24px) saturate(1.7);
+  box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
+    inset -1.5px -2px 1px -2px var(--glass-rim-soft),
+    inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-float);
+  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
 }
 
-/* 会滑动的选中态指示器,取代瞬间色块切换,呈现液态移动感 */
+/* 液态胶囊滑块:主色玻璃药丸随选中项弹性滑动 */
 .tabIndicator {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: calc(100% / var(--tab-count, 6));
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / var(--tab-count, 6));
   border-radius: 999px;
-  background: var(--accent-tint);
+  background-color: var(--accent);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 60%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 14px var(--accent-tint);
   transform: translateX(calc(var(--tab-index, 0) * 100%));
-  transition: transform 0.45s var(--ease-spring);
+  transition: transform 0.5s var(--ease-spring);
 }
 
 .tabBar button {
@@ -633,15 +842,16 @@ tr:last-child td {
   font-size: 10.5px;
   font-weight: 500;
   color: var(--text-2);
-  transition: color 0.2s var(--ease);
+  transition: color 0.25s var(--ease), transform 0.35s var(--ease-spring);
 }
 
 .tabBar button:not(.active):hover {
   color: var(--text);
+  background: transparent;
 }
 
 .tabBar button.active {
-  color: var(--accent);
+  color: var(--on-accent);
   font-weight: 600;
 }
 
@@ -652,15 +862,21 @@ tr:last-child td {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: var(--bg);
+  background: transparent;
 }
 
 .authPanel {
   width: min(420px, 100%);
-  background: var(--surface);
-  border: 1px solid var(--sep);
+  background-color: var(--glass-bg-strong);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 55%);
+  border: 1px solid var(--glass-stroke);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
+    inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
+    inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-raised);
+  -webkit-backdrop-filter: blur(32px) saturate(2) brightness(1.05);
+  backdrop-filter: blur(32px) saturate(2) brightness(1.05);
   padding: 36px 32px;
   display: grid;
   gap: 14px;
@@ -749,10 +965,17 @@ tr:last-child td {
 }
 
 /* 今日摄入卡 */
+/* 今日摄入 Hero:更强的主色染色 + 更大圆角(保留玻璃光泽层) */
 .todayCard {
   padding: 22px 20px;
   display: grid;
   gap: 14px;
+  border-radius: var(--r-lg);
+  background-image:
+    linear-gradient(160deg, var(--accent-tint), transparent 52%),
+    radial-gradient(130% 90% at 50% -12%, var(--glass-card-tint), transparent 58%),
+    linear-gradient(115deg, var(--glass-gloss) 0%, rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, var(--glass-gloss), rgba(255, 255, 255, 0) 22%);
 }
 
 .todayHead {
@@ -2141,8 +2364,7 @@ tr:last-child td {
 }
 
 .bodyMetricCard:hover {
-  background: var(--surface);
-  border-color: var(--sep-strong);
+  background-color: var(--glass-bg);
 }
 
 .bodyMetricCard > span {
@@ -2573,14 +2795,22 @@ tr:last-child td {
 /* 指标历史弹层 */
 .metricHistoryDialog {
   width: min(720px, 100%);
-  background: var(--surface);
+  background-color: var(--glass-bg-strong);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 40%);
+  border: 1px solid var(--glass-stroke);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-float);
+  box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
+    inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
+    inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-float);
+  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
   padding: 22px;
   display: grid;
   gap: 16px;
   max-height: 90vh;
   overflow-y: auto;
+  animation: dialogIn 0.45s var(--ease-spring);
 }
 
 .metricHistoryHead {
@@ -3319,19 +3549,33 @@ tr:last-child td {
   place-items: center;
   padding: 20px;
   background: var(--backdrop);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
   overflow-y: auto;
+  animation: backdropIn 0.3s var(--ease);
+}
+
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .noticeDialog {
   width: min(420px, 100%);
-  background: var(--surface);
+  background-color: var(--glass-bg-strong);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 40%);
+  border: 1px solid var(--glass-stroke);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-float);
+  box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
+    inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
+    inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-float);
+  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
   padding: 24px;
   display: grid;
   gap: 12px;
+  animation: dialogIn 0.45s var(--ease-spring);
 }
 
 .noticeDialog h3 {
@@ -3391,14 +3635,33 @@ tr:last-child td {
 
 .entryDialog {
   width: min(680px, 100%);
-  background: var(--surface);
+  background-color: var(--glass-bg-strong);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 40%);
+  border: 1px solid var(--glass-stroke);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-float);
+  box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
+    inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
+    inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-float);
+  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
   padding: 22px;
   display: grid;
   gap: 16px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
+  animation: dialogIn 0.45s var(--ease-spring);
+}
+
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .compactDialog {
@@ -3937,18 +4200,22 @@ tr:last-child td {
   max-width: min(420px, calc(100vw - 40px));
   padding: 12px 18px;
   border-radius: 999px;
-  background: var(--glass-bg);
+  background-color: var(--glass-bg-strong);
+  background-image: linear-gradient(115deg, var(--glass-gloss), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, var(--glass-highlight), transparent 62%);
   border: 1px solid var(--glass-stroke);
-  box-shadow: var(--shadow-float), inset 0 1px 0 var(--glass-highlight);
-  -webkit-backdrop-filter: blur(24px) saturate(1.7);
-  backdrop-filter: blur(24px) saturate(1.7);
+  box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
+    inset -1.5px -2px 1px -2px var(--glass-rim-soft),
+    inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-float);
+  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
   text-align: left;
   min-height: 0;
   animation: toastIn 0.5s var(--ease-spring);
 }
 
 .appToast:hover {
-  background: var(--glass-bg);
+  background-color: var(--glass-bg-strong);
 }
 
 @keyframes toastIn {

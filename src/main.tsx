@@ -1863,7 +1863,7 @@ function PhotoStrip({ photos, empty }: { photos: string[]; empty: string }) {
 
 function InsightCard({ tone, title, items }: { tone: "good" | "warn"; title: string; items: string[] }) {
   return (
-    <article className={`insightCard ${tone}`}>
+    <article className={`lg-glass lg-card insightCard ${tone}`}>
       <h4>{title}</h4>
       <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul>
     </article>
@@ -1913,7 +1913,7 @@ function CoachPanel({ items, totals }: { items: FoodItem[]; totals: ReturnType<t
   const swaps = buildSwapSuggestions(items);
   const tomorrow = buildTomorrowSuggestions(totals);
   return (
-    <article className="coachCard">
+    <article className="lg-glass lg-card coachCard">
       <h4>减脂复盘</h4>
       <div className="coachBlock">
         <strong>影响最大的食物</strong>
@@ -1955,7 +1955,7 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
   return (
     <section className="bodyLayout">
       <div className="bodyMain">
-        <section className="bodyHero">
+        <section className="lg-glass lg-card bodyHero">
           <div>
             <p className="todayLabel">身体数据 · 和饮食一起看趋势</p>
             <h2>{current ? formatDateLabel(current.date) : "还没有身体数据"}</h2>
@@ -1982,7 +1982,7 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
             </section>
 
             <section className="bodySplit">
-              <article className="bodyTrendCard">
+              <article className="lg-glass lg-card bodyTrendCard">
                 <div className="bodySectionHead">
                   <div>
                     <h3>体重趋势</h3>
@@ -1993,7 +1993,7 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
                 <BodyWeightLineChart currentDate={current.date} maxWeight={maxWeight} metrics={recent} minWeight={minWeight} />
               </article>
 
-              <article className="bodyAnalysisCard">
+              <article className="lg-glass lg-card bodyAnalysisCard">
                 <div className="bodySectionHead">
                   <div>
                     <h3>饮食 + 身体分析</h3>
@@ -2009,7 +2009,7 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
 
             <BodyCompositionFigure metric={current} />
 
-            <section className="bodyDetailCard">
+            <section className="lg-glass lg-card bodyDetailCard">
               <div className="bodySectionHead">
                 <div>
                   <h3>完整指标</h3>
@@ -2029,7 +2029,7 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
             </section>
           </>
         ) : (
-          <section className="bodyEmpty">
+          <section className="lg-glass lg-card bodyEmpty">
             <Scale size={30} />
             <h3>先记录一次身体数据</h3>
             <p>{bodyState.includes("不可用") ? bodyState : "可以先把体脂秤截图里的体重、体脂、BMI、基础代谢录进来。"}</p>
@@ -2038,7 +2038,7 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
         )}
       </div>
 
-      <aside className="bodyHistory">
+      <aside className="lg-glass lg-card bodyHistory">
         <div className="bodySectionHead">
           <div>
             <h3>身体记录</h3>
@@ -2122,7 +2122,7 @@ function BodyCompositionFigure({ metric }: { metric: BodyMetric }) {
     { key: "leftLeg", label: "左腿", part: parts.leftLeg },
   ];
   return (
-    <section className="bodyFigureCard">
+    <section className="lg-glass lg-card bodyFigureCard">
       <div className="bodySectionHead">
         <div>
           <h3>身体分布图</h3>
@@ -2623,7 +2623,7 @@ function ExerciseDashboard({
 
   return (
     <section className="exerciseLayout healthRedesign">
-      <section className="exerciseHeader">
+      <section className="lg-glass lg-card exerciseHeader">
         <div>
           <p>运动数据</p>
           <span>{round(activeCalories)} kcal · {round(exerciseMinutes)} 分钟 · {workouts.length} 次训练</span>
@@ -2644,7 +2644,7 @@ function ExerciseDashboard({
       </section>
 
       <section className="healthDashboardGrid">
-        <article className="healthRingCard">
+        <article className="lg-glass lg-card healthRingCard">
           <div className="bodySectionHead">
             <div>
               <h3>今日活动</h3>
@@ -2667,7 +2667,7 @@ function ExerciseDashboard({
           </div>
         </article>
 
-        <article className="healthBalanceCard">
+        <article className="lg-glass lg-card healthBalanceCard">
           <div className="bodySectionHead">
             <div>
               <h3>饮食 + 运动差值</h3>
@@ -2680,7 +2680,7 @@ function ExerciseDashboard({
           <MiniLineChart values={balanceValues} color="#0A84FF" />
         </article>
 
-        <article className="healthBodySnapshotCard">
+        <article className="lg-glass lg-card healthBodySnapshotCard">
           <div className="bodySectionHead">
             <div>
               <h3>身体快照</h3>
@@ -2694,7 +2694,7 @@ function ExerciseDashboard({
           </div>
         </article>
 
-        <article className="healthTrendCard">
+        <article className="lg-glass lg-card healthTrendCard">
           <div className="bodySectionHead">
             <div>
               <h3>7 日活动趋势</h3>
@@ -2717,7 +2717,7 @@ function ExerciseDashboard({
           </div>
         </article>
 
-        <article className="healthWorkoutCard">
+        <article className="lg-glass lg-card healthWorkoutCard">
           <div className="bodySectionHead">
             <div>
               <h3>训练</h3>
@@ -2733,7 +2733,7 @@ function ExerciseDashboard({
           />
         </article>
 
-        <article className="healthSummaryCard">
+        <article className="lg-glass lg-card healthSummaryCard">
           <div className="bodySectionHead">
             <div>
               <h3>活动摘要</h3>
@@ -2806,7 +2806,7 @@ function SyncDiagnosticsPanel({
   tips.push("接口会拒绝全 0 快捷指令数据，避免覆盖已经导入的正确历史数据。");
 
   return (
-    <article className="syncDiagnosticsCard">
+    <article className="lg-glass lg-card syncDiagnosticsCard">
       <div className="bodySectionHead">
         <div>
           <h3>同步诊断</h3>
@@ -2843,7 +2843,7 @@ function AppleHealthMetricsPanel({ activity }: { activity?: DailyActivity }) {
   const selectedDefinitions = grouped[selectedCategory] || [];
 
   return (
-    <article className="appleHealthPanel">
+    <article className="lg-glass lg-card appleHealthPanel">
       <div className="bodySectionHead">
         <div>
           <h3>健康分类</h3>
@@ -3250,7 +3250,7 @@ function Detail({ items, onDeleteItem, onEditItem }: { items: FoodItem[]; onDele
         const totals = totalsFor(mealItems);
         const isExpanded = expandedMeal === meal.key;
         return (
-          <article className={`${mealItems.length ? "ledgerCard hasItems" : "ledgerCard empty"} ${isExpanded ? "expanded" : ""}`} key={meal.key}>
+          <article className={`lg-glass lg-card ${mealItems.length ? "ledgerCard hasItems" : "ledgerCard empty"} ${isExpanded ? "expanded" : ""}`} key={meal.key}>
             <button
               aria-expanded={isExpanded}
               className="ledgerToggle"
@@ -3365,7 +3365,7 @@ function Trend({
     <section className="trendGrid">
       <PeriodReportSummary title="本周复盘" report={weekReport} />
       <PeriodReportSummary title="30 日趋势" report={monthReport} />
-      <article className="trendCard trendSummary">
+      <article className="lg-glass lg-card trendCard trendSummary">
         <StatTile
           icon={<Flame size={16} />}
           label="7日平均"
@@ -3386,7 +3386,7 @@ function Trend({
         />
         <StatTile icon={<CheckCircle2 size={16} />} label="连续记录" tone="teal" value={<>{streak}<small>天</small></>} />
       </article>
-      <article className="trendCard wide">
+      <article className="lg-glass lg-card trendCard wide">
         <div className="trendCardHead">
           <div>
             <h3>热量趋势</h3>
@@ -3407,11 +3407,11 @@ function Trend({
           })}
         </div>
       </article>
-      <article className="trendCard">
+      <article className="lg-glass lg-card trendCard">
         <h3>最高热量食物</h3>
         <ul>{topFoods.map((item) => <li key={item.id}><span>{item.name}</span><strong>{round(item.calories)} kcal</strong></li>)}</ul>
       </article>
-      <article className="trendCard">
+      <article className="lg-glass lg-card trendCard">
         <h3>照片记录</h3>
         <PhotoLibrary items={selectedItems} compact />
       </article>
@@ -3426,7 +3426,7 @@ function Trend({
 
 function PeriodReportSummary({ report, title }: { report: ReturnType<typeof buildPeriodReport>; title: string }) {
   return (
-    <article className="trendCard reportSummaryCard">
+    <article className="lg-glass lg-card trendCard reportSummaryCard">
       <div className="trendCardHead">
         <div>
           <h3>{title}</h3>

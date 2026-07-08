@@ -431,27 +431,7 @@ tr:last-child td {
    反光   偏移内阴影:左上亮缘(负 spread 收进)/右下暗缘,模拟边缘弯折光
    厚度   底部内阴影 + 贴地/环境双层投影 */
 .railPanel,
-.coachCard,
-.insightCard,
-.ledgerCard,
-.trendCard,
-.bodyHero,
 .bodyMetricCard,
-.bodyTrendCard,
-.bodyAnalysisCard,
-.bodyFigureCard,
-.bodyDetailCard,
-.bodyEmpty,
-.bodyHistory,
-.exerciseHeader,
-.healthRingCard,
-.healthBalanceCard,
-.healthBodySnapshotCard,
-.healthTrendCard,
-.healthWorkoutCard,
-.healthSummaryCard,
-.syncDiagnosticsCard,
-.appleHealthPanel,
 .photoCard {
   background-color: var(--glass-card-bg);
   background-image:
@@ -1561,6 +1541,7 @@ tr:last-child td {
 
 .ledgerCard {
   overflow: hidden;
+  padding: 0;
 }
 
 .ledgerToggle {
@@ -4568,21 +4549,11 @@ tr:last-child td {
 
 /* Card Hover 浮起:仅悬停设备,轻抬 2px + 投影加深 */
 @media (hover: hover) {
-  :is(.railPanel,
-      .coachCard, .insightCard, .ledgerCard, .trendCard,
-      .bodyHero, .bodyMetricCard, .bodyTrendCard, .bodyAnalysisCard, .bodyFigureCard,
-      .bodyDetailCard, .bodyHistory, .exerciseHeader, .healthRingCard, .healthBalanceCard,
-      .healthBodySnapshotCard, .healthTrendCard, .healthWorkoutCard, .healthSummaryCard,
-      .syncDiagnosticsCard, .appleHealthPanel, .photoCard) {
+  :is(.railPanel, .bodyMetricCard, .photoCard) {
     transition: transform 0.45s var(--spring-gentle), box-shadow 0.45s var(--ease);
   }
 
-  :is(.railPanel,
-      .coachCard, .insightCard, .ledgerCard, .trendCard,
-      .bodyHero, .bodyMetricCard, .bodyTrendCard, .bodyAnalysisCard, .bodyFigureCard,
-      .bodyDetailCard, .bodyHistory, .exerciseHeader, .healthRingCard, .healthBalanceCard,
-      .healthBodySnapshotCard, .healthTrendCard, .healthWorkoutCard, .healthSummaryCard,
-      .syncDiagnosticsCard, .appleHealthPanel, .photoCard):hover {
+  :is(.railPanel, .bodyMetricCard, .photoCard):hover {
     transform: translateY(-2px);
     box-shadow:
       inset 0 0 0 1px var(--glass-rim-soft),
@@ -4689,7 +4660,7 @@ body.lg-modal-open {
 
 /* GlassCard 仪表盘卡:悬停轻抬(不改光标,卡片本身不可点) */
 @media (hover: hover) {
-  .overviewLayout .lg-card:hover {
+  :is(.overviewLayout, .bodyLayout, .exerciseLayout, .trendGrid, .viewPanel) .lg-card:hover {
     transform: translateY(-2px);
     box-shadow:
       inset 0 0 0 1px var(--lg-rim-soft),

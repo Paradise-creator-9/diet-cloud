@@ -52,6 +52,7 @@
   --glass-rim-bright: rgba(255, 255, 255, 0.95);
   --glass-rim-soft: rgba(255, 255, 255, 0.45);
   --glass-inner-shade: rgba(8, 32, 36, 0.16);
+  --glass-sheen: rgba(255, 255, 255, 0.3);
 
   --text: #16181c;
   --text-2: #5e646d;
@@ -127,6 +128,7 @@
   --glass-rim-bright: rgba(255, 255, 255, 0.32);
   --glass-rim-soft: rgba(255, 255, 255, 0.1);
   --glass-inner-shade: rgba(0, 0, 0, 0.45);
+  --glass-sheen: rgba(255, 255, 255, 0.12);
 
   --text: #f2f4f8;
   --text-2: #9aa1ac;
@@ -4545,4 +4547,102 @@ tr:last-child td {
   .trendSummary {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ---------- 15. Micro-interactions ---------- */
+
+/* 页面切换 Stagger Entrance:子块依次浮现,transform/opacity only */
+:is(.journalColumn, .nutritionRail, .viewPanel, .trendGrid, .bodyMain, .healthDashboardGrid) > *,
+.bodyLayout > aside > *,
+.exerciseLayout > .exerciseHeader {
+  animation: viewIn 0.5s var(--spring-gentle) backwards;
+}
+
+:is(.journalColumn, .nutritionRail, .viewPanel, .trendGrid, .bodyMain, .healthDashboardGrid) > *:nth-child(2) { animation-delay: 0.06s; }
+:is(.journalColumn, .nutritionRail, .viewPanel, .trendGrid, .bodyMain, .healthDashboardGrid) > *:nth-child(3) { animation-delay: 0.12s; }
+:is(.journalColumn, .nutritionRail, .viewPanel, .trendGrid, .bodyMain, .healthDashboardGrid) > *:nth-child(4) { animation-delay: 0.18s; }
+:is(.journalColumn, .nutritionRail, .viewPanel, .trendGrid, .bodyMain, .healthDashboardGrid) > *:nth-child(5) { animation-delay: 0.24s; }
+:is(.journalColumn, .nutritionRail, .viewPanel, .trendGrid, .bodyMain, .healthDashboardGrid) > *:nth-child(n + 6) { animation-delay: 0.28s; }
+
+@keyframes viewIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* Card Hover 浮起:仅悬停设备,轻抬 2px + 投影加深 */
+@media (hover: hover) {
+  :is(.todayCard, .mealList, .favoriteFoodsPanel, .railPanel, .goalDashboard,
+      .periodReportCard, .coachCard, .insightCard, .ledgerCard, .trendCard,
+      .bodyHero, .bodyMetricCard, .bodyTrendCard, .bodyAnalysisCard, .bodyFigureCard,
+      .bodyDetailCard, .bodyHistory, .exerciseHeader, .healthRingCard, .healthBalanceCard,
+      .healthBodySnapshotCard, .healthTrendCard, .healthWorkoutCard, .healthSummaryCard,
+      .syncDiagnosticsCard, .appleHealthPanel, .photoCard) {
+    transition: transform 0.45s var(--spring-gentle), box-shadow 0.45s var(--ease);
+  }
+
+  :is(.todayCard, .mealList, .favoriteFoodsPanel, .railPanel, .goalDashboard,
+      .periodReportCard, .coachCard, .insightCard, .ledgerCard, .trendCard,
+      .bodyHero, .bodyMetricCard, .bodyTrendCard, .bodyAnalysisCard, .bodyFigureCard,
+      .bodyDetailCard, .bodyHistory, .exerciseHeader, .healthRingCard, .healthBalanceCard,
+      .healthBodySnapshotCard, .healthTrendCard, .healthWorkoutCard, .healthSummaryCard,
+      .syncDiagnosticsCard, .appleHealthPanel, .photoCard):hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 0 0 1px var(--glass-rim-soft),
+      inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
+      inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
+      inset 0 -8px 14px -10px var(--glass-inner-shade),
+      var(--shadow-raised);
+  }
+}
+
+/* Glass Reflection:今日 Hero 卡每 9s 一道高光缓慢扫过 */
+.todayCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.todayCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, var(--glass-sheen) 50%, transparent 62%);
+  transform: translateX(-160%);
+  animation: heroSheen 9s var(--ease) 3s infinite;
+}
+
+@keyframes heroSheen {
+  0% { transform: translateX(-160%); }
+  22% { transform: translateX(160%); }
+  100% { transform: translateX(160%); }
+}
+
+/* AI 按钮轻微呼吸:顶部光晕 4.5s 起伏,opacity only */
+.aiAnalyzeButton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(120% 100% at 50% 0%, rgba(255, 255, 255, 0.4), transparent 62%);
+  animation: aiBreath 4.5s ease-in-out infinite;
+}
+
+@keyframes aiBreath {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Tab 选中:图标 spring 弹跳 */
+.tabBar button.active svg {
+  animation: tabIconPop 0.45s var(--ease-spring);
+}
+
+@keyframes tabIconPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
 }

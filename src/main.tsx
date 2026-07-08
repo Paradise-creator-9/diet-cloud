@@ -1580,12 +1580,38 @@ function GoalDashboard({
   );
 }
 
+function AnimatedNumber({ value, duration = 700 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(value);
+  const previousRef = useRef(value);
+
+  useEffect(() => {
+    const from = previousRef.current;
+    const to = value;
+    previousRef.current = value;
+    if (from === to) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplay(to);
+      return;
+    }
+    const start = performance.now();
+    let frame = requestAnimationFrame(function tick(now: number) {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(from + (to - from) * eased));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [value, duration]);
+
+  return <>{display.toLocaleString()}</>;
+}
+
 function GoalRing({ label, progress, value, tone }: { label: string; progress: number; value: string; tone: string }) {
   const displayProgress = Math.min(100, progress);
   return (
     <div className={`goalRing ${tone}`} style={{ "--progress": `${displayProgress}%` } as React.CSSProperties}>
       <div className="goalRingDial">
-        <strong>{Math.round(progress)}%</strong>
+        <strong><AnimatedNumber value={Math.round(progress)} />%</strong>
       </div>
       <span>{label}</span>
       <em>{value}</em>
@@ -1678,10 +1704,12 @@ function HeroStory({ goals, items, onAiAnalyze, onEdit, totals }: { goals: UserG
         </div>
       </div>
       <div className="todayNumber">
-        <strong>{round(totals.calories).toLocaleString()}</strong>
+        <strong><AnimatedNumber value={round(totals.calories)} /></strong>
         <small>kcal</small>
         <em className={remaining >= 0 ? "" : "over"}>
-          {remaining >= 0 ? `还可安排 ${remaining.toLocaleString()} kcal` : `超出目标 ${Math.abs(remaining).toLocaleString()} kcal`}
+          {remaining >= 0
+            ? <>还可安排 <AnimatedNumber value={remaining} /> kcal</>
+            : <>超出目标 <AnimatedNumber value={Math.abs(remaining)} /> kcal</>}
         </em>
       </div>
       <div className="todayMacros">

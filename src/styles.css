@@ -32,11 +32,11 @@
   color-scheme: light;
   --bg: #eef1f5;
 
-  /* Aurora 动态背景色斑(L0 背景层) */
-  --aurora-a: rgba(0, 205, 182, 0.55);
-  --aurora-b: rgba(70, 150, 255, 0.46);
-  --aurora-c: rgba(188, 118, 255, 0.38);
-  --aurora-d: rgba(255, 172, 70, 0.4);
+  /* Aurora 动态背景色斑(L0 背景层):低饱和、克制 */
+  --aurora-a: rgba(0, 190, 170, 0.3);
+  --aurora-b: rgba(80, 148, 235, 0.25);
+  --aurora-c: rgba(175, 125, 235, 0.2);
+  --aurora-d: rgba(245, 172, 95, 0.2);
 
   /* 旧表面 token:仅剩表单控件、芯片等小控件在用 */
   --surface: rgba(255, 255, 255, 0.78);
@@ -45,18 +45,19 @@
   --surface-strong: rgba(255, 255, 255, 0.92);
   --card-stroke: rgba(255, 255, 255, 0.6);
 
-  /* Liquid Glass 卡片材质(L1):折射基底 / 动态染色 / 边缘反光 / 厚度 */
-  --glass-card-bg: rgba(255, 255, 255, 0.38);
-  --glass-card-tint: rgba(0, 170, 150, 0.07);
-  --glass-gloss: rgba(255, 255, 255, 0.32);
-  --glass-rim-bright: rgba(255, 255, 255, 0.95);
-  --glass-rim-soft: rgba(255, 255, 255, 0.45);
-  --glass-inner-shade: rgba(8, 32, 36, 0.16);
-  --glass-sheen: rgba(255, 255, 255, 0.3);
+  /* Liquid Glass 卡片材质(L1):折射基底 / 动态染色 / 边缘反光 / 厚度
+     可读性优先:基底不透明度提高,高光与染色全面收敛 */
+  --glass-card-bg: rgba(255, 255, 255, 0.58);
+  --glass-card-tint: rgba(0, 170, 150, 0.04);
+  --glass-gloss: rgba(255, 255, 255, 0.18);
+  --glass-rim-bright: rgba(255, 255, 255, 0.7);
+  --glass-rim-soft: rgba(255, 255, 255, 0.3);
+  --glass-inner-shade: rgba(8, 32, 36, 0.1);
+  --glass-sheen: rgba(255, 255, 255, 0.16);
 
   --text: #16181c;
-  --text-2: #5e646d;
-  --text-3: #989ea8;
+  --text-2: #545a63;
+  --text-3: #8e949e;
   --sep: rgba(18, 30, 40, 0.08);
   --sep-strong: rgba(18, 30, 40, 0.14);
 
@@ -89,10 +90,10 @@
   --shadow-float: 0 2px 6px rgba(22, 38, 44, 0.08), 0 16px 48px rgba(22, 38, 44, 0.18);
 
   /* Liquid Glass(L2 悬浮层):导航、工具栏、弹层、Toast */
-  --glass-bg: rgba(255, 255, 255, 0.4);
-  --glass-bg-strong: rgba(252, 253, 254, 0.72);
-  --glass-stroke: rgba(255, 255, 255, 0.75);
-  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-bg: rgba(255, 255, 255, 0.58);
+  --glass-bg-strong: rgba(252, 253, 254, 0.85);
+  --glass-stroke: rgba(255, 255, 255, 0.65);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shade: rgba(18, 40, 50, 0.05);
   --backdrop: rgba(18, 26, 36, 0.36);
 
@@ -111,10 +112,10 @@
   color-scheme: dark;
   --bg: #05070c;
 
-  --aurora-a: rgba(0, 218, 192, 0.3);
-  --aurora-b: rgba(62, 132, 255, 0.28);
-  --aurora-c: rgba(172, 102, 255, 0.22);
-  --aurora-d: rgba(255, 152, 62, 0.16);
+  --aurora-a: rgba(0, 200, 178, 0.16);
+  --aurora-b: rgba(70, 135, 240, 0.15);
+  --aurora-c: rgba(165, 108, 240, 0.12);
+  --aurora-d: rgba(240, 150, 70, 0.08);
 
   --surface: rgba(30, 33, 40, 0.72);
   --surface-2: rgba(122, 128, 142, 0.14);
@@ -122,13 +123,13 @@
   --surface-strong: rgba(32, 35, 42, 0.94);
   --card-stroke: rgba(255, 255, 255, 0.08);
 
-  --glass-card-bg: rgba(20, 24, 32, 0.42);
-  --glass-card-tint: rgba(46, 211, 189, 0.06);
-  --glass-gloss: rgba(255, 255, 255, 0.07);
-  --glass-rim-bright: rgba(255, 255, 255, 0.32);
-  --glass-rim-soft: rgba(255, 255, 255, 0.1);
-  --glass-inner-shade: rgba(0, 0, 0, 0.45);
-  --glass-sheen: rgba(255, 255, 255, 0.12);
+  --glass-card-bg: rgba(24, 27, 34, 0.6);
+  --glass-card-tint: rgba(46, 211, 189, 0.035);
+  --glass-gloss: rgba(255, 255, 255, 0.045);
+  --glass-rim-bright: rgba(255, 255, 255, 0.2);
+  --glass-rim-soft: rgba(255, 255, 255, 0.07);
+  --glass-inner-shade: rgba(0, 0, 0, 0.3);
+  --glass-sheen: rgba(255, 255, 255, 0.07);
 
   --text: #f2f4f8;
   --text-2: #9aa1ac;
@@ -162,10 +163,10 @@
   --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
   --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.45), 0 18px 52px rgba(0, 0, 0, 0.6);
 
-  --glass-bg: rgba(22, 25, 32, 0.45);
-  --glass-bg-strong: rgba(26, 29, 36, 0.78);
-  --glass-stroke: rgba(255, 255, 255, 0.13);
-  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-bg: rgba(22, 25, 32, 0.62);
+  --glass-bg-strong: rgba(26, 29, 36, 0.88);
+  --glass-stroke: rgba(255, 255, 255, 0.11);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
   --glass-shade: rgba(0, 0, 0, 0.3);
   --backdrop: rgba(0, 0, 0, 0.55);
 }
@@ -465,8 +466,8 @@ tr:last-child td {
     linear-gradient(180deg, var(--glass-gloss), rgba(255, 255, 255, 0) 22%);
   border: none;
   border-radius: var(--r-md);
-  -webkit-backdrop-filter: blur(20px) saturate(2) brightness(1.06) contrast(1.04);
-  backdrop-filter: blur(20px) saturate(2) brightness(1.06) contrast(1.04);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4) brightness(1.03);
+  backdrop-filter: blur(24px) saturate(1.4) brightness(1.03);
   box-shadow:
     inset 0 0 0 1px var(--glass-rim-soft),
     inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
@@ -499,7 +500,7 @@ tr:last-child td {
   font-weight: 600;
   color: var(--on-accent);
   background-color: var(--accent);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 55%);
   padding: 10px 18px;
   min-height: 40px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 18px var(--accent-tint);
@@ -534,7 +535,7 @@ tr:last-child td {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.55) 48%, transparent 64%);
+  background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.32) 48%, transparent 64%);
   transform: translateX(-130%);
 }
 
@@ -584,7 +585,7 @@ tr:last-child td {
   font-weight: 600;
   color: var(--on-accent);
   background-color: var(--accent);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 55%);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 55%);
   padding: 10px 18px;
   min-height: 40px;
   position: relative;
@@ -629,8 +630,8 @@ tr:last-child td {
   box-shadow: inset 1.5px 2.5px 1px -2px var(--glass-rim-bright),
     inset -1px -1.5px 1px -1.5px var(--glass-rim-soft),
     inset 0 -4px 8px -6px var(--glass-inner-shade), var(--shadow-card);
-  -webkit-backdrop-filter: blur(24px) saturate(2.1) brightness(1.08) contrast(1.04);
-  backdrop-filter: blur(24px) saturate(2.1) brightness(1.08) contrast(1.04);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(24px) saturate(1.5) brightness(1.04);
 }
 
 .glassButton:hover {
@@ -652,8 +653,8 @@ tr:last-child td {
   box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
     inset -1.5px -2px 1px -2px var(--glass-rim-soft),
     inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-raised);
-  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
-  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
 }
 
 .segmentedGlass .glassButton {
@@ -694,8 +695,8 @@ tr:last-child td {
   box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
     inset -1.5px -2px 1px -2px var(--glass-rim-soft),
     inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-float);
-  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
-  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
 }
 
 /* 通用区块头(标题 + 说明 + 右侧动作) */
@@ -811,8 +812,8 @@ tr:last-child td {
   box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
     inset -1.5px -2px 1px -2px var(--glass-rim-soft),
     inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-float);
-  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
-  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
 }
 
 /* 液态胶囊滑块:主色玻璃药丸随选中项弹性滑动 */
@@ -824,8 +825,8 @@ tr:last-child td {
   width: calc((100% - 12px) / var(--tab-count, 6));
   border-radius: 999px;
   background-color: var(--accent);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 60%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 4px 14px var(--accent-tint);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 60%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 14px var(--accent-tint);
   transform: translateX(calc(var(--tab-index, 0) * 100%));
   transition: transform 0.5s var(--ease-spring);
 }
@@ -877,8 +878,8 @@ tr:last-child td {
   box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
     inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
     inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-raised);
-  -webkit-backdrop-filter: blur(32px) saturate(2) brightness(1.05);
-  backdrop-filter: blur(32px) saturate(2) brightness(1.05);
+  -webkit-backdrop-filter: blur(32px) saturate(1.5) brightness(1.02);
+  backdrop-filter: blur(32px) saturate(1.5) brightness(1.02);
   padding: 36px 32px;
   display: grid;
   gap: 14px;
@@ -956,13 +957,13 @@ tr:last-child td {
 .overviewLayout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 16px;
+  gap: 20px;
   align-items: start;
 }
 
 .journalColumn {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -1344,7 +1345,7 @@ tr:last-child td {
 /* 右侧信息栏 */
 .nutritionRail {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -2314,13 +2315,13 @@ tr:last-child td {
 .bodyLayout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 16px;
+  gap: 20px;
   align-items: start;
 }
 
 .bodyMain {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   min-width: 0;
 }
 
@@ -2805,8 +2806,8 @@ tr:last-child td {
   box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
     inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
     inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-float);
-  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
-  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5) brightness(1.02);
+  backdrop-filter: blur(40px) saturate(1.5) brightness(1.02);
   padding: 22px;
   display: grid;
   gap: 16px;
@@ -2980,7 +2981,7 @@ tr:last-child td {
 .healthDashboardGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
   align-items: start;
 }
 
@@ -3572,8 +3573,8 @@ tr:last-child td {
   box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
     inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
     inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-float);
-  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
-  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5) brightness(1.02);
+  backdrop-filter: blur(40px) saturate(1.5) brightness(1.02);
   padding: 24px;
   display: grid;
   gap: 12px;
@@ -3645,8 +3646,8 @@ tr:last-child td {
   box-shadow: inset 2.5px 3.5px 1px -3px var(--glass-rim-bright),
     inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
     inset 0 -8px 14px -10px var(--glass-inner-shade), var(--shadow-float);
-  -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
-  backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5) brightness(1.02);
+  backdrop-filter: blur(40px) saturate(1.5) brightness(1.02);
   padding: 22px;
   display: grid;
   gap: 16px;
@@ -4209,8 +4210,8 @@ tr:last-child td {
   box-shadow: inset 2px 3px 1px -2.5px var(--glass-rim-bright),
     inset -1.5px -2px 1px -2px var(--glass-rim-soft),
     inset 0 -5px 10px -8px var(--glass-inner-shade), var(--shadow-float);
-  -webkit-backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
-  backdrop-filter: blur(28px) saturate(2.1) brightness(1.08) contrast(1.04);
+  -webkit-backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(28px) saturate(1.5) brightness(1.04);
   text-align: left;
   min-height: 0;
   animation: toastIn 0.5s var(--ease-spring);
@@ -4611,12 +4612,12 @@ tr:last-child td {
   pointer-events: none;
   background: linear-gradient(105deg, transparent 38%, var(--glass-sheen) 50%, transparent 62%);
   transform: translateX(-160%);
-  animation: heroSheen 9s var(--ease) 3s infinite;
+  animation: heroSheen 16s var(--ease) 4s infinite;
 }
 
 @keyframes heroSheen {
   0% { transform: translateX(-160%); }
-  22% { transform: translateX(160%); }
+  14% { transform: translateX(160%); }
   100% { transform: translateX(160%); }
 }
 
@@ -4627,12 +4628,12 @@ tr:last-child td {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  background: radial-gradient(120% 100% at 50% 0%, rgba(255, 255, 255, 0.4), transparent 62%);
-  animation: aiBreath 4.5s ease-in-out infinite;
+  background: radial-gradient(120% 100% at 50% 0%, rgba(255, 255, 255, 0.24), transparent 62%);
+  animation: aiBreath 6s ease-in-out infinite;
 }
 
 @keyframes aiBreath {
-  0%, 100% { opacity: 0.3; }
+  0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
 

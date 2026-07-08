@@ -46,7 +46,7 @@ import { appleHealthMetricDefinitions, parseAppleHealthExport, type AppleHealthI
 import { mealMeta, nutrientTargets, seedItems } from "./data";
 import type { BodyMetric, DailyActivity, ExerciseActivity, FoodItem, MealType } from "./types";
 import { buildDates, formatDateLabel, itemsByMeal, round, totalsFor, uniquePhotos } from "./utils";
-import { GlassButton, GlassCard, GlassModal } from "./design-system";
+import { AuroraBackground, GlassButton, GlassCard, GlassModal, MouseLight, NoiseOverlay, ScrollReveal } from "./design-system";
 import "./styles.css";
 
 type View = "overview" | "detail" | "trend" | "photos" | "body" | "exercise";
@@ -821,26 +821,39 @@ function AuthGate({ mode }: { mode: "loading" | "login" }) {
   }
 
   return (
-    <main className="authPage">
-      <section className="authPanel">
-        <div className="brandMark"><ScrollText size={22} /></div>
-        <h1 className="authBrand">膳食志</h1>
-        <p className="authTagline">登录后查看你的饮食、照片和营养分析</p>
-        <div className="authChecks">
-          <span><ShieldCheck size={16} /> 数据按账号隔离</span>
-          <span><Cloud size={16} /> Supabase 云端保存</span>
-        </div>
-        {mode === "login" && (
-          <form className="authForm" onSubmit={handleSubmit}>
-            <label>
-              <span>邮箱</span>
-              <input autoComplete="email" inputMode="email" onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" type="email" value={email} />
-            </label>
-            <button type="submit"><Mail size={16} />发送登录邮件</button>
-          </form>
-        )}
-        <p className="authStatus">{status}</p>
+    <main className="authPage authHero">
+      <AuroraBackground />
+      <section className="authHeroContent">
+        <ScrollReveal y={16}>
+          <div className="brandMark"><ScrollText size={22} /></div>
+        </ScrollReveal>
+        <ScrollReveal delay={0.08} y={16}>
+          <h1 className="authBrand">膳食志</h1>
+        </ScrollReveal>
+        <ScrollReveal delay={0.16} y={16}>
+          <p className="authTagline">登录后查看你的饮食、照片和营养分析</p>
+        </ScrollReveal>
+        <ScrollReveal className="authHeroCard" delay={0.24} y={22}>
+          <GlassCard className="authCard">
+            {mode === "login" && (
+              <form className="authForm" onSubmit={handleSubmit}>
+                <label>
+                  <span>邮箱</span>
+                  <input autoComplete="email" inputMode="email" onChange={(event) => setEmail(event.target.value)} placeholder="name@example.com" type="email" value={email} />
+                </label>
+                <GlassButton variant="accent" type="submit"><Mail size={16} />发送登录邮件</GlassButton>
+              </form>
+            )}
+            <p className="authStatus">{status}</p>
+            <div className="authChecks">
+              <span><ShieldCheck size={16} /> 数据按账号隔离</span>
+              <span><Cloud size={16} /> Supabase 云端保存</span>
+            </div>
+          </GlassCard>
+        </ScrollReveal>
       </section>
+      <NoiseOverlay />
+      <MouseLight />
     </main>
   );
 }

@@ -4699,3 +4699,60 @@ body.lg-modal-open {
       var(--lg-shadow-md);
   }
 }
+
+/* ---------- 17. 登录页 Liquid Glass Hero ---------- */
+
+.authHero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Aurora 铺满 Hero 底层;内容层抬到其上;噪点与鼠标光罩在最上(均不挡交互) */
+.authHeroContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 12px;
+  width: min(440px, 100%);
+}
+
+.authHero .authBrand {
+  font-size: 56px;
+}
+
+.authHero .brandMark {
+  animation: brandFloat 7s ease-in-out infinite;
+}
+
+@keyframes brandFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.authHeroCard {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.authCard {
+  display: grid;
+  gap: 14px;
+  text-align: left;
+  padding: 26px 24px;
+}
+
+.authCard .authChecks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding-top: 2px;
+  border-top: 1px solid var(--sep);
+  padding-top: 12px;
+}
+
+.authCard .lg-button {
+  width: 100%;
+}

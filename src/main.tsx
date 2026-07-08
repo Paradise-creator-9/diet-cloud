@@ -565,7 +565,6 @@ function App() {
             onOpenGoals={() => setGoalsDialogOpen(true)}
             onQuickAddFavorite={quickAddFavoriteFood}
             onRecordMeal={openRecordNotice}
-            onSelectDate={setSelectedDate}
             selectedDate={selectedDate}
             totals={totals}
           />
@@ -1451,77 +1450,6 @@ function TabButton({ active, icon, label, onClick }: { active: boolean; icon: Re
   );
 }
 
-function MiniCalendar({
-  bodyMetrics,
-  dailyActivities,
-  items,
-  onSelectDate,
-  selectedDate,
-}: {
-  bodyMetrics: BodyMetric[];
-  dailyActivities: DailyActivity[];
-  items: FoodItem[];
-  onSelectDate: (date: string) => void;
-  selectedDate: string;
-}) {
-  const selected = new Date(`${selectedDate}T00:00:00`);
-  const year = selected.getFullYear();
-  const month = selected.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const start = new Date(firstDay);
-  start.setDate(firstDay.getDate() - firstDay.getDay());
-  const foodDates = new Set(items.map((item) => item.date));
-  const activityDates = new Set(dailyActivities.map((activityItem) => activityItem.date));
-  const bodyDates = new Set(bodyMetrics.map((metric) => metric.date));
-  const days = Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    const key = dateKey(date);
-    return {
-      date: key,
-      day: date.getDate(),
-      isOutside: date.getMonth() !== month,
-      hasFood: foodDates.has(key),
-      hasActivity: activityDates.has(key),
-      hasBody: bodyDates.has(key),
-    };
-  });
-  return (
-    <section className="miniCalendar">
-      <div className="calendarHead">
-        <strong>{year} 年 {month + 1} 月</strong>
-        <span><ChevronRight size={15} /></span>
-      </div>
-      <div className="calendarWeek">
-        {["日", "一", "二", "三", "四", "五", "六"].map((day) => <span key={day}>{day}</span>)}
-      </div>
-      <div className="calendarGrid">
-        {days.map((day) => {
-          const isSelected = day.date === selectedDate;
-          const hasAny = day.hasFood || day.hasActivity || day.hasBody;
-          return (
-            <button
-              aria-label={`${day.date}${hasAny ? " 有记录" : ""}`}
-              className={`${day.isOutside ? "outside" : ""} ${isSelected ? "selected" : ""} ${hasAny ? "hasData" : ""}`}
-              disabled={day.isOutside}
-              key={day.date}
-              onClick={() => onSelectDate(day.date)}
-              type="button"
-            >
-              <span>{day.day}</span>
-              <i>
-                {day.hasFood && <em className="foodDot" />}
-                {day.hasActivity && <em className="activityDot" />}
-                {day.hasBody && <em className="bodyDot" />}
-              </i>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 function Overview({
   allItems,
   bodyMetrics,
@@ -1536,7 +1464,6 @@ function Overview({
   onOpenGoals,
   onQuickAddFavorite,
   onRecordMeal,
-  onSelectDate,
   selectedDate,
   totals,
 }: {
@@ -1553,7 +1480,6 @@ function Overview({
   onOpenGoals: () => void;
   onQuickAddFavorite: (food: FavoriteFood) => void;
   onRecordMeal: (meal: MealType) => void;
-  onSelectDate: (date: string) => void;
   selectedDate: string;
   totals: ReturnType<typeof totalsFor>;
 }) {
@@ -1565,7 +1491,7 @@ function Overview({
         <FavoriteFoodsPanel favoriteFoods={favoriteFoods} onManage={onManageFavorites} onQuickAdd={onQuickAddFavorite} />
         <ReflectionBox />
       </div>
-      <NutritionRail allItems={allItems} bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} onSelectDate={onSelectDate} selectedDate={selectedDate} totals={totals} />
+      <NutritionRail allItems={allItems} bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} selectedDate={selectedDate} totals={totals} />
     </section>
   );
 }
@@ -1836,7 +1762,6 @@ function NutritionRail({
   exerciseActivities,
   goals,
   onOpenGoals,
-  onSelectDate,
   selectedDate,
   totals,
 }: {
@@ -1846,19 +1771,11 @@ function NutritionRail({
   exerciseActivities: ExerciseActivity[];
   goals: UserGoals;
   onOpenGoals: () => void;
-  onSelectDate: (date: string) => void;
   selectedDate: string;
   totals: ReturnType<typeof totalsFor>;
 }) {
   return (
     <aside className="nutritionRail">
-      <MiniCalendar
-        bodyMetrics={bodyMetrics}
-        dailyActivities={dailyActivities}
-        items={allItems}
-        onSelectDate={onSelectDate}
-        selectedDate={selectedDate}
-      />
       <GoalDashboard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} selectedDate={selectedDate} totals={totals} />
       <MacroSplit totals={totals} />
       <PeriodReportCard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={allItems} selectedDate={selectedDate} />
@@ -2139,14 +2056,24 @@ function BodyWeightLineChart({ currentDate, maxWeight, metrics, minWeight }: { c
   );
 }
 
+const BODY_FIGURE_VIEWBOX = { width: 220, height: 440 };
+
+const BODY_FIGURE_POINTS: Record<"trunk" | "leftArm" | "rightArm" | "leftLeg" | "rightLeg", { x: number; y: number; anchor: "start" | "end" }> = {
+  trunk: { x: 110, y: 130, anchor: "start" },
+  rightArm: { x: 54, y: 205, anchor: "end" },
+  leftArm: { x: 166, y: 205, anchor: "start" },
+  rightLeg: { x: 90, y: 400, anchor: "end" },
+  leftLeg: { x: 130, y: 400, anchor: "start" },
+};
+
 function BodyCompositionFigure({ metric }: { metric: BodyMetric }) {
   const parts = bodyPartMetrics(metric);
-  const mapItems = [
+  const mapItems: { key: keyof typeof BODY_FIGURE_POINTS; label: string; part: { fat: number; muscle: number } }[] = [
     { key: "trunk", label: "躯干", part: parts.trunk },
-    { key: "leftArm", label: "左手", part: parts.leftArm },
     { key: "rightArm", label: "右手", part: parts.rightArm },
-    { key: "leftLeg", label: "左腿", part: parts.leftLeg },
+    { key: "leftArm", label: "左手", part: parts.leftArm },
     { key: "rightLeg", label: "右腿", part: parts.rightLeg },
+    { key: "leftLeg", label: "左腿", part: parts.leftLeg },
   ];
   return (
     <section className="bodyFigureCard">
@@ -2158,70 +2085,70 @@ function BodyCompositionFigure({ metric }: { metric: BodyMetric }) {
         <strong>{metric.bodyFatPercent.toFixed(1)}% 体脂</strong>
       </div>
       <div className="bodyScanMap">
-        <svg className="bodyScanFigure" viewBox="0 0 360 540" role="img" aria-label="身体分布图">
+        <svg className="bodyScanFigure" viewBox={`0 0 ${BODY_FIGURE_VIEWBOX.width} ${BODY_FIGURE_VIEWBOX.height}`} role="img" aria-label="身体分布图">
           <defs>
-            <linearGradient id="scanOutline" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stopColor="#91a4bf" />
-              <stop offset="52%" stopColor="#67d7cd" />
-              <stop offset="100%" stopColor="#86a6d8" />
+            <linearGradient gradientUnits="userSpaceOnUse" id="scanBodyGradient" x1="20" x2="200" y1="0" y2="440">
+              <stop className="scanGradientStart" offset="0%" />
+              <stop className="scanGradientEnd" offset="100%" />
             </linearGradient>
-            <linearGradient id="scanFat" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stopColor="#506b8a" stopOpacity=".68" />
-              <stop offset="100%" stopColor="#9baec4" stopOpacity=".22" />
-            </linearGradient>
-            <linearGradient id="scanMuscle" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0%" stopColor="#39c7c9" stopOpacity=".68" />
-              <stop offset="100%" stopColor="#a8f0e5" stopOpacity=".2" />
-            </linearGradient>
-            <radialGradient id="scanGlow" cx="50%" cy="46%" r="52%">
-              <stop offset="0%" stopColor="#79e2dc" stopOpacity=".24" />
-              <stop offset="62%" stopColor="#8dccff" stopOpacity=".12" />
-              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-            </radialGradient>
           </defs>
-          <ellipse className="scanFloor" cx="180" cy="508" rx="82" ry="14" />
-          <ellipse className="scanAura" cx="180" cy="280" rx="130" ry="205" fill="url(#scanGlow)" />
-          <g className="scanHuman">
-            <circle className="scanBase" cx="180" cy="66" r="31" />
-            <path className="scanBase" d="M137 125C143 104 158 94 180 94C202 94 217 104 223 125C233 160 235 209 227 262C224 285 212 303 196 317L180 332L164 317C148 303 136 285 133 262C125 209 127 160 137 125Z" />
-            <path className="scanFatLayer" d="M152 132C160 112 170 103 180 103V326C161 305 151 271 148 225C145 182 146 151 152 132Z" />
-            <path className="scanMuscleLayer" d="M180 103C191 103 201 112 208 132C215 151 216 182 212 225C209 271 199 305 180 326Z" />
-            <path className="scanBase" d="M126 134C101 147 87 180 80 224L68 302C65 324 76 338 93 335C107 333 114 319 118 296L131 213C137 176 136 148 126 134Z" />
-            <path className="scanBase" d="M234 134C259 147 273 180 280 224L292 302C295 324 284 338 267 335C253 333 246 319 242 296L229 213C223 176 224 148 234 134Z" />
-            <path className="scanFatLayer" d="M104 166C92 188 87 228 81 292C80 311 86 322 96 321C106 319 110 307 113 289L123 215C126 190 121 172 104 166Z" />
-            <path className="scanMuscleLayer" d="M256 166C268 188 273 228 279 292C280 311 274 322 264 321C254 319 250 307 247 289L237 215C234 190 239 172 256 166Z" />
-            <path className="scanBase" d="M163 315C151 333 145 359 143 393L140 486C139 506 150 518 166 513C178 509 182 494 181 471L180 337C174 332 168 325 163 315Z" />
-            <path className="scanBase" d="M197 315C209 333 215 359 217 393L220 486C221 506 210 518 194 513C182 509 178 494 179 471L180 337C186 332 192 325 197 315Z" />
-            <path className="scanFatLayer" d="M160 340C152 359 150 395 150 475C151 490 157 499 164 497C173 495 174 481 174 463L176 351C170 348 165 344 160 340Z" />
-            <path className="scanMuscleLayer" d="M200 340C208 359 210 395 210 475C209 490 203 499 196 497C187 495 186 481 186 463L184 351C190 348 195 344 200 340Z" />
-            <g className="scanDots">
-              <circle cx="104" cy="223" r="8" />
-              <circle cx="256" cy="223" r="8" />
-              <circle cx="180" cy="230" r="10" />
-              <circle cx="164" cy="430" r="8" />
-              <circle cx="196" cy="430" r="8" />
-            </g>
+          <ellipse className="scanFloor" cx="110" cy="428" rx="52" ry="8" />
+          <circle className="scanSilhouette" cx="110" cy="40" r="22" />
+          <path className="scanLimb" d="M54,205 L78,92" />
+          <path className="scanLimb" d="M166,205 L142,92" />
+          <path className="scanLimb scanLimbLeg" d="M90,400 L96,214" />
+          <path className="scanLimb scanLimbLeg" d="M130,400 L124,214" />
+          <path
+            className="scanSilhouette"
+            d="M80,80 C70,100 68,150 84,192 L88,214 C96,226 124,226 132,214 L136,192 C152,150 150,100 140,80 C128,66 92,66 80,80 Z"
+          />
+          <g className="scanConnectors">
+            {Object.entries(BODY_FIGURE_POINTS).map(([key, point]) => (
+              <line
+                className="scanConnector"
+                key={key}
+                x1={point.x}
+                x2={point.anchor === "end" ? point.x - 28 : point.x + 28}
+                y1={point.y}
+                y2={point.y}
+              />
+            ))}
           </g>
+          {Object.entries(BODY_FIGURE_POINTS).map(([key, point]) => (
+            <g key={key}>
+              <circle className="scanPointRing" cx={point.x} cy={point.y} r="6" />
+              <circle className="scanPoint" cx={point.x} cy={point.y} r="3" />
+            </g>
+          ))}
         </svg>
-        {mapItems.map((item) => (
-          <BodyMapMetric key={item.key} label={item.label} part={item.part} placement={item.key} />
-        ))}
-        <div className="bodyMapLegend">
-          <span><i className="fatDot" />脂肪率 %</span>
-          <span><i className="muscleDot" />肌肉量 kg</span>
-        </div>
+        {mapItems.map((item) => {
+          const point = BODY_FIGURE_POINTS[item.key];
+          return (
+            <BodyMapMetric
+              anchor={point.anchor}
+              key={item.key}
+              label={item.label}
+              part={item.part}
+              style={{ top: `${(point.y / BODY_FIGURE_VIEWBOX.height) * 100}%`, left: `${(point.x / BODY_FIGURE_VIEWBOX.width) * 100}%` }}
+            />
+          );
+        })}
+      </div>
+      <div className="bodyMapLegend">
+        <span><i className="fatDot" />脂肪率 %</span>
+        <span><i className="muscleDot" />肌肉量 kg</span>
       </div>
     </section>
   );
 }
 
-function BodyMapMetric({ label, part, placement }: { label: string; part: { fat: number; muscle: number }; placement?: string }) {
+function BodyMapMetric({ anchor, label, part, style }: { anchor: "start" | "end"; label: string; part: { fat: number; muscle: number }; style: React.CSSProperties }) {
   return (
-    <div className={`bodyMapMetric ${placement ? `bodyMapMetric-${placement}` : ""}`}>
+    <div className={`bodyMapMetric bodyMapMetric-${anchor}`} style={style}>
       <strong>{label}</strong>
       <div>
-        <span><i className="fatDot" />{part.fat.toFixed(2)}%</span>
-        <span><i className="muscleDot" />{part.muscle.toFixed(2)} kg</span>
+        <span><i className="fatDot" />{part.fat.toFixed(1)}%</span>
+        <span><i className="muscleDot" />{part.muscle.toFixed(1)}kg</span>
       </div>
     </div>
   );
@@ -2653,17 +2580,19 @@ function ExerciseDashboard({
       <section className="exerciseHeader">
         <div>
           <p>运动数据</p>
-          <h2>{formatDateLabel(selectedDate)}</h2>
           <span>{round(activeCalories)} kcal · {round(exerciseMinutes)} 分钟 · {workouts.length} 次训练</span>
         </div>
         <div className="exerciseHeroActions">
-          <div className="segmentedGlass">
-            <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button"><CloudUpload size={16} />近 1 个月</button>
-            <button className="glassButton primaryGlassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(3)} type="button"><CloudUpload size={16} />{appleHealthImporting ? "导入中" : "导入近 3 个月"}</button>
-            <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(6)} type="button"><CloudUpload size={16} />近 6 个月</button>
-            <button className="glassButton" onClick={onOpenShortcutInfo} type="button"><Smartphone size={16} />快捷同步</button>
-            <button className="glassButton" onClick={onOpenDaily} type="button"><Watch size={16} />记录活动摘要</button>
+          <div className="exerciseImportGroup">
+            <span className="exerciseImportLabel">Apple 健康导入</span>
+            <div className="segmentedGlass">
+              <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button">1 个月</button>
+              <button className="glassButton primaryGlassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(3)} type="button">{appleHealthImporting ? "导入中" : "3 个月"}</button>
+              <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(6)} type="button">6 个月</button>
+            </div>
           </div>
+          <button className="glassButton" onClick={onOpenShortcutInfo} type="button"><Smartphone size={16} />快捷同步</button>
+          <button className="glassButton" onClick={onOpenDaily} type="button"><Watch size={16} />记录活动摘要</button>
           <button className="aiAnalyzeButton" onClick={onOpenWorkout} type="button"><Plus size={16} />新增训练</button>
         </div>
       </section>
@@ -3391,10 +3320,25 @@ function Trend({
       <PeriodReportSummary title="本周复盘" report={weekReport} />
       <PeriodReportSummary title="30 日趋势" report={monthReport} />
       <article className="trendCard trendSummary">
-        <div><span>7日平均</span><strong>{dates.length ? round(weekCalories / dates.length) : 0}</strong><small>kcal / 天</small></div>
-        <div><span>蛋白平均</span><strong>{dates.length ? round(weekProtein / dates.length) : 0}</strong><small>g / 天</small></div>
-        <div><span>最高热量日</span><strong>{bestDay.calories ? bestDay.date.slice(5) : "--"}</strong><small>{round(bestDay.calories)} kcal</small></div>
-        <div><span>连续记录</span><strong>{streak}</strong><small>天</small></div>
+        <StatTile
+          icon={<Flame size={16} />}
+          label="7日平均"
+          tone="amber"
+          value={<>{dates.length ? round(weekCalories / dates.length) : 0}<small>kcal / 天</small></>}
+        />
+        <StatTile
+          icon={<Dumbbell size={16} />}
+          label="蛋白平均"
+          tone="blue"
+          value={<>{dates.length ? round(weekProtein / dates.length) : 0}<small>g / 天</small></>}
+        />
+        <StatTile
+          icon={<HeartPulse size={16} />}
+          label="最高热量日"
+          tone="rose"
+          value={<>{bestDay.calories ? bestDay.date.slice(5) : "--"}<small>{round(bestDay.calories)} kcal</small></>}
+        />
+        <StatTile icon={<CheckCircle2 size={16} />} label="连续记录" tone="teal" value={<>{streak}<small>天</small></>} />
       </article>
       <article className="trendCard wide">
         <div className="trendCardHead">
@@ -3442,18 +3386,30 @@ function PeriodReportSummary({ report, title }: { report: ReturnType<typeof buil
           <h3>{title}</h3>
           <p>{report.startLabel} 至 {report.endLabel}</p>
         </div>
-        <strong>{report.summary}</strong>
+        <strong className="reportSummaryBadge">{report.summary}</strong>
       </div>
       <div className="reportMetricGrid">
-        <span><strong>{round(report.averageCalories)}</strong><em>平均 kcal</em></span>
-        <span><strong>{round(report.averageProtein)}g</strong><em>蛋白平均</em></span>
-        <span><strong>{report.onTargetDays}/{report.days}</strong><em>达标天数</em></span>
-        <span><strong>{report.weightDeltaText}</strong><em>体重变化</em></span>
+        <StatTile icon={<Flame size={16} />} label="平均 kcal" tone="amber" value={round(report.averageCalories)} />
+        <StatTile icon={<Dumbbell size={16} />} label="蛋白平均" tone="blue" value={`${round(report.averageProtein)}g`} />
+        <StatTile icon={<CheckCircle2 size={16} />} label="达标天数" tone="teal" value={`${report.onTargetDays}/${report.days}`} />
+        <StatTile icon={<Scale size={16} />} label="体重变化" tone="cyan" value={report.weightDeltaText} />
       </div>
       <ul className="reportInsightList">
         {report.insights.map((insight) => <li key={insight}>{insight}</li>)}
       </ul>
     </article>
+  );
+}
+
+function StatTile({ icon, label, tone, value }: { icon: React.ReactNode; label: string; tone: string; value: React.ReactNode }) {
+  return (
+    <div className={`statTile ${tone}`}>
+      <span className="statTileIcon">{icon}</span>
+      <div>
+        <strong>{value}</strong>
+        <em>{label}</em>
+      </div>
+    </div>
   );
 }
 

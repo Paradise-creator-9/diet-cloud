@@ -305,7 +305,6 @@ tr:last-child td {
 .favoriteFoodsPanel,
 .reflectionBox,
 .railPanel,
-.miniCalendar,
 .goalDashboard,
 .macroCard,
 .periodReportCard,
@@ -1118,96 +1117,6 @@ tr:last-child td {
   color: var(--text-3);
 }
 
-/* 小日历 */
-.miniCalendar {
-  padding: 16px;
-  display: grid;
-  gap: 10px;
-}
-
-.calendarHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.calendarHead span {
-  color: var(--text-3);
-  display: inline-flex;
-}
-
-.calendarWeek {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-3);
-}
-
-.calendarGrid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-
-.calendarGrid button {
-  flex-direction: column;
-  gap: 1px;
-  min-height: 36px;
-  padding: 3px 0;
-  border-radius: var(--r-sm);
-  background: transparent;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.calendarGrid button:hover {
-  background: var(--surface-2);
-}
-
-.calendarGrid button.outside {
-  color: var(--text-3);
-  opacity: 0.4;
-}
-
-.calendarGrid button.selected {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.calendarGrid button i {
-  display: inline-flex;
-  gap: 2px;
-  min-height: 4px;
-}
-
-.calendarGrid button em {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-}
-
-.calendarGrid .foodDot {
-  background: var(--d-cal);
-}
-
-.calendarGrid .activityDot {
-  background: var(--d-fiber);
-}
-
-.calendarGrid .bodyDot {
-  background: var(--d-body);
-}
-
-.calendarGrid button.selected em {
-  background: var(--on-accent);
-}
-
 /* 目标面板 */
 .goalDashboard {
   padding: 18px;
@@ -1735,6 +1644,14 @@ tr:last-child td {
   white-space: nowrap;
 }
 
+.reportSummaryBadge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent);
+  font-size: 13px;
+}
+
 .trendSummary {
   grid-column: 1 / -1;
   grid-template-columns: repeat(4, 1fr);
@@ -1743,29 +1660,70 @@ tr:last-child td {
   padding: 14px;
 }
 
-.trendSummary > div {
-  display: grid;
-  gap: 1px;
-  padding: 12px 14px;
+/* 彩色数据卡片(参考 Apple 健康):图标用数据色 tint,数字用同色高亮 */
+.statTile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: var(--r-sm);
   background: var(--surface-2);
+  min-width: 0;
 }
 
-.trendSummary span {
-  font-size: 11.5px;
+.statTileIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--surface-3);
   color: var(--text-2);
 }
 
-.trendSummary strong {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  font-variant-numeric: tabular-nums;
+.statTile.amber .statTileIcon { background: var(--d-cal-tint); color: var(--d-cal); }
+.statTile.blue .statTileIcon { background: var(--d-protein-tint); color: var(--d-protein); }
+.statTile.teal .statTileIcon { background: var(--d-fiber-tint); color: var(--d-fiber); }
+.statTile.cyan .statTileIcon { background: var(--d-body-tint); color: var(--d-body); }
+.statTile.purple .statTileIcon { background: var(--d-fat-tint); color: var(--d-fat); }
+.statTile.rose .statTileIcon { background: var(--d-heart-tint); color: var(--d-heart); }
+
+.statTile.amber strong { color: var(--d-cal); }
+.statTile.blue strong { color: var(--d-protein); }
+.statTile.teal strong { color: var(--d-fiber); }
+.statTile.cyan strong { color: var(--d-body); }
+.statTile.purple strong { color: var(--d-fat); }
+.statTile.rose strong { color: var(--d-heart); }
+
+.statTile > div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
 }
 
-.trendSummary small {
+.statTile strong {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statTile strong small {
+  margin-left: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.statTile em {
+  font-style: normal;
   font-size: 11.5px;
-  color: var(--text-3);
+  color: var(--text-2);
 }
 
 .bars {
@@ -1794,8 +1752,8 @@ tr:last-child td {
 .barWrap .bar {
   width: min(34px, 70%);
   border-radius: 8px;
-  background: var(--surface-3);
-  transition: height 0.3s var(--ease);
+  background: var(--d-cal-tint);
+  transition: height 0.3s var(--ease), background 0.2s var(--ease);
 }
 
 .barWrap .bar.active {
@@ -1844,7 +1802,7 @@ tr:last-child td {
 .reportSummaryCard ul.reportInsightList li {
   display: block;
   font-size: 13px;
-  color: var(--text-2);
+  color: var(--text);
   border-bottom: none;
   padding: 0 0 0 14px;
   position: relative;
@@ -1858,7 +1816,7 @@ tr:last-child td {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--text-3);
+  background: var(--accent);
 }
 
 .reportInsightList {
@@ -1871,24 +1829,8 @@ tr:last-child td {
   gap: 8px;
 }
 
-.reportMetricGrid span {
-  display: grid;
-  gap: 1px;
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-}
-
-.reportMetricGrid strong {
-  font-size: 15px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.reportMetricGrid em {
-  font-style: normal;
-  font-size: 11.5px;
-  color: var(--text-2);
+.reportMetricGrid .statTile strong {
+  font-size: 16px;
 }
 
 /* 减脂复盘 + 洞察(趋势页) */
@@ -2012,7 +1954,7 @@ tr:last-child td {
 
 .insightCard li {
   font-size: 13px;
-  color: var(--text-2);
+  color: var(--text);
   padding-left: 14px;
   position: relative;
 }
@@ -2026,6 +1968,14 @@ tr:last-child td {
   height: 5px;
   border-radius: 50%;
   background: var(--text-3);
+}
+
+.insightCard.good li::before {
+  background: var(--d-fiber);
+}
+
+.insightCard.warn li::before {
+  background: var(--d-cal);
 }
 
 /* ---------- 9. Photos ---------- */
@@ -2404,49 +2354,79 @@ tr:last-child td {
 }
 
 .bodyScanFigure {
-  width: min(300px, 80%);
+  width: min(230px, 74%);
   height: auto;
+  overflow: visible;
 }
 
 .scanFloor {
-  fill: var(--surface-2);
+  fill: var(--sep);
 }
 
-.scanAura {
-  opacity: 0.5;
+.scanGradientStart {
+  stop-color: var(--surface-3);
 }
 
-.scanBase {
-  fill: var(--surface-2);
+.scanGradientEnd {
+  stop-color: var(--d-body);
+  stop-opacity: 0.3;
+}
+
+.scanSilhouette {
+  fill: url(#scanBodyGradient);
   stroke: var(--sep-strong);
-  stroke-width: 1.5;
+  stroke-width: 1;
 }
 
-.scanFatLayer {
-  fill: var(--d-body);
-  opacity: 0.18;
+.scanLimb {
+  fill: none;
+  stroke: url(#scanBodyGradient);
+  stroke-width: 24;
+  stroke-linecap: round;
 }
 
-.scanMuscleLayer {
-  fill: var(--d-fiber);
-  opacity: 0.22;
+.scanLimbLeg {
+  stroke-width: 30;
 }
 
-.scanDots circle {
-  fill: var(--accent);
-  opacity: 0.5;
+.scanConnector {
+  stroke: var(--d-body);
+  stroke-width: 1.25;
+  stroke-dasharray: 2 4;
+  opacity: 0.55;
+}
+
+.scanPointRing {
+  fill: var(--d-body-tint);
+}
+
+.scanPoint {
+  fill: var(--surface);
+  stroke: var(--d-body);
+  stroke-width: 2;
 }
 
 .bodyMapMetric {
   position: absolute;
+  top: 0;
+  left: 0;
   display: grid;
   gap: 3px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border-radius: var(--r-sm);
   background: var(--surface);
   border: 1px solid var(--sep);
   box-shadow: var(--shadow-card);
   font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.bodyMapMetric-start {
+  transform: translateY(-50%) translateX(32px);
+}
+
+.bodyMapMetric-end {
+  transform: translateY(-50%) translateX(calc(-100% - 32px));
 }
 
 .bodyMapMetric strong {
@@ -2455,8 +2435,8 @@ tr:last-child td {
 }
 
 .bodyMapMetric div {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  gap: 8px;
 }
 
 .bodyMapMetric span {
@@ -2482,31 +2462,6 @@ tr:last-child td {
 
 .muscleDot {
   background: var(--d-fiber);
-}
-
-.bodyMapMetric-trunk {
-  top: 26%;
-  right: 2%;
-}
-
-.bodyMapMetric-leftArm {
-  top: 18%;
-  left: 2%;
-}
-
-.bodyMapMetric-rightArm {
-  top: 48%;
-  right: 4%;
-}
-
-.bodyMapMetric-leftLeg {
-  bottom: 14%;
-  left: 4%;
-}
-
-.bodyMapMetric-rightLeg {
-  bottom: 6%;
-  right: 8%;
 }
 
 .bodyMapLegend {
@@ -2783,24 +2738,36 @@ tr:last-child td {
   flex-wrap: wrap;
 }
 
-.exerciseHeader h2 {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
-  margin: 4px 0;
-}
-
 .exerciseHeader > div > span {
-  font-size: 13.5px;
-  color: var(--text-2);
+  display: block;
+  margin-top: 6px;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
 .exerciseHeroActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: flex-end;
+  gap: 10px;
   justify-content: flex-end;
+}
+
+.exerciseImportGroup {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.exerciseImportLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding-right: 2px;
 }
 
 .healthDashboardGrid {
@@ -4172,6 +4139,7 @@ tr:last-child td {
 
   .bodyMapMetric {
     position: static;
+    transform: none;
   }
 
   .bodyScanMap {

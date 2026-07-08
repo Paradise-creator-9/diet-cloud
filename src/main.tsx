@@ -28,6 +28,7 @@ import {
   Plus,
   RefreshCw,
   Route,
+  ScrollText,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -825,9 +826,9 @@ function AuthGate({ mode }: { mode: "loading" | "login" }) {
   return (
     <main className="authPage">
       <section className="authPanel">
-        <div className="brandMark"><Utensils size={22} /></div>
-        <p className="todayLabel">云端饮食记录</p>
-        <h1>登录后查看你的饮食、照片和营养分析</h1>
+        <div className="brandMark"><ScrollText size={22} /></div>
+        <h1 className="authBrand">膳食志</h1>
+        <p className="authTagline">登录后查看你的饮食、照片和营养分析</p>
         <div className="authChecks">
           <span><ShieldCheck size={16} /> 数据按账号隔离</span>
           <span><Cloud size={16} /> Supabase 云端保存</span>

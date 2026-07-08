@@ -673,6 +673,7 @@ function App() {
           defaultDate={selectedDate}
           defaultMeal={entryDraft.meal}
           editingItem={entryDraft.item}
+          items={items}
           mode={entryDraft.mode}
           onClose={() => setEntryDraft(null)}
           onSaved={async (savedDate) => {
@@ -1075,7 +1076,18 @@ function FavoriteFoodsDialog({ favoriteFoods, onClose, onSave }: { favoriteFoods
   );
 }
 
-function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, mode = "manual", onClose, onSaved }: { defaultDate: string; defaultMeal: MealType; editingItem?: FoodItem; mode?: "manual" | "ai"; onClose: () => void; onSaved: (savedDate: string) => Promise<void> }) {
+const DAILY_PHOTO_LIMIT = 5;
+
+function countPhotosUploadedToday(items: FoodItem[]) {
+  const today = dateKey(new Date());
+  return items.reduce((sum, item) => {
+    if (!item.createdAt || dateKey(new Date(item.createdAt)) !== today) return sum;
+    return sum + item.photoUrls.length;
+  }, 0);
+}
+
+function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode = "manual", onClose, onSaved }: { defaultDate: string; defaultMeal: MealType; editingItem?: FoodItem; items: FoodItem[]; mode?: "manual" | "ai"; onClose: () => void; onSaved: (savedDate: string) => Promise<void> }) {
+  const remainingPhotoQuota = Math.max(0, DAILY_PHOTO_LIMIT - countPhotosUploadedToday(items));
   const [date, setDate] = useState(editingItem?.date || dateKey(new Date()));
   const [meal, setMeal] = useState<MealType>(editingItem?.meal || defaultMeal);
   const [name, setName] = useState(editingItem?.name || "");
@@ -1141,6 +1153,14 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, mode = "manu
       fat: Math.max(0, item.fat * factor),
       fiber: Math.max(0, item.fiber * factor),
     });
+  }
+
+  function handlePhotoSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    if (files.length > remainingPhotoQuota) {
+      setError(`每人每天最多上传 ${DAILY_PHOTO_LIMIT} 张照片，今天还能上传 ${remainingPhotoQuota} 张，已自动截取前 ${remainingPhotoQuota} 张。`);
+    }
+    setPhotos(files.slice(0, remainingPhotoQuota));
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -1282,8 +1302,8 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, mode = "manu
                     <span>可以再写一句份量说明，例如“米饭一小碗、鱼约 100g”。</span>
                   </div>
                 </div>
-                <label className="aiUploadDrop">
-                  <input accept="image/*" multiple onChange={(event) => setPhotos(Array.from(event.target.files || []))} type="file" />
+                <label className={`aiUploadDrop ${remainingPhotoQuota ? "" : "disabled"}`}>
+                  <input accept="image/*" disabled={!remainingPhotoQuota} multiple onChange={handlePhotoSelect} type="file" />
                   <CloudUpload size={22} />
                   <strong>{photos.length ? `已选择 ${photos.length} 张照片` : "选择或拖入餐食照片"}</strong>
                   <span>最多分析 3 张，会先压缩再上传分析。</span>
@@ -1293,6 +1313,7 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, mode = "manu
                     {photos.slice(0, 3).map((photo) => <span key={`${photo.name}-${photo.size}`}>{photo.name}</span>)}
                   </div>
                 ) : null}
+                <small className="uploadQuotaHint">每人每天最多上传 {DAILY_PHOTO_LIMIT} 张照片，今天还能上传 {remainingPhotoQuota} 张</small>
               </section>
               <label className="wide aiHintField">
                 <span>补充说明（可选）</span>
@@ -1328,7 +1349,11 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, mode = "manu
                   })}</div>
                 </div>
               ) : null}
-              <label className="wide"><span>{editingItem ? "追加照片" : "照片"}</span><input accept="image/*" multiple onChange={(event) => setPhotos(Array.from(event.target.files || []))} type="file" /></label>
+              <label className="wide">
+                <span>{editingItem ? "追加照片" : "照片"}</span>
+                <input accept="image/*" disabled={!remainingPhotoQuota} multiple onChange={handlePhotoSelect} type="file" />
+                <small className="uploadQuotaHint">每人每天最多上传 {DAILY_PHOTO_LIMIT} 张照片，今天还能上传 {remainingPhotoQuota} 张</small>
+              </label>
               <div className="analysisAction">
                 <p className="entryHint">{photos.length ? `已选择 ${photos.length} 张照片。可以先让 AI 估算，再确认保存。` : "如果你不知道热量，可以先上传照片让 AI 分析；也可以继续发给我估算。"}</p>
                 <button disabled={analyzing || !photos.length} onClick={handleAnalyzePhotos} type="button"><Sparkles size={15} />{analyzing ? "分析中" : "AI 分析照片"}</button>

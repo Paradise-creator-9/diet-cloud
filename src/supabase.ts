@@ -209,7 +209,7 @@ export type ExerciseActivityInput = {
   note: string;
 };
 
-function rowToFoodItem(row: MealRow): FoodItem {
+function rowToFoodItemBase(row: MealRow, photoUrls: string[]): FoodItem {
   return {
     id: row.id,
     date: row.eaten_on,
@@ -222,10 +222,22 @@ function rowToFoodItem(row: MealRow): FoodItem {
     fat: Number(row.fat || 0),
     fiber: Number(row.fiber || 0),
     note: row.note || "",
-    photoUrls: (row.photo_urls || []).map(resolvePhotoUrl),
+    photoUrls,
     photoPaths: row.photo_urls || [],
     createdAt: row.created_at,
   };
+}
+
+async function rowToFoodItem(row: MealRow): Promise<FoodItem> {
+  const photoUrls = await resolvePhotoUrls(row.photo_urls || []);
+  return rowToFoodItemBase(row, photoUrls);
+}
+
+async function rowsToFoodItems(rows: MealRow[]): Promise<FoodItem[]> {
+  const allPaths = [...new Set(rows.flatMap((row) => row.photo_urls || []))];
+  const resolvedUrls = await resolvePhotoUrls(allPaths);
+  const urlMap = new Map(allPaths.map((path, index) => [path, resolvedUrls[index]]));
+  return rows.map((row) => rowToFoodItemBase(row, (row.photo_urls || []).map((path) => urlMap.get(path) || path)));
 }
 
 function rowToBodyMetric(row: BodyMetricRow): BodyMetric {
@@ -302,10 +314,16 @@ function rowToExerciseActivity(row: ExerciseActivityRow): ExerciseActivity {
   };
 }
 
-function resolvePhotoUrl(photoUrl: string) {
-  if (!photoUrl || photoUrl.startsWith("http") || photoUrl.startsWith("/")) return photoUrl;
-  if (!supabase) return photoUrl;
-  return supabase.storage.from(configuredStorageBucket).getPublicUrl(photoUrl).data.publicUrl;
+const PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24;
+
+async function resolvePhotoUrls(photoPaths: string[]): Promise<string[]> {
+  if (!photoPaths.length || !supabase) return photoPaths;
+  const toSign = photoPaths.filter((path) => path && !path.startsWith("http") && !path.startsWith("/"));
+  if (!toSign.length) return photoPaths;
+  const { data, error } = await supabase.storage.from(configuredStorageBucket).createSignedUrls(toSign, PHOTO_SIGNED_URL_TTL_SECONDS);
+  if (error) throw error;
+  const signedMap = new Map(toSign.map((path, index) => [path, data[index]?.signedUrl || ""]));
+  return photoPaths.map((path) => (!path || path.startsWith("http") || path.startsWith("/")) ? path : (signedMap.get(path) || ""));
 }
 
 export async function getCurrentUser() {
@@ -345,7 +363,7 @@ export async function fetchFoodItems(): Promise<FoodItem[]> {
     .order("created_at", { ascending: true });
 
   if (error) throw error;
-  return (data as MealRow[]).map(rowToFoodItem);
+  return rowsToFoodItems(data as MealRow[]);
 }
 
 export async function fetchBodyMetrics(): Promise<BodyMetric[]> {
@@ -547,7 +565,7 @@ export async function createFoodItems(inputs: ManualFoodInput[], sharedPhotos: F
   const { data, error } = await supabase.from("food_items").insert(rows).select("*");
   if (error) throw error;
 
-  return (data as MealRow[]).map(rowToFoodItem);
+  return rowsToFoodItems(data as MealRow[]);
 }
 
 export async function updateFoodItem(id: string, input: ManualFoodInput): Promise<FoodItem> {

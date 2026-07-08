@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import {
   Activity,
-  AlertTriangle,
   Bike,
   CalendarDays,
   CheckCircle2,
@@ -14,6 +13,7 @@ import {
   Download,
   Droplets,
   Dumbbell,
+  House,
   ImagePlus,
   Flame,
   Footprints,
@@ -34,7 +34,6 @@ import {
   Smartphone,
   Scale,
   Sun,
-  Table2,
   Timer,
   Trash2,
   Utensils,
@@ -195,9 +194,11 @@ function App() {
   const [favoriteFoods, setFavoriteFoods] = useState<FavoriteFood[]>(() => readStoredArray(localStorageKeys.favorites, defaultFavoriteFoods));
   const [goalsDialogOpen, setGoalsDialogOpen] = useState(false);
   const [favoritesDialogOpen, setFavoritesDialogOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [appleHealthImporting, setAppleHealthImporting] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getInitialTheme());
+  const [headerScrolled, setHeaderScrolled] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
   const appleHealthInputRef = useRef<HTMLInputElement>(null);
   const appleHealthImportMonthsRef = useRef(3);
@@ -219,6 +220,15 @@ function App() {
 
   useEffect(() => () => {
     if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    function onScroll() {
+      setHeaderScrolled(window.scrollY > 8);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   function showToast(title: string, body?: string, tone: ToastMessage["tone"] = "success") {
@@ -513,116 +523,33 @@ function App() {
 
   return (
     <div className="appShell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brandMark">
-            <Utensils size={20} />
-          </div>
-          <div>
-            <h1>饮食记录</h1>
-            <p>云端照片与营养分析</p>
-          </div>
+      <header className={`appHeader${headerScrolled ? " appHeader--scrolled" : ""}`}>
+        <div>
+          <p className="appEyebrow">{activeViewTitle(activeView)} · {dates.length ? `${dates.length} 天记录` : cloudState}</p>
+          <h1 className="appTitle">{formatDateLabel(selectedDate)}</h1>
         </div>
-
-        <button className="newEntryButton" onClick={() => openRecordNotice("snack")} type="button">
-          新增食物
-          <Plus size={16} />
-        </button>
-
-        <div className="syncCard">
-          <Cloud size={16} />
-          <span>{cloudState}<br />{bodyState}<br />{exerciseState}</span>
+        <div className="appHeaderActions headerToolbar">
+          <label aria-label="选择日期" className="iconButton datePickerButton" title="选择日期">
+            <CalendarDays size={18} />
+            <input value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} type="date" />
+          </label>
+          <button aria-label="新增食物" className="iconButton" onClick={() => openRecordNotice("snack")} title="新增食物" type="button"><Plus size={19} /></button>
+          <button
+            aria-label={themeMode === "dark" ? "切换到白天模式" : "切换到黑暗模式"}
+            className="iconButton"
+            onClick={toggleThemeMode}
+            title={themeMode === "dark" ? "白天模式" : "黑暗模式"}
+            type="button"
+          >
+            {themeMode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+          <button aria-label="更多操作" className="iconButton" onClick={() => setMoreOpen(true)} title="更多操作" type="button"><Settings size={17} /></button>
+          <input accept="application/json,.json" className="hiddenFileInput" onChange={handleImportFile} ref={importInputRef} type="file" />
+          <input accept=".zip,application/zip,application/x-zip-compressed" className="hiddenFileInput" onChange={handleAppleHealthImport} ref={appleHealthInputRef} type="file" />
         </div>
+      </header>
 
-        <label className="dateControl">
-          <span>选择日期</span>
-          <input value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} type="date" />
-        </label>
-
-        <MiniCalendar
-          bodyMetrics={bodyMetrics}
-          dailyActivities={dailyActivities}
-          items={items}
-          onSelectDate={setSelectedDate}
-          selectedDate={selectedDate}
-        />
-
-        <div className="historyHead">
-          <span>最近记录</span>
-          <strong>{dates.length} 天</strong>
-        </div>
-        <div className="historyList">
-          {dates.map((date) => {
-            const dateItems = items.filter((item) => item.date === date);
-            const dateTotals = totalsFor(dateItems);
-            return (
-              <button
-                className={date === selectedDate ? "historyItem active" : "historyItem"}
-                key={date}
-                onClick={() => setSelectedDate(date)}
-                type="button"
-              >
-                <span>
-                  <strong>{formatDateLabel(date)}</strong>
-                  <small>{dateItems.length} 个食物 · 蛋白 {round(dateTotals.protein)}g</small>
-                </span>
-                <em>{round(dateTotals.calories)} kcal</em>
-              </button>
-            );
-          })}
-        </div>
-
-        <WeeklyMiniSummary items={items} />
-      </aside>
-
-      <MobileHeader
-        activeView={activeView}
-        cloudState={cloudState}
-        dates={dates}
-        onAiAnalyze={openAiAnalysis}
-        onNewEntry={() => openRecordNotice("snack")}
-        onSync={() => { refreshCloudItems(); refreshBodyMetrics(); refreshExerciseData(); }}
-        onToggleTheme={toggleThemeMode}
-        selectedDate={selectedDate}
-        setSelectedDate={setSelectedDate}
-        setActiveView={setActiveView}
-        themeMode={themeMode}
-      />
-
-      <main className="main">
-        <header className="topbar">
-          <nav className="viewTabs">
-            <TabButton active={activeView === "overview"} icon={<Sparkles size={16} />} label="总览" onClick={() => setActiveView("overview")} />
-            <TabButton active={activeView === "detail"} icon={<Table2 size={16} />} label="明细" onClick={() => setActiveView("detail")} />
-            <TabButton active={activeView === "trend"} icon={<LineChart size={16} />} label="趋势" onClick={() => setActiveView("trend")} />
-            <TabButton active={activeView === "photos"} icon={<ImagePlus size={16} />} label="照片库" onClick={() => setActiveView("photos")} />
-            <TabButton active={activeView === "body"} icon={<Scale size={16} />} label="身体" onClick={() => setActiveView("body")} />
-            <TabButton active={activeView === "exercise"} icon={<Activity size={16} />} label="运动" onClick={() => setActiveView("exercise")} />
-          </nav>
-          <div className="topActions">
-            <button className="quickAddButton" onClick={() => openRecordNotice("snack")} type="button"><Plus size={16} />新增食物</button>
-            <button className="syncButton" onClick={() => setGoalsDialogOpen(true)} type="button"><ShieldCheck size={16} />目标</button>
-            <button className="syncButton" onClick={() => setFavoritesDialogOpen(true)} type="button"><Utensils size={16} />常吃</button>
-            <button className="syncButton" onClick={() => { refreshCloudItems(); refreshBodyMetrics(); refreshExerciseData(); }} type="button"><RefreshCw size={16} />同步</button>
-            <button
-              aria-label={themeMode === "dark" ? "切换到白天模式" : "切换到黑暗模式"}
-              className="themeToggleButton"
-              onClick={toggleThemeMode}
-              title={themeMode === "dark" ? "白天模式" : "黑暗模式"}
-              type="button"
-            >
-              {themeMode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-            </button>
-            <button aria-label="手机查看" onClick={showMobileInfo} title="手机查看" type="button"><Smartphone size={17} /></button>
-            <button aria-label="设置" onClick={showSettings} title="设置" type="button"><Settings size={17} /></button>
-            <input accept="application/json,.json" className="hiddenFileInput" onChange={handleImportFile} ref={importInputRef} type="file" />
-            <input accept=".zip,application/zip,application/x-zip-compressed" className="hiddenFileInput" onChange={handleAppleHealthImport} ref={appleHealthInputRef} type="file" />
-            <button disabled={importing} onClick={() => importInputRef.current?.click()} type="button"><CloudUpload size={16} />{importing ? "导入中" : "导入"}</button>
-            <button className="exportButton" onClick={exportRecords} type="button"><Download size={16} />导出</button>
-            {isCloudConfigured && <button aria-label="退出" onClick={() => signOut()} title="退出" type="button"><LogOut size={17} /></button>}
-          </div>
-        </header>
-
+      <main className="appMain">
         {activeView === "overview" && (
           <Overview
             allItems={items}
@@ -638,6 +565,7 @@ function App() {
             onOpenGoals={() => setGoalsDialogOpen(true)}
             onQuickAddFavorite={quickAddFavoriteFood}
             onRecordMeal={openRecordNotice}
+            onSelectDate={setSelectedDate}
             selectedDate={selectedDate}
             totals={totals}
           />
@@ -723,6 +651,21 @@ function App() {
           />
         )}
       </main>
+
+      <TabBar activeView={activeView} setActiveView={setActiveView} />
+
+      {moreOpen && (
+        <MoreSheet
+          importing={importing}
+          onClose={() => setMoreOpen(false)}
+          onExport={exportRecords}
+          onImport={() => importInputRef.current?.click()}
+          onShowMobile={showMobileInfo}
+          onShowSettings={showSettings}
+          onShowShortcut={showShortcutInfo}
+          onSync={() => { refreshCloudItems(); refreshBodyMetrics(); refreshExerciseData(); }}
+        />
+      )}
       {notice && <NoticeDialog notice={notice} onClose={() => setNotice(null)} />}
       <Toast toast={toast} onClose={() => setToast(null)} />
       {entryDraft && (
@@ -786,82 +729,68 @@ function App() {
   );
 }
 
-function MobileHeader({
-  activeView,
-  cloudState,
-  dates,
-  onAiAnalyze,
-  onNewEntry,
-  onSync,
-  onToggleTheme,
-  selectedDate,
-  setActiveView,
-  setSelectedDate,
-  themeMode,
-}: {
-  activeView: View;
-  cloudState: string;
-  dates: string[];
-  onAiAnalyze: () => void;
-  onNewEntry: () => void;
-  onSync: () => void;
-  onToggleTheme: () => void;
-  selectedDate: string;
-  setActiveView: (view: View) => void;
-  setSelectedDate: (date: string) => void;
-  themeMode: ThemeMode;
-}) {
-  const recentDatesLabel = dates.length ? `${dates.length} 天记录` : "选择日期";
-  const isOverview = activeView === "overview";
+const TAB_ORDER: View[] = ["overview", "detail", "trend", "photos", "body", "exercise"];
+
+function TabBar({ activeView, setActiveView }: { activeView: View; setActiveView: (view: View) => void }) {
+  const activeIndex = TAB_ORDER.indexOf(activeView);
   return (
-    <header className={isOverview ? "mobileHeader" : "mobileHeader compact"}>
-      <section className="mobileTitleBar">
-        <div className="mobileBrandMark"><Utensils size={19} /></div>
-        <div>
-          <p>{activeViewTitle(activeView)} · {recentDatesLabel}</p>
-          <h1>{formatDateLabel(selectedDate)}</h1>
-        </div>
-        <div className="mobileTitleActions">
-          <label className="mobileDateIconButton" aria-label="选择日期">
-            <CalendarDays size={17} />
-            <input value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} type="date" />
-          </label>
-          <button aria-label="新增记录" className="mobileAddButton" onClick={onNewEntry} type="button"><Plus size={18} /></button>
-          <button aria-label="同步" onClick={onSync} type="button"><RefreshCw size={17} /></button>
-          <button
-            aria-label={themeMode === "dark" ? "切换到白天模式" : "切换到黑暗模式"}
-            className="mobileThemeButton"
-            onClick={onToggleTheme}
-            type="button"
-          >
-            {themeMode === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-        </div>
-      </section>
-
-      <MobileNav activeView={activeView} setActiveView={setActiveView} />
-
-      {isOverview && (
-        <section className="mobileQuickActions">
-          <button className="primary" onClick={onAiAnalyze} type="button"><Sparkles size={15} />AI 分析</button>
-          <button onClick={onNewEntry} type="button"><Plus size={15} />新增记录</button>
-          <span>{cloudState}</span>
-        </section>
-      )}
-    </header>
+    <nav
+      className="tabBar"
+      aria-label="主导航"
+      style={{ "--tab-count": TAB_ORDER.length, "--tab-index": activeIndex } as React.CSSProperties}
+    >
+      <span aria-hidden="true" className="tabIndicator" />
+      <TabButton active={activeView === "overview"} icon={<House size={19} />} label="总览" onClick={() => setActiveView("overview")} />
+      <TabButton active={activeView === "detail"} icon={<ListChecks size={19} />} label="明细" onClick={() => setActiveView("detail")} />
+      <TabButton active={activeView === "trend"} icon={<LineChart size={19} />} label="趋势" onClick={() => setActiveView("trend")} />
+      <TabButton active={activeView === "photos"} icon={<ImagePlus size={19} />} label="照片" onClick={() => setActiveView("photos")} />
+      <TabButton active={activeView === "body"} icon={<Scale size={19} />} label="身体" onClick={() => setActiveView("body")} />
+      <TabButton active={activeView === "exercise"} icon={<Activity size={19} />} label="运动" onClick={() => setActiveView("exercise")} />
+    </nav>
   );
 }
 
-function MobileNav({ activeView, setActiveView }: { activeView: View; setActiveView: (view: View) => void }) {
+function MoreSheet({
+  importing,
+  onClose,
+  onExport,
+  onImport,
+  onShowMobile,
+  onShowSettings,
+  onShowShortcut,
+  onSync,
+}: {
+  importing: boolean;
+  onClose: () => void;
+  onExport: () => void;
+  onImport: () => void;
+  onShowMobile: () => void;
+  onShowSettings: () => void;
+  onShowShortcut: () => void;
+  onSync: () => void;
+}) {
+  function run(action: () => void) {
+    onClose();
+    action();
+  }
+
   return (
-    <nav className="mobileNav" aria-label="移动端导航">
-      <TabButton active={activeView === "overview"} icon={<Sparkles size={17} />} label="总览" onClick={() => setActiveView("overview")} />
-      <TabButton active={activeView === "detail"} icon={<Table2 size={17} />} label="明细" onClick={() => setActiveView("detail")} />
-      <TabButton active={activeView === "trend"} icon={<LineChart size={17} />} label="趋势" onClick={() => setActiveView("trend")} />
-      <TabButton active={activeView === "photos"} icon={<ImagePlus size={17} />} label="照片" onClick={() => setActiveView("photos")} />
-      <TabButton active={activeView === "body"} icon={<Scale size={17} />} label="身体" onClick={() => setActiveView("body")} />
-      <TabButton active={activeView === "exercise"} icon={<Activity size={17} />} label="运动" onClick={() => setActiveView("exercise")} />
-    </nav>
+    <ModalPortal>
+      <div className="modalBackdrop" role="presentation" onClick={onClose}>
+        <section aria-modal="true" className="noticeDialog moreSheet" role="dialog" onClick={(event) => event.stopPropagation()}>
+          <h3>更多操作</h3>
+          <div className="moreList">
+            <button onClick={() => run(onSync)} type="button"><RefreshCw size={16} />同步云端数据</button>
+            <button disabled={importing} onClick={() => run(onImport)} type="button"><CloudUpload size={16} />{importing ? "导入中" : "导入 JSON 记录"}</button>
+            <button onClick={() => run(onExport)} type="button"><Download size={16} />导出全部记录</button>
+            <button onClick={() => run(onShowMobile)} type="button"><Smartphone size={16} />手机查看</button>
+            <button onClick={() => run(onShowShortcut)} type="button"><Watch size={16} />快捷指令同步说明</button>
+            <button onClick={() => run(onShowSettings)} type="button"><Settings size={16} />账号与同步状态</button>
+            {isCloudConfigured && <button className="moreDanger" onClick={() => signOut()} type="button"><LogOut size={16} />退出登录</button>}
+          </div>
+        </section>
+      </div>
+    </ModalPortal>
   );
 }
 
@@ -1593,28 +1522,6 @@ function MiniCalendar({
   );
 }
 
-function WeeklyMiniSummary({ items }: { items: FoodItem[] }) {
-  const dates = buildDates(items).slice(0, 7).reverse();
-  const values = dates.map((date) => totalsFor(items.filter((item) => item.date === date)).calories);
-  const total = values.reduce((sum, value) => sum + value, 0);
-  const average = values.length ? total / values.length : 0;
-  const max = Math.max(1, ...values);
-  return (
-    <section className="weeklyMini">
-      <div>
-        <span>本周小结</span>
-        <strong>{round(total).toLocaleString()} kcal</strong>
-        <small>日均 {round(average).toLocaleString()} kcal</small>
-      </div>
-      <div className="miniBars">
-        {values.length ? values.map((value, index) => (
-          <i key={`${value}-${index}`} style={{ height: `${Math.max(18, (value / max) * 76)}px` }} />
-        )) : <i style={{ height: 18 }} />}
-      </div>
-    </section>
-  );
-}
-
 function Overview({
   allItems,
   bodyMetrics,
@@ -1629,6 +1536,7 @@ function Overview({
   onOpenGoals,
   onQuickAddFavorite,
   onRecordMeal,
+  onSelectDate,
   selectedDate,
   totals,
 }: {
@@ -1645,18 +1553,19 @@ function Overview({
   onOpenGoals: () => void;
   onQuickAddFavorite: (food: FavoriteFood) => void;
   onRecordMeal: (meal: MealType) => void;
+  onSelectDate: (date: string) => void;
   selectedDate: string;
   totals: ReturnType<typeof totalsFor>;
 }) {
   return (
     <section className="overviewLayout">
       <div className="journalColumn">
-        <HeroStory items={items} onAiAnalyze={onAiAnalyze} onEdit={onEdit} selectedDate={selectedDate} totals={totals} />
-        <FavoriteFoodsPanel favoriteFoods={favoriteFoods} onManage={onManageFavorites} onQuickAdd={onQuickAddFavorite} />
+        <HeroStory goals={goals} items={items} onAiAnalyze={onAiAnalyze} onEdit={onEdit} totals={totals} />
         <MealTimeline items={items} onRecordMeal={onRecordMeal} />
+        <FavoriteFoodsPanel favoriteFoods={favoriteFoods} onManage={onManageFavorites} onQuickAdd={onQuickAddFavorite} />
         <ReflectionBox />
       </div>
-      <NutritionRail allItems={allItems} bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={items} onOpenGoals={onOpenGoals} selectedDate={selectedDate} totals={totals} />
+      <NutritionRail allItems={allItems} bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} onSelectDate={onSelectDate} selectedDate={selectedDate} totals={totals} />
     </section>
   );
 }
@@ -1792,63 +1701,45 @@ function scaleFavoriteForServing(food: FavoriteFood, servingGrams: number): Favo
   };
 }
 
-function HeroStory({ items, onAiAnalyze, onEdit, selectedDate, totals }: { items: FoodItem[]; onAiAnalyze: () => void; onEdit: () => void; selectedDate: string; totals: ReturnType<typeof totalsFor> }) {
+function HeroStory({ goals, items, onAiAnalyze, onEdit, totals }: { goals: UserGoals; items: FoodItem[]; onAiAnalyze: () => void; onEdit: () => void; totals: ReturnType<typeof totalsFor> }) {
   const photos = uniquePhotos(items);
-  const titleMeal = mealMeta.find((meal) => itemsByMeal(items, meal.key).length)?.title || "饮食记录";
+  const remaining = Math.round(goals.dailyCalories - totals.calories);
   return (
-    <section className="heroStory">
-      <div className="heroIntro">
-        <p className="todayLabel">饮食记录 · 记录每一餐，见证改变</p>
-        <div>
-          <h2>{formatDateLabel(selectedDate)}</h2>
-          <div className="heroActions">
-            <button className="aiAnalyzeButton" onClick={onAiAnalyze} type="button"><Sparkles size={16} />AI 分析</button>
-            <button onClick={onEdit} type="button"><PenLine size={16} />编辑</button>
-          </div>
+    <section className="todayCard">
+      <div className="todayHead">
+        <span className="todayLabel">今日摄入</span>
+        <div className="todayActions">
+          <button className="aiAnalyzeButton" onClick={onAiAnalyze} type="button"><Sparkles size={15} />AI 分析</button>
+          <button className="secondaryButton" onClick={onEdit} type="button"><PenLine size={15} />明细</button>
         </div>
       </div>
-      <div className="heroPhoto">
-        {photos.length ? photos.slice(0, 2).map((photo) => (
-          <div className="heroImage" key={photo} style={{ backgroundImage: `url("${photo}")` }} />
-        )) : <div className="heroEmpty">今天还没有照片</div>}
-        <div className="heroOverlay">
-          <span>{titleMeal}</span>
-          <strong>{round(totals.calories).toLocaleString()} kcal</strong>
-          <p>蛋白质 {round(totals.protein)}g · 碳水 {round(totals.carbs)}g · 脂肪 {round(totals.fat)}g · 膳食纤维 {round(totals.fiber)}g</p>
-        </div>
+      <div className="todayNumber">
+        <strong>{round(totals.calories).toLocaleString()}</strong>
+        <small>kcal</small>
+        <em className={remaining >= 0 ? "" : "over"}>
+          {remaining >= 0 ? `还可安排 ${remaining.toLocaleString()} kcal` : `超出目标 ${Math.abs(remaining).toLocaleString()} kcal`}
+        </em>
       </div>
-      <Summary totals={totals} />
-    </section>
-  );
-}
-
-function Summary({ totals }: { totals: ReturnType<typeof totalsFor> }) {
-  const cards = [
-    { label: "总热量", value: round(totals.calories), unit: "kcal", tone: "total", icon: <Flame size={17} /> },
-    { label: "蛋白质", value: round(totals.protein), unit: "g", tone: "", icon: <Dumbbell size={17} /> },
-    { label: "碳水", value: round(totals.carbs), unit: "g", tone: "", icon: <Wheat size={17} /> },
-    { label: "脂肪", value: round(totals.fat), unit: "g", tone: "", icon: <Droplets size={17} /> },
-    { label: "膳食纤维", value: round(totals.fiber), unit: "g", tone: "", icon: <Leaf size={17} /> },
-  ];
-  return (
-    <section className="summaryGrid">
-      {cards.map(({ label, value, unit, tone, icon }) => (
-        <article className={tone === "total" ? "summaryCard total" : "summaryCard"} key={label}>
-          <div className="summaryHead">
-            <span className="summaryIcon">{icon}</span>
-            <span>{label}</span>
-          </div>
-          <strong>{value}</strong>
-          <small>{unit}</small>
-        </article>
-      ))}
+      <div className="todayMacros">
+        <span>蛋白质 <b>{round(totals.protein)}g</b></span>
+        <span>碳水 <b>{round(totals.carbs)}g</b></span>
+        <span>脂肪 <b>{round(totals.fat)}g</b></span>
+        <span>膳食纤维 <b>{round(totals.fiber)}g</b></span>
+      </div>
+      {photos.length ? (
+        <div className="todayPhotos">
+          {photos.slice(0, 4).map((photo) => (
+            <div className="photoTile" key={photo} style={{ backgroundImage: `url("${photo}")` }} />
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
 
 function MealTimeline({ items, onRecordMeal }: { items: FoodItem[]; onRecordMeal: (meal: MealType) => void }) {
   return (
-    <section className="timelineSection">
+    <section className="mealList">
       {mealMeta.map((meal) => (
         <MealTimelineCard key={meal.key} meal={meal.key} onRecordMeal={onRecordMeal} title={meal.title} hint={meal.hint} items={itemsByMeal(items, meal.key)} />
       ))}
@@ -1866,33 +1757,32 @@ function mealIcon(meal: MealType) {
 function MealTimelineCard({ meal, onRecordMeal, title, hint, items }: { meal: MealType; onRecordMeal: (meal: MealType) => void; title: string; hint: string; items: FoodItem[] }) {
   const totals = totalsFor(items);
   const photos = uniquePhotos(items);
+  const hasItems = items.length > 0;
   return (
-    <article className={items.length ? "timelineMeal hasItems" : "timelineMeal"}>
-      <div className="timelineDot" />
-      <div className="mealIcon">{mealIcon(meal)}</div>
-      <div className="timelineMealMeta">
-        <div>
+    <article className={hasItems ? "timelineMeal hasItems" : "timelineMeal"}>
+      <div className="mealRowHead">
+        <div className="mealIcon">{mealIcon(meal)}</div>
+        <div className="timelineMealMeta">
           <h3>{title}</h3>
+          <p>{hasItems ? `${items.length} 个食物` : hint}</p>
         </div>
-        <p>{items.length ? `${items.length} 个食物` : hint}</p>
-        <strong>{round(totals.calories).toLocaleString()} kcal</strong>
-      </div>
-      {items.length ? <MealNutrientStrip totals={totals} /> : null}
-      <div className="timelineMealContent">
-        {items.length ? (
-          <>
-            <PhotoStrip photos={photos} empty="本餐暂无照片" />
-            <div className="foodChips">
-              {items.slice(0, 4).map((item) => (
-                <span key={item.id}>{item.name} <b>{round(item.calories)}kcal</b></span>
-              ))}
-            </div>
-          </>
+        {hasItems ? (
+          <strong className="mealRowKcal">{round(totals.calories).toLocaleString()} kcal</strong>
         ) : (
-          <button className="ghostAdd" onClick={() => onRecordMeal(meal)} type="button"><Plus size={15} />记录{title}</button>
+          <button className="ghostAdd" onClick={() => onRecordMeal(meal)} type="button"><Plus size={14} />记录{title}</button>
         )}
       </div>
-      {items.length ? <ChevronRight className="mealArrow" size={20} /> : null}
+      {hasItems ? (
+        <div className="timelineMealContent">
+          {photos.length ? <PhotoStrip photos={photos} empty="" /> : null}
+          <div className="foodChips">
+            {items.slice(0, 4).map((item) => (
+              <span key={item.id}>{item.name} <b>{round(item.calories)}kcal</b></span>
+            ))}
+          </div>
+          <MealNutrientStrip totals={totals} />
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -1945,8 +1835,8 @@ function NutritionRail({
   dailyActivities,
   exerciseActivities,
   goals,
-  items,
   onOpenGoals,
+  onSelectDate,
   selectedDate,
   totals,
 }: {
@@ -1955,93 +1845,24 @@ function NutritionRail({
   dailyActivities: DailyActivity[];
   exerciseActivities: ExerciseActivity[];
   goals: UserGoals;
-  items: FoodItem[];
   onOpenGoals: () => void;
+  onSelectDate: (date: string) => void;
   selectedDate: string;
   totals: ReturnType<typeof totalsFor>;
 }) {
   return (
     <aside className="nutritionRail">
-      <section className="railPanel totalPanel">
-        <div className="railHead">
-          <h3>今日营养总览</h3>
-          <CalendarDays size={16} />
-        </div>
-        <NutritionRings totals={totals} />
-        <div className="largeMetric">
-          <strong>{round(totals.calories).toLocaleString()}</strong>
-          <span>kcal</span>
-          <em>参考目标 {nutrientTargets.calories.toLocaleString()} kcal</em>
-        </div>
-        <Progress label="热量" value={totals.calories} target={nutrientTargets.calories} unit="kcal" />
-        <div className="metricGrid">
-          <MetricPill icon={<Dumbbell size={15} />} label="蛋白质" value={round(totals.protein)} unit="g" />
-          <MetricPill icon={<Wheat size={15} />} label="碳水" value={round(totals.carbs)} unit="g" />
-          <MetricPill icon={<Droplets size={15} />} label="脂肪" value={round(totals.fat)} unit="g" />
-          <MetricPill icon={<Leaf size={15} />} label="膳食纤维" value={round(totals.fiber)} unit="g" />
-        </div>
-      </section>
+      <MiniCalendar
+        bodyMetrics={bodyMetrics}
+        dailyActivities={dailyActivities}
+        items={allItems}
+        onSelectDate={onSelectDate}
+        selectedDate={selectedDate}
+      />
       <GoalDashboard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} selectedDate={selectedDate} totals={totals} />
       <MacroSplit totals={totals} />
       <PeriodReportCard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={allItems} selectedDate={selectedDate} />
-      <CoachPanel items={items} totals={totals} />
-      <InsightCard tone="good" title="做得好" items={buildGoodInsights(items, totals)} />
-      <InsightCard tone="warn" title="需要注意" items={buildNeedsInsights(items, totals)} />
     </aside>
-  );
-}
-
-function NutritionRings({ totals }: { totals: ReturnType<typeof totalsFor> }) {
-  const rings = [
-    { label: "热量", value: totals.calories, target: nutrientTargets.calories, unit: "kcal", tone: "blue", icon: <Flame size={15} /> },
-    { label: "蛋白质", value: totals.protein, target: nutrientTargets.protein, unit: "g", tone: "indigo", icon: <Dumbbell size={15} /> },
-    { label: "膳食纤维", value: totals.fiber, target: nutrientTargets.fiber, unit: "g", tone: "green", icon: <Leaf size={15} /> },
-  ];
-  return (
-    <div className="nutritionRings">
-      {rings.map((ring) => {
-        const progress = Math.min(100, Math.round((ring.value / ring.target) * 100));
-        return (
-          <div className={`nutritionRing ${ring.tone}`} key={ring.label} style={{ "--progress": `${progress}%` } as React.CSSProperties}>
-            <div className="ringDial">
-              <span>{ring.icon}</span>
-              <strong>{progress}%</strong>
-            </div>
-            <small>{ring.label}</small>
-            <em>{round(ring.value)}{ring.unit}</em>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function MetricPill({ icon, label, value, unit }: { icon: React.ReactNode; label: string; value: number; unit: string }) {
-  return (
-    <div className="metricPill">
-      <span className="metricLabel"><span className="metricPillIcon">{icon}</span>{label}</span>
-      <strong>{value}{unit}</strong>
-    </div>
-  );
-}
-
-function MealCard({ meal, title, hint, items }: { meal: MealType; title: string; hint: string; items: FoodItem[] }) {
-  const totals = totalsFor(items);
-  const photos = uniquePhotos(items);
-  const topItems = [...items].sort((a, b) => b.calories - a.calories).slice(0, 3);
-  return (
-    <article className="mealCard">
-      <PhotoStrip photos={photos} empty="无照片" />
-      <div className="mealCopy">
-        <div>
-          <h4>{title}</h4>
-          <span>{items.length ? `${items.length} 个食物` : hint}</span>
-        </div>
-        <strong>{round(totals.calories)} kcal</strong>
-        <p>{topItems.length ? topItems.map((item) => `${item.name} ${round(item.calories)}kcal`).join(" · ") : "还没有明细"}</p>
-        <small>{meal === "lunch" ? "早午饭默认归入午餐" : " "}</small>
-      </div>
-    </article>
   );
 }
 
@@ -2050,19 +1871,6 @@ function PhotoStrip({ photos, empty }: { photos: string[]; empty: string }) {
   return (
     <div className={photos.length > 1 ? "photoStrip multi" : "photoStrip"}>
       {photos.slice(0, 4).map((photo) => <div className="photoTile" key={photo} style={{ backgroundImage: `url("${photo}")` }} />)}
-    </div>
-  );
-}
-
-function Progress({ label, value, target, unit }: { label: string; value: number; target: number; unit: string }) {
-  const percent = Math.min(130, Math.round((value / target) * 100));
-  return (
-    <div className="progressRow">
-      <div>
-        <strong>{label} {round(value)}{unit}</strong>
-        <span>参考目标 {target}{unit}</span>
-      </div>
-      <div className="meter"><i className={percent > 110 ? "high" : percent < 60 ? "low" : ""} style={{ width: `${Math.min(100, percent)}%` }} /></div>
     </div>
   );
 }
@@ -2849,11 +2657,13 @@ function ExerciseDashboard({
           <span>{round(activeCalories)} kcal · {round(exerciseMinutes)} 分钟 · {workouts.length} 次训练</span>
         </div>
         <div className="exerciseHeroActions">
-          <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button"><CloudUpload size={16} />近 1 个月</button>
-          <button className="glassButton primaryGlassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(3)} type="button"><CloudUpload size={16} />{appleHealthImporting ? "导入中" : "导入近 3 个月"}</button>
-          <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(6)} type="button"><CloudUpload size={16} />近 6 个月</button>
-          <button className="glassButton" onClick={onOpenShortcutInfo} type="button"><Smartphone size={16} />快捷同步</button>
-          <button className="glassButton" onClick={onOpenDaily} type="button"><Watch size={16} />记录活动摘要</button>
+          <div className="segmentedGlass">
+            <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button"><CloudUpload size={16} />近 1 个月</button>
+            <button className="glassButton primaryGlassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(3)} type="button"><CloudUpload size={16} />{appleHealthImporting ? "导入中" : "导入近 3 个月"}</button>
+            <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(6)} type="button"><CloudUpload size={16} />近 6 个月</button>
+            <button className="glassButton" onClick={onOpenShortcutInfo} type="button"><Smartphone size={16} />快捷同步</button>
+            <button className="glassButton" onClick={onOpenDaily} type="button"><Watch size={16} />记录活动摘要</button>
+          </div>
           <button className="aiAnalyzeButton" onClick={onOpenWorkout} type="button"><Plus size={16} />新增训练</button>
         </div>
       </section>
@@ -3563,6 +3373,7 @@ function Trend({
 }) {
   const dates = buildDates(items).slice(0, 7).reverse();
   const selectedItems = items.filter((item) => item.date === selectedDate);
+  const selectedTotals = totalsFor(selectedItems);
   const topFoods = [...selectedItems].sort((a, b) => b.calories - a.calories).slice(0, 6);
   const max = Math.max(1, ...dates.map((date) => totalsFor(items.filter((item) => item.date === date)).calories));
   const weekTotals = dates.map((date) => totalsFor(items.filter((item) => item.date === date)));
@@ -3614,6 +3425,11 @@ function Trend({
         <h3>照片记录</h3>
         <PhotoLibrary items={selectedItems} compact />
       </article>
+      <CoachPanel items={selectedItems} totals={selectedTotals} />
+      <div className="trendInsightColumn">
+        <InsightCard tone="good" title="做得好" items={buildGoodInsights(selectedItems, selectedTotals)} />
+        <InsightCard tone="warn" title="需要注意" items={buildNeedsInsights(selectedItems, selectedTotals)} />
+      </div>
     </section>
   );
 }

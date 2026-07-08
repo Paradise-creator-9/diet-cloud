@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { BodyMetric, DailyActivity, ExerciseActivity, FoodItem, MealType } from "./types";
+import { compressPhotosForUpload } from "./utils";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -391,7 +392,8 @@ function safeStorageName(fileName: string) {
 async function uploadPhotoFiles(userId: string, date: string, photos: File[] = []) {
   if (!supabase) throw new Error("Supabase 还没有配置。");
   const photoPaths: string[] = [];
-  for (const file of photos) {
+  const compressedPhotos = await compressPhotosForUpload(photos);
+  for (const file of compressedPhotos) {
     const storagePath = `${userId}/${date}/${Date.now()}-${safeStorageName(file.name)}`;
     const { error } = await supabase.storage
       .from(configuredStorageBucket)

@@ -1607,8 +1607,10 @@ function FavoriteFoodsPanel({ favoriteFoods, onManage, onQuickAdd }: { favoriteF
         {favoriteFoods.slice(0, 8).map((food) => {
           const serving = favoriteServing(food);
           const scaledCalories = scaleNutrient(food.calories, food.grams, serving.grams);
+          const category = foodCategoryMeta(food.name, food.note);
           return (
-            <button key={food.id} onClick={() => onQuickAdd(food)} title={`点击一次添加 ${serving.label}`} type="button">
+            <button className={`tone-${category.tone}`} key={food.id} onClick={() => onQuickAdd(food)} title={`点击一次添加 ${serving.label}`} type="button">
+              <i className="favoriteFoodChipIcon">{category.emoji}</i>
               <span>{food.name}</span>
               <small>{serving.label}</small>
               <em>{round(scaledCalories)} kcal</em>
@@ -1618,6 +1620,16 @@ function FavoriteFoodsPanel({ favoriteFoods, onManage, onQuickAdd }: { favoriteF
       </div>
     </section>
   );
+}
+
+function foodCategoryMeta(name: string, note: string): { emoji: string; tone: string } {
+  const text = `${name} ${note || ""}`;
+  if (/蛋|鸡|牛肉|猪肉|羊肉|鱼|虾|肉|豆腐|豆干/.test(text)) return { emoji: "🍗", tone: "protein" };
+  if (/米饭|面|粥|燕麦|馒头|面包|吐司|饼|薯|土豆|红薯|玉米/.test(text)) return { emoji: "🍚", tone: "carbs" };
+  if (/西兰花|小松菜|胡萝卜|生菜|菠菜|黄瓜|番茄|西红柿|蔬菜|菜/.test(text)) return { emoji: "🥦", tone: "fiber" };
+  if (/果|香蕉|苹果|橙|葡萄|莓/.test(text)) return { emoji: "🍎", tone: "cal" };
+  if (/奶|酸奶|拿铁|咖啡|茶|豆浆/.test(text)) return { emoji: "🥛", tone: "body" };
+  return { emoji: "🍪", tone: "heart" };
 }
 
 function favoriteServing(food: FavoriteFood) {
@@ -1803,7 +1815,6 @@ function NutritionRail({
   return (
     <aside className="nutritionRail">
       <GoalDashboard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} selectedDate={selectedDate} totals={totals} />
-      <MacroSplit totals={totals} />
       <PeriodReportCard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={allItems} selectedDate={selectedDate} />
     </aside>
   );
@@ -1823,29 +1834,6 @@ function InsightCard({ tone, title, items }: { tone: "good" | "warn"; title: str
     <article className={`insightCard ${tone}`}>
       <h4>{title}</h4>
       <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul>
-    </article>
-  );
-}
-
-function MacroSplit({ totals }: { totals: ReturnType<typeof totalsFor> }) {
-  const macroCalories = Math.max(1, totals.protein * 4 + totals.carbs * 4 + totals.fat * 9);
-  const rows = [
-    ["蛋白质", totals.protein, totals.protein * 4, "green"],
-    ["碳水", totals.carbs, totals.carbs * 4, "gold"],
-    ["脂肪", totals.fat, totals.fat * 9, "coral"],
-  ];
-  return (
-    <article className="macroCard">
-      <h4>三大营养比例</h4>
-      {rows.map(([label, grams, calories, tone]) => {
-        const percent = Math.round((Number(calories) / macroCalories) * 100);
-        return (
-          <div className="macroRow" key={String(label)}>
-            <div><span>{label} {round(Number(grams))}g</span><strong>{percent}%</strong></div>
-            <div className="macroTrack"><i className={String(tone)} style={{ width: `${percent}%` }} /></div>
-          </div>
-        );
-      })}
     </article>
   );
 }

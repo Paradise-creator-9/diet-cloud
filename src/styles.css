@@ -306,7 +306,6 @@ tr:last-child td {
 .reflectionBox,
 .railPanel,
 .goalDashboard,
-.macroCard,
 .periodReportCard,
 .coachCard,
 .insightCard,
@@ -1046,9 +1045,9 @@ tr:last-child td {
   background: var(--surface);
   border: 1px solid var(--sep);
   border-radius: 999px;
-  padding: 8px 8px 8px 14px;
-  min-height: 40px;
-  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  min-height: 30px;
+  gap: 6px;
   font-weight: 500;
 }
 
@@ -1056,25 +1055,45 @@ tr:last-child td {
   background: var(--surface-2);
 }
 
+.favoriteFoodChipIcon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-style: normal;
+  border-radius: 50%;
+  background: var(--surface-2);
+}
+
+.favoriteFoodChips button.tone-protein .favoriteFoodChipIcon { background: var(--d-protein-tint); }
+.favoriteFoodChips button.tone-carbs .favoriteFoodChipIcon { background: var(--d-carbs-tint); }
+.favoriteFoodChips button.tone-fiber .favoriteFoodChipIcon { background: var(--d-fiber-tint); }
+.favoriteFoodChips button.tone-cal .favoriteFoodChipIcon { background: var(--d-cal-tint); }
+.favoriteFoodChips button.tone-body .favoriteFoodChipIcon { background: var(--d-body-tint); }
+.favoriteFoodChips button.tone-heart .favoriteFoodChipIcon { background: var(--d-heart-tint); }
+
 .favoriteFoodChips button span {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .favoriteFoodChips button small {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-3);
   font-weight: 500;
 }
 
 .favoriteFoodChips button em {
   font-style: normal;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--accent);
   background: var(--accent-tint);
   border-radius: 999px;
-  padding: 3px 9px;
+  padding: 2px 7px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1237,58 +1256,6 @@ tr:last-child td {
   font-style: normal;
   font-size: 11.5px;
   color: var(--text-2);
-}
-
-/* 三大营养比例 */
-.macroCard {
-  padding: 18px;
-  display: grid;
-  gap: 12px;
-}
-
-.macroCard h4 {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.macroRow > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 13px;
-  color: var(--text-2);
-  margin-bottom: 5px;
-  font-variant-numeric: tabular-nums;
-}
-
-.macroRow strong {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.macroTrack {
-  height: 5px;
-  border-radius: 3px;
-  background: var(--surface-2);
-  overflow: hidden;
-}
-
-.macroTrack i {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-}
-
-.macroTrack .green {
-  background: var(--d-protein);
-}
-
-.macroTrack .gold {
-  background: var(--d-carbs);
-}
-
-.macroTrack .coral {
-  background: var(--d-fat);
 }
 
 /* 7 日复盘卡(右栏) */
@@ -4179,6 +4146,112 @@ tr:last-child td {
 
   .bodyMapLegend {
     grid-column: 1 / -1;
+  }
+
+  /* 今日摄入:缩小照片缩略图,腾出更多信息空间 */
+  .todayCard {
+    padding: 16px 14px;
+    gap: 10px;
+  }
+
+  .todayPhotos {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+  }
+
+  .todayPhotos .photoTile {
+    height: 44px;
+    border-radius: 8px;
+  }
+
+  /* 四餐列表:减少留白,更紧凑 */
+  .timelineMeal {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .mealIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .timelineMealContent {
+    gap: 7px;
+  }
+
+  .photoStrip .photoTile {
+    width: 64px;
+    height: 52px;
+  }
+
+  /* 照片页:一行放 5-6 张小缩略图 */
+  .photoDayGrid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+
+  .photoCard img {
+    height: 62px;
+  }
+
+  .photoCard figcaption {
+    display: none;
+  }
+
+  .photoCard.expanded {
+    grid-column: 1 / -1;
+  }
+
+  .photoCard.expanded figcaption {
+    display: flex;
+  }
+
+  /* 身体页:顶部时间板块与按钮更紧凑 */
+  .bodyHero {
+    padding: 14px 14px;
+    gap: 10px;
+  }
+
+  .bodyHero h2 {
+    font-size: 18px;
+    margin: 2px 0;
+  }
+
+  .bodyHero .aiAnalyzeButton {
+    font-size: 13px;
+    padding: 7px 12px;
+    min-height: 32px;
+  }
+
+  /* 运动页:顶部同步板块更紧凑 */
+  .exerciseHeader {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .exerciseHeader > div > span {
+    font-size: 15px;
+    margin-top: 3px;
+  }
+
+  .exerciseHeroActions {
+    gap: 6px;
+  }
+
+  .exerciseImportGroup {
+    justify-items: start;
+  }
+
+  .segmentedGlass {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .exerciseHeader .glassButton,
+  .exerciseHeader .aiAnalyzeButton {
+    font-size: 12px;
+    padding: 6px 10px;
+    min-height: 30px;
   }
 }
 

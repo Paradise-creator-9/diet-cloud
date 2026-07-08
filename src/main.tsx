@@ -46,7 +46,7 @@ import { appleHealthMetricDefinitions, parseAppleHealthExport, type AppleHealthI
 import { mealMeta, nutrientTargets, seedItems } from "./data";
 import type { BodyMetric, DailyActivity, ExerciseActivity, FoodItem, MealType } from "./types";
 import { buildDates, formatDateLabel, itemsByMeal, round, totalsFor, uniquePhotos } from "./utils";
-import { GlassButton, GlassModal } from "./design-system";
+import { GlassButton, GlassCard, GlassModal } from "./design-system";
 import "./styles.css";
 
 type View = "overview" | "detail" | "trend" | "photos" | "body" | "exercise";
@@ -1547,7 +1547,7 @@ function GoalDashboard({
     : `今天已超出目标约 ${Math.abs(remainingCalories).toLocaleString()} kcal`;
 
   return (
-    <section className="goalDashboard">
+    <GlassCard className="goalDashboard">
       <div className="goalHeader">
         <div>
           <span>目标系统</span>
@@ -1567,7 +1567,7 @@ function GoalDashboard({
         <span><strong>{previousBody ? `${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(2)}kg` : "--"}</strong><em>较上次</em></span>
         <span><strong>{weeklyNeeded ? `${weeklyNeeded.toFixed(2)}kg/周` : "--"}</strong><em>所需速度</em></span>
       </div>
-    </section>
+    </GlassCard>
   );
 }
 
@@ -1612,7 +1612,7 @@ function GoalRing({ label, progress, value, tone }: { label: string; progress: n
 
 function FavoriteFoodsPanel({ favoriteFoods, onManage, onQuickAdd }: { favoriteFoods: FavoriteFood[]; onManage: () => void; onQuickAdd: (food: FavoriteFood) => void }) {
   return (
-    <section className="favoriteFoodsPanel">
+    <GlassCard className="favoriteFoodsPanel">
       <div className="panelHead">
         <div>
           <span>食物库</span>
@@ -1635,7 +1635,7 @@ function FavoriteFoodsPanel({ favoriteFoods, onManage, onQuickAdd }: { favoriteF
           );
         })}
       </div>
-    </section>
+    </GlassCard>
   );
 }
 
@@ -1686,7 +1686,7 @@ function HeroStory({ goals, items, onAiAnalyze, onEdit, totals }: { goals: UserG
   const photos = uniquePhotos(items);
   const remaining = Math.round(goals.dailyCalories - totals.calories);
   return (
-    <section className="todayCard">
+    <GlassCard className="todayCard">
       <div className="todayHead">
         <span className="todayLabel">今日摄入</span>
         <div className="todayActions">
@@ -1716,17 +1716,17 @@ function HeroStory({ goals, items, onAiAnalyze, onEdit, totals }: { goals: UserG
           ))}
         </div>
       ) : null}
-    </section>
+    </GlassCard>
   );
 }
 
 function MealTimeline({ items, onRecordMeal }: { items: FoodItem[]; onRecordMeal: (meal: MealType) => void }) {
   return (
-    <section className="mealList">
+    <GlassCard className="mealList">
       {mealMeta.map((meal) => (
         <MealTimelineCard key={meal.key} meal={meal.key} onRecordMeal={onRecordMeal} title={meal.title} hint={meal.hint} items={itemsByMeal(items, meal.key)} />
       ))}
-    </section>
+    </GlassCard>
   );
 }
 
@@ -1804,11 +1804,11 @@ function ReflectionBox() {
   }
 
   return (
-    <section className="reflectionBox">
+    <GlassCard className="reflectionBox">
       <ListChecks size={18} />
       <span>{saved ? "已保存这个提醒。" : "今天的饮食感受如何？记录一下吧..."}</span>
       <button onClick={handleSave} type="button">{saved ? "已保存" : "保存"}</button>
-    </section>
+    </GlassCard>
   );
 }
 
@@ -1874,7 +1874,7 @@ function PeriodReportCard({
 }) {
   const report = buildPeriodReport(items, bodyMetrics, dailyActivities, exerciseActivities, goals, selectedDate, 7);
   return (
-    <article className="periodReportCard">
+    <GlassCard className="periodReportCard">
       <div className="periodReportHead">
         <div>
           <span>7 日复盘</span>
@@ -1891,7 +1891,7 @@ function PeriodReportCard({
       <ul>
         {report.insights.map((insight) => <li key={insight}>{insight}</li>)}
       </ul>
-    </article>
+    </GlassCard>
   );
 }
 

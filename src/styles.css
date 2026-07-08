@@ -430,13 +430,7 @@ tr:last-child td {
    镜面   115° 斜向光泽 + 顶部亮缘
    反光   偏移内阴影:左上亮缘(负 spread 收进)/右下暗缘,模拟边缘弯折光
    厚度   底部内阴影 + 贴地/环境双层投影 */
-.todayCard,
-.mealList,
-.favoriteFoodsPanel,
-.reflectionBox,
 .railPanel,
-.goalDashboard,
-.periodReportCard,
 .coachCard,
 .insightCard,
 .ledgerCard,
@@ -4574,8 +4568,8 @@ tr:last-child td {
 
 /* Card Hover 浮起:仅悬停设备,轻抬 2px + 投影加深 */
 @media (hover: hover) {
-  :is(.todayCard, .mealList, .favoriteFoodsPanel, .railPanel, .goalDashboard,
-      .periodReportCard, .coachCard, .insightCard, .ledgerCard, .trendCard,
+  :is(.railPanel,
+      .coachCard, .insightCard, .ledgerCard, .trendCard,
       .bodyHero, .bodyMetricCard, .bodyTrendCard, .bodyAnalysisCard, .bodyFigureCard,
       .bodyDetailCard, .bodyHistory, .exerciseHeader, .healthRingCard, .healthBalanceCard,
       .healthBodySnapshotCard, .healthTrendCard, .healthWorkoutCard, .healthSummaryCard,
@@ -4583,8 +4577,8 @@ tr:last-child td {
     transition: transform 0.45s var(--spring-gentle), box-shadow 0.45s var(--ease);
   }
 
-  :is(.todayCard, .mealList, .favoriteFoodsPanel, .railPanel, .goalDashboard,
-      .periodReportCard, .coachCard, .insightCard, .ledgerCard, .trendCard,
+  :is(.railPanel,
+      .coachCard, .insightCard, .ledgerCard, .trendCard,
       .bodyHero, .bodyMetricCard, .bodyTrendCard, .bodyAnalysisCard, .bodyFigureCard,
       .bodyDetailCard, .bodyHistory, .exerciseHeader, .healthRingCard, .healthBalanceCard,
       .healthBodySnapshotCard, .healthTrendCard, .healthWorkoutCard, .healthSummaryCard,
@@ -4683,5 +4677,25 @@ body.lg-modal-open {
   .lg-modal-backdrop {
     align-items: flex-end;
     padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+}
+
+/* 总览仪表盘卡迁移至 GlassCard(lg-glass/lg-card)后的布局垫片 */
+
+/* 四餐列表:行内自带留白,容器不需要 lg-card 的默认 padding */
+.mealList {
+  padding: 0;
+}
+
+/* GlassCard 仪表盘卡:悬停轻抬(不改光标,卡片本身不可点) */
+@media (hover: hover) {
+  .overviewLayout .lg-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 0 0 1px var(--lg-rim-soft),
+      inset 2.5px 3.5px 1px -3px var(--lg-rim-bright),
+      inset -2px -2.5px 1px -2.5px var(--lg-rim-soft),
+      inset 0 -8px 14px -10px var(--lg-inner-shade),
+      var(--lg-shadow-md);
   }
 }

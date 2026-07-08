@@ -4647,3 +4647,41 @@ tr:last-child td {
   40% { transform: scale(1.18); }
   100% { transform: scale(1); }
 }
+
+/* ---------- 16. Liquid Glass 设计系统接入(GlassModal/GlassButton) ---------- */
+
+/* GlassModal 打开时锁定页面滚动(与旧 ModalPortal 的 modal-open 行为一致) */
+body.lg-modal-open {
+  overflow: hidden;
+}
+
+/* 通知正文:保留旧 .noticeDialog p 的长文本行为 */
+.noticeBody {
+  white-space: pre-line;
+  word-break: break-word;
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-bottom: 14px;
+}
+
+/* 确认删除等危险动作:红色语义 */
+.noticeActions .lg-button.noticeDanger {
+  color: var(--danger);
+  background: var(--danger-tint);
+  border-color: transparent;
+}
+
+/* MoreSheet 列表内的玻璃按钮:整行、左对齐 */
+.moreList .lg-button {
+  width: 100%;
+  justify-content: flex-start;
+  font-size: 14px;
+}
+
+/* 移动端:GlassModal 与旧弹层一致,从底部浮出 */
+@media (max-width: 720px) {
+  .lg-modal-backdrop {
+    align-items: flex-end;
+    padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+}

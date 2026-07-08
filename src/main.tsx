@@ -46,6 +46,7 @@ import { appleHealthMetricDefinitions, parseAppleHealthExport, type AppleHealthI
 import { mealMeta, nutrientTargets, seedItems } from "./data";
 import type { BodyMetric, DailyActivity, ExerciseActivity, FoodItem, MealType } from "./types";
 import { buildDates, formatDateLabel, itemsByMeal, round, totalsFor, uniquePhotos } from "./utils";
+import { GlassButton, GlassModal } from "./design-system";
 import "./styles.css";
 
 type View = "overview" | "detail" | "trend" | "photos" | "body" | "exercise";
@@ -776,22 +777,17 @@ function MoreSheet({
   }
 
   return (
-    <ModalPortal>
-      <div className="modalBackdrop" role="presentation" onClick={onClose}>
-        <section aria-modal="true" className="noticeDialog moreSheet" role="dialog" onClick={(event) => event.stopPropagation()}>
-          <h3>更多操作</h3>
-          <div className="moreList">
-            <button onClick={() => run(onSync)} type="button"><RefreshCw size={16} />同步云端数据</button>
-            <button disabled={importing} onClick={() => run(onImport)} type="button"><CloudUpload size={16} />{importing ? "导入中" : "导入 JSON 记录"}</button>
-            <button onClick={() => run(onExport)} type="button"><Download size={16} />导出全部记录</button>
-            <button onClick={() => run(onShowMobile)} type="button"><Smartphone size={16} />手机查看</button>
-            <button onClick={() => run(onShowShortcut)} type="button"><Watch size={16} />快捷指令同步说明</button>
-            <button onClick={() => run(onShowSettings)} type="button"><Settings size={16} />账号与同步状态</button>
-            {isCloudConfigured && <button className="moreDanger" onClick={() => signOut()} type="button"><LogOut size={16} />退出登录</button>}
-          </div>
-        </section>
+    <GlassModal open onClose={onClose} title="更多操作">
+      <div className="moreList">
+        <GlassButton variant="glass" onClick={() => run(onSync)} type="button"><RefreshCw size={16} />同步云端数据</GlassButton>
+        <GlassButton variant="glass" disabled={importing} onClick={() => run(onImport)} type="button"><CloudUpload size={16} />{importing ? "导入中" : "导入 JSON 记录"}</GlassButton>
+        <GlassButton variant="glass" onClick={() => run(onExport)} type="button"><Download size={16} />导出全部记录</GlassButton>
+        <GlassButton variant="glass" onClick={() => run(onShowMobile)} type="button"><Smartphone size={16} />手机查看</GlassButton>
+        <GlassButton variant="glass" onClick={() => run(onShowShortcut)} type="button"><Watch size={16} />快捷指令同步说明</GlassButton>
+        <GlassButton variant="glass" onClick={() => run(onShowSettings)} type="button"><Settings size={16} />账号与同步状态</GlassButton>
+        {isCloudConfigured && <GlassButton className="moreDanger" variant="ghost" onClick={() => signOut()} type="button"><LogOut size={16} />退出登录</GlassButton>}
       </div>
-    </ModalPortal>
+    </GlassModal>
   );
 }
 
@@ -946,18 +942,13 @@ function NoticeDialog({ notice, onClose }: { notice: Notice; onClose: () => void
   }
 
   return (
-    <ModalPortal>
-      <div className="modalBackdrop" role="presentation" onClick={onClose}>
-      <section aria-modal="true" className="noticeDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
-        <h3>{notice.title}</h3>
-        <p>{notice.body}</p>
-        <div className="noticeActions">
-          {notice.actionLabel && <button className="secondaryButton" onClick={handleAction} type="button">{notice.actionLabel}</button>}
-          <button onClick={onClose} type="button">知道了</button>
-        </div>
-      </section>
+    <GlassModal open onClose={onClose} title={notice.title}>
+      <p className="noticeBody">{notice.body}</p>
+      <div className="noticeActions">
+        {notice.actionLabel && <GlassButton className="noticeDanger" size="sm" variant="ghost" onClick={handleAction} type="button">{notice.actionLabel}</GlassButton>}
+        <GlassButton size="sm" variant="glass" onClick={onClose} type="button">知道了</GlassButton>
       </div>
-    </ModalPortal>
+    </GlassModal>
   );
 }
 

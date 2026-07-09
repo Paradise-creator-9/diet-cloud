@@ -1918,7 +1918,10 @@ tr:last-child td {
 }
 
 .mobileFoodMain em {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
   font-style: normal;
   font-size: 12px;
   color: var(--text-3);
@@ -3984,6 +3987,44 @@ tr:last-child td {
   font-size: 12.5px;
   font-weight: 500;
   color: var(--text-2);
+}
+
+/* 日期字段:用一个普通的 div 顶替原生 date input 的可见外观，
+   避免 WebKit 原生日期控件的内在尺寸和网格列宽不一致（挤压/重叠相邻字段）。
+   原生 input 仍然存在，只是完全透明地盖在上面接收点击、弹出系统日期选择器。 */
+.dateFieldControl {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+.dateFieldControl svg {
+  color: var(--text-3);
+  flex: none;
+}
+
+.dateFieldControl > span {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.dateFieldControl input[type="date"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .entryForm .wide {

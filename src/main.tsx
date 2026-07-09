@@ -1280,8 +1280,9 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
       } else {
         applyAnalysisItems([{ name: analysis.dishName || "AI 识别餐食", grams: Number(total.grams || 0), calories: Number(total.calories || 0), protein: Number(total.protein || 0), carbs: Number(total.carbs || 0), fat: Number(total.fat || 0), fiber: Number(total.fiber || 0), reasoning: analysis.notes || "" }]);
       }
-      const itemLines = (nextAnalysisItems.length ? nextAnalysisItems : []).map((item: AnalysisItem) => `${item.name} ${round(Number(item.grams || 0))}g / ${round(Number(item.calories || 0))}kcal${item.reasoning ? `：${item.reasoning}` : ""}`);
-      setNote([userHint ? `用户补充：${userHint}` : "", `AI 照片估算，置信度约 ${Math.round(Number(analysis.confidence || 0) * 100)}%。`, analysis.notes, ...itemLines].filter(Boolean).join("\n"));
+      // 每个食物已经在下面的"确认食物拆分"列表里单独展示和可编辑，
+      // 备注只保留整体信息，不再逐条重复每个食物的估算依据（否则保存后每条食物记录的备注都会重复一遍所有食物）。
+      setNote([userHint ? `用户补充：${userHint}` : "", `AI 照片估算，置信度约 ${Math.round(Number(analysis.confidence || 0) * 100)}%。`, analysis.notes].filter(Boolean).join("\n"));
       setAnalysisSummary(`已识别 ${nextAnalysisItems.length || 1} 个食物，约 ${round(Number(total.calories || 0))} kcal。可以先微调每个食物，再保存。`);
     } catch (error) {
       setError(formatCloudError(error));
@@ -1302,7 +1303,14 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
           <button aria-label="关闭" onClick={onClose} type="button">×</button>
         </div>
         <form className={`entryForm ${isAiMode ? "aiEntryForm" : ""}`} onSubmit={handleSubmit}>
-          <label><span>日期</span><input value={date} onChange={(event) => setDate(event.target.value)} type="date" /></label>
+          <label className="dateField">
+            <span>日期</span>
+            <div className="dateFieldControl">
+              <CalendarDays size={15} />
+              <span>{date}</span>
+              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
+            </div>
+          </label>
           <label>
             <span>餐次</span>
             <select value={meal} onChange={(event) => setMeal(event.target.value as MealType)}>
@@ -2564,7 +2572,14 @@ function BodyMetricDialog({ defaultDate, metric, onClose, onSaved }: { defaultDa
           <button aria-label="关闭" onClick={onClose} type="button">×</button>
         </div>
         <form className="entryForm bodyForm" onSubmit={handleSubmit}>
-          <label><span>日期</span><input value={date} onChange={(event) => setDate(event.target.value)} type="date" /></label>
+          <label className="dateField">
+            <span>日期</span>
+            <div className="dateFieldControl">
+              <CalendarDays size={15} />
+              <span>{date}</span>
+              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
+            </div>
+          </label>
           <label><span>测量时间</span><input value={measuredAt} onChange={(event) => setMeasuredAt(event.target.value)} type="datetime-local" /></label>
           <label><span>体重 kg</span><input inputMode="decimal" value={weightKg} onChange={(event) => setWeightKg(event.target.value)} placeholder="75.05" /></label>
           <label><span>体脂 %</span><input inputMode="decimal" value={bodyFatPercent} onChange={(event) => setBodyFatPercent(event.target.value)} placeholder="20.8" /></label>
@@ -3185,7 +3200,14 @@ function DailyActivityDialog({ activity, defaultDate, onClose, onSaved }: { acti
           <button aria-label="关闭" onClick={onClose} type="button">×</button>
         </div>
         <form className="entryForm bodyForm" onSubmit={handleSubmit}>
-          <label><span>日期</span><input value={date} onChange={(event) => setDate(event.target.value)} type="date" /></label>
+          <label className="dateField">
+            <span>日期</span>
+            <div className="dateFieldControl">
+              <CalendarDays size={15} />
+              <span>{date}</span>
+              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
+            </div>
+          </label>
           <label><span>来源</span><select value={source} onChange={(event) => setSource(event.target.value)}>{activitySourceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           <label><span>步数</span><input inputMode="numeric" value={steps} onChange={(event) => setSteps(event.target.value)} placeholder="8500" /></label>
           <label><span>活动热量 kcal</span><input inputMode="decimal" value={activeCalories} onChange={(event) => setActiveCalories(event.target.value)} placeholder="420" /></label>
@@ -3275,7 +3297,14 @@ function WorkoutDialog({ defaultDate, onClose, onSaved, workout }: { defaultDate
           <button aria-label="关闭" onClick={onClose} type="button">×</button>
         </div>
         <form className="entryForm bodyForm" onSubmit={handleSubmit}>
-          <label><span>日期</span><input value={date} onChange={(event) => setDate(event.target.value)} type="date" /></label>
+          <label className="dateField">
+            <span>日期</span>
+            <div className="dateFieldControl">
+              <CalendarDays size={15} />
+              <span>{date}</span>
+              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
+            </div>
+          </label>
           <label><span>开始时间</span><input value={startedAt} onChange={(event) => setStartedAt(event.target.value)} type="datetime-local" /></label>
           <label><span>来源</span><select value={source} onChange={(event) => setSource(event.target.value)}>{activitySourceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           <label><span>运动类型</span><input value={type} onChange={(event) => setType(event.target.value)} placeholder="力量训练 / 跑步 / 骑行" /></label>

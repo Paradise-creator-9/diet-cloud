@@ -3588,6 +3588,12 @@ tr:last-child td {
   padding: 12px;
   border-radius: var(--r-sm);
   background: var(--surface-2);
+  text-align: left;
+  transition: background 0.15s var(--ease);
+}
+
+.compactMetric:hover {
+  background: var(--glass-bg);
 }
 
 .compactMetric i {

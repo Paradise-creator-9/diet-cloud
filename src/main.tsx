@@ -79,14 +79,18 @@ type AnalysisItem = {
   reasoning?: string;
 };
 type BodyMetricKey = "weightKg" | "bodyFatPercent" | "muscleKg" | "bmrKcal" | "waterPercent" | "visceralFat";
-type BodyMetricDefinition = {
-  key: BodyMetricKey;
+type MetricHistoryDefinition = {
+  key: string;
   label: string;
   unit: string;
-  tone: string;
   color: string;
   icon: React.ReactNode;
   format: (value: number) => string;
+  getValue: (record: BodyMetric | DailyActivity) => number;
+};
+type BodyMetricDefinition = MetricHistoryDefinition & {
+  key: BodyMetricKey;
+  tone: string;
 };
 type UserGoals = {
   targetWeightKg: number;
@@ -2017,12 +2021,12 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
   const maxWeight = Math.max(1, ...recent.map((metric) => metric.weightKg));
   const minWeight = Math.min(...recent.map((metric) => metric.weightKg), maxWeight);
   const metricDefinitions: BodyMetricDefinition[] = [
-    { key: "weightKg", label: "体重", unit: "kg", tone: "blue", color: "var(--ov-cyan)", icon: <Scale size={18} />, format: (value) => value.toFixed(2) },
-    { key: "bodyFatPercent", label: "体脂", unit: "%", tone: "purple", color: "var(--ov-violet)", icon: <Activity size={18} />, format: (value) => value.toFixed(1) },
-    { key: "muscleKg", label: "肌肉", unit: "kg", tone: "cyan", color: "var(--ov-emerald)", icon: <Dumbbell size={18} />, format: (value) => value.toFixed(1) },
-    { key: "bmrKcal", label: "基础代谢", unit: "kcal", tone: "amber", color: "var(--ov-amber)", icon: <Flame size={18} />, format: (value) => round(value).toLocaleString() },
-    { key: "waterPercent", label: "水分", unit: "%", tone: "teal", color: "var(--ov-emerald)", icon: <Droplets size={18} />, format: (value) => value.toFixed(1) },
-    { key: "visceralFat", label: "内脏脂肪", unit: "", tone: "slate", color: "var(--text-2)", icon: <ShieldCheck size={18} />, format: (value) => value.toFixed(1) },
+    { key: "weightKg", label: "体重", unit: "kg", tone: "blue", color: "var(--ov-cyan)", icon: <Scale size={18} />, format: (value) => value.toFixed(2), getValue: (record) => (record as BodyMetric).weightKg },
+    { key: "bodyFatPercent", label: "体脂", unit: "%", tone: "purple", color: "var(--ov-violet)", icon: <Activity size={18} />, format: (value) => value.toFixed(1), getValue: (record) => (record as BodyMetric).bodyFatPercent },
+    { key: "muscleKg", label: "肌肉", unit: "kg", tone: "cyan", color: "var(--ov-emerald)", icon: <Dumbbell size={18} />, format: (value) => value.toFixed(1), getValue: (record) => (record as BodyMetric).muscleKg },
+    { key: "bmrKcal", label: "基础代谢", unit: "kcal", tone: "amber", color: "var(--ov-amber)", icon: <Flame size={18} />, format: (value) => round(value).toLocaleString(), getValue: (record) => (record as BodyMetric).bmrKcal },
+    { key: "waterPercent", label: "水分", unit: "%", tone: "teal", color: "var(--ov-emerald)", icon: <Droplets size={18} />, format: (value) => value.toFixed(1), getValue: (record) => (record as BodyMetric).waterPercent },
+    { key: "visceralFat", label: "内脏脂肪", unit: "", tone: "slate", color: "var(--text-2)", icon: <ShieldCheck size={18} />, format: (value) => value.toFixed(1), getValue: (record) => (record as BodyMetric).visceralFat },
   ];
   const selectedMetric = metricDefinitions.find((definition) => definition.key === selectedMetricKey);
 
@@ -2130,10 +2134,10 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
         )) : <p className="bodyHistoryEmpty">还没有历史记录。</p>}
       </aside>
       {selectedMetric && (
-        <BodyMetricHistoryDialog
+        <MetricHistoryDialog
           currentDate={current?.date || selectedDate}
           definition={selectedMetric}
-          metrics={bodyMetrics}
+          records={bodyMetrics}
           onClose={() => setSelectedMetricKey(null)}
         />
       )}
@@ -2298,10 +2302,10 @@ function BodyMetricCard({ delta, icon, label, onClick, tone, unit, value }: { de
   );
 }
 
-function BodyMetricHistoryDialog({ currentDate, definition, metrics, onClose }: { currentDate: string; definition: BodyMetricDefinition; metrics: BodyMetric[]; onClose: () => void }) {
-  const series = [...metrics]
+function MetricHistoryDialog({ currentDate, definition, records, onClose }: { currentDate: string; definition: MetricHistoryDefinition; records: (BodyMetric | DailyActivity)[]; onClose: () => void }) {
+  const series = [...records]
     .sort((a, b) => a.date.localeCompare(b.date))
-    .map((metric) => ({ date: metric.date, value: Number(metric[definition.key] || 0), id: metric.id }))
+    .map((record) => ({ date: record.date, value: Number(definition.getValue(record) || 0), id: record.id }))
     .filter((point) => Number.isFinite(point.value) && point.value > 0);
   const latest = series[series.length - 1];
   const previous = series[series.length - 2];
@@ -2711,6 +2715,16 @@ function ExerciseDashboard({
     const food = totalsFor(items.filter((item) => item.date === date)).calories;
     return food - activityCaloriesForDate(dailyActivities, exerciseActivities, date);
   });
+  const [selectedExerciseMetricKey, setSelectedExerciseMetricKey] = useState<string | null>(null);
+  const exerciseMetricDefinitions: MetricHistoryDefinition[] = [
+    { key: "activeCalories", label: "活动消耗", unit: "kcal", color: "var(--ov-cyan)", icon: <Flame size={18} />, format: (value) => round(value).toLocaleString(), getValue: (record) => (record as DailyActivity).activeCalories },
+    { key: "steps", label: "步数", unit: "步", color: "var(--ov-emerald)", icon: <Footprints size={18} />, format: (value) => round(value).toLocaleString(), getValue: (record) => (record as DailyActivity).steps },
+    { key: "exerciseMinutes", label: "运动时间", unit: "分钟", color: "var(--ov-violet)", icon: <Timer size={18} />, format: (value) => round(value).toLocaleString(), getValue: (record) => (record as DailyActivity).exerciseMinutes },
+    { key: "distanceKm", label: "距离", unit: "km", color: "var(--ov-amber)", icon: <Route size={18} />, format: (value) => value.toFixed(1), getValue: (record) => (record as DailyActivity).distanceKm },
+    { key: "floors", label: "爬楼", unit: "层", color: "var(--ov-cyan)", icon: <LineChart size={18} />, format: (value) => round(value).toLocaleString(), getValue: (record) => (record as DailyActivity).floors },
+    { key: "standHours", label: "站立时间", unit: "小时", color: "var(--ov-emerald)", icon: <Droplets size={18} />, format: (value) => round(value).toLocaleString(), getValue: (record) => (record as DailyActivity).standHours },
+  ];
+  const selectedExerciseMetric = exerciseMetricDefinitions.find((definition) => definition.key === selectedExerciseMetricKey);
 
   return (
     <section className="exerciseLayout healthRedesign">
@@ -2833,12 +2847,12 @@ function ExerciseDashboard({
             {currentDaily && <button className="miniActionButton danger" onClick={() => onDeleteDaily(currentDaily)} type="button"><Trash2 size={14} />删除</button>}
           </div>
           <div className="compactMetricGrid">
-            <CompactMetric icon={<Flame size={17} />} label="活动消耗" value={`${round(currentDaily?.activeCalories || activeCalories)} kcal`} color="var(--ov-cyan)" tint="var(--ov-cyan-tint)" />
-            <CompactMetric icon={<Footprints size={17} />} label="步数" value={`${round(currentDaily?.steps || 0).toLocaleString()} 步`} color="var(--ov-emerald)" tint="var(--ov-emerald-tint)" />
-            <CompactMetric icon={<Timer size={17} />} label="运动时间" value={`${round(exerciseMinutes)} 分钟`} color="var(--ov-violet)" tint="var(--ov-violet-tint)" />
-            <CompactMetric icon={<Route size={17} />} label="距离" value={`${distanceKm ? distanceKm.toFixed(1) : "0.0"} km`} color="var(--ov-amber)" tint="var(--ov-amber-tint)" />
-            <CompactMetric icon={<LineChart size={17} />} label="爬楼" value={`${round(currentDaily?.floors || 0)} 层`} color="var(--ov-cyan)" tint="var(--ov-cyan-tint)" />
-            <CompactMetric icon={<Droplets size={17} />} label="站立时间" value={`${round(currentDaily?.standHours || 0)} 小时`} color="var(--ov-emerald)" tint="var(--ov-emerald-tint)" />
+            <CompactMetric icon={<Flame size={17} />} label="活动消耗" onClick={() => setSelectedExerciseMetricKey("activeCalories")} value={`${round(currentDaily?.activeCalories || activeCalories)} kcal`} color="var(--ov-cyan)" tint="var(--ov-cyan-tint)" />
+            <CompactMetric icon={<Footprints size={17} />} label="步数" onClick={() => setSelectedExerciseMetricKey("steps")} value={`${round(currentDaily?.steps || 0).toLocaleString()} 步`} color="var(--ov-emerald)" tint="var(--ov-emerald-tint)" />
+            <CompactMetric icon={<Timer size={17} />} label="运动时间" onClick={() => setSelectedExerciseMetricKey("exerciseMinutes")} value={`${round(exerciseMinutes)} 分钟`} color="var(--ov-violet)" tint="var(--ov-violet-tint)" />
+            <CompactMetric icon={<Route size={17} />} label="距离" onClick={() => setSelectedExerciseMetricKey("distanceKm")} value={`${distanceKm ? distanceKm.toFixed(1) : "0.0"} km`} color="var(--ov-amber)" tint="var(--ov-amber-tint)" />
+            <CompactMetric icon={<LineChart size={17} />} label="爬楼" onClick={() => setSelectedExerciseMetricKey("floors")} value={`${round(currentDaily?.floors || 0)} 层`} color="var(--ov-cyan)" tint="var(--ov-cyan-tint)" />
+            <CompactMetric icon={<Droplets size={17} />} label="站立时间" onClick={() => setSelectedExerciseMetricKey("standHours")} value={`${round(currentDaily?.standHours || 0)} 小时`} color="var(--ov-emerald)" tint="var(--ov-emerald-tint)" />
           </div>
         </article>
 
@@ -2853,6 +2867,14 @@ function ExerciseDashboard({
 
         <AppleHealthMetricsPanel activity={currentDaily} />
       </section>
+      {selectedExerciseMetric && (
+        <MetricHistoryDialog
+          currentDate={currentDaily?.date || selectedDate}
+          definition={selectedExerciseMetric}
+          records={dailyActivities}
+          onClose={() => setSelectedExerciseMetricKey(null)}
+        />
+      )}
     </section>
   );
 }
@@ -3088,9 +3110,9 @@ function PercentIcon() {
   return <span className="percentGlyph">%</span>;
 }
 
-function CompactMetric({ color, icon, label, tint, value }: { color: string; icon: React.ReactNode; label: string; tint: string; value: string }) {
+function CompactMetric({ color, icon, label, onClick, tint, value }: { color: string; icon: React.ReactNode; label: string; onClick?: () => void; tint: string; value: string }) {
   return (
-    <div className="compactMetric">
+    <button className="compactMetric" onClick={onClick} type="button">
       <i style={{ color, background: tint }}>{icon}</i>
       <span>{label}</span>
       <strong>{value}</strong>
@@ -3099,7 +3121,7 @@ function CompactMetric({ color, icon, label, tint, value }: { color: string; ico
           <em key={index} style={{ height: `${5 + ((index * 7) % 20)}px`, background: color }} />
         ))}
       </b>
-    </div>
+    </button>
   );
 }
 

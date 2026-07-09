@@ -68,7 +68,7 @@ function normalizeAnalysis(payload) {
       fiber: number(item.fiber),
       reasoning: String(item.reasoning || ""),
     })),
-    notes: String(payload.notes || "照片估算结果，仅供饮食记录参考。"),
+    notes: String(payload.notes || "AI 估算结果，仅供饮食记录参考。"),
   };
 }
 
@@ -85,11 +85,9 @@ export default async function handler(req, res) {
     const payload = await readJson(req);
     const photos = Array.isArray(payload.photos) ? payload.photos.slice(0, 3) : [];
     const hint = String(payload.hint || payload.description || payload.note || "").trim();
-    if (!photos.length) return json(res, 400, { error: "请先上传至少一张照片。" });
+    if (!photos.length && !hint) return json(res, 400, { error: "请上传照片，或者至少填写一句文字说明。" });
 
-    const prompt = [
-      "你是一个严谨的饮食营养估算助手。请根据照片估算这顿饭的食物组成、可食重量、热量和营养成分。",
-      hint ? `用户补充说明：${hint}` : "",
+    const instructions = [
       "要求：",
       "1. 用中文输出。",
       "2. 如果无法确定，请给保守估算，并在 notes 说明不确定因素。",
@@ -107,6 +105,20 @@ export default async function handler(req, res) {
       '  "notes": "整体说明"',
       "}",
     ].join("\n");
+
+    const prompt = photos.length
+      ? [
+          "你是一个严谨的饮食营养估算助手。请根据照片估算这顿饭的食物组成、可食重量、热量和营养成分。",
+          hint ? `用户补充说明：${hint}` : "",
+          hint ? "如果用户的文字说明和照片内容有出入（比如食物种类、数量），以文字说明为准；照片主要用来辅助判断分量和做法。" : "",
+          instructions,
+        ].filter(Boolean).join("\n")
+      : [
+          "你是一个严谨的饮食营养估算助手。用户这次没有上传照片，只给了一句文字描述，请完全根据这段文字估算这顿饭的食物组成、可食重量、热量和营养成分。",
+          `用户描述：${hint}`,
+          "没有照片可参考时，请按常见的家常份量估算，如果描述模糊（比如没写数量、大小），confidence 应该明显偏低，并在 notes 里说明是纯文字估算、建议用户核对份量。",
+          instructions,
+        ].join("\n");
 
     const parts = [{ text: prompt }];
     for (const photo of photos) {

@@ -1241,11 +1241,11 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
   }
 
   async function handleAnalyzePhotos() {
-    if (!photos.length) {
-      setError("请先选择照片。");
+    const userHint = analysisHint.trim();
+    if (!photos.length && !userHint) {
+      setError("请先选择照片，或者至少写一句文字说明。");
       return;
     }
-    const userHint = analysisHint.trim();
     setAnalyzing(true);
     setError("");
     setAnalysisSummary("");
@@ -1324,7 +1324,7 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
                   <Sparkles size={18} />
                   <div>
                     <strong>上传照片后自动拆分食物</strong>
-                    <span>可以再写一句份量说明，例如“米饭一小碗、鱼约 100g”。</span>
+                    <span>没拍照片也可以，只写文字说明（比如“一根玉米”）AI 也能估算。</span>
                   </div>
                 </div>
                 <label className={`aiUploadDrop ${remainingPhotoQuota ? "" : "disabled"}`}>
@@ -1341,12 +1341,20 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
                 <small className="uploadQuotaHint">每人每天最多上传 {DAILY_PHOTO_LIMIT} 张照片，今天还能上传 {remainingPhotoQuota} 张</small>
               </section>
               <label className="wide aiHintField">
-                <span>补充说明（可选）</span>
-                <textarea value={analysisHint} onChange={(event) => setAnalysisHint(event.target.value)} placeholder="例如：一小碗米饭、两条鱼、下午骑车吃了 3 根香蕉" />
+                <span>{photos.length ? "补充说明（可选）" : "文字说明（没有照片时必填）"}</span>
+                <textarea value={analysisHint} onChange={(event) => setAnalysisHint(event.target.value)} placeholder="例如：一根玉米 / 一小碗米饭、两条鱼、下午骑车吃了 3 根香蕉" />
               </label>
               <div className="analysisAction aiAnalyzeAction">
-                <p className="entryHint">{photos.length ? "点下面按钮后，AI 会估算每个食物的重量、热量和营养成分。" : "先上传照片；如果没照片，也可以用“手动新增记录”补录简单食物。"}</p>
-                <button disabled={analyzing || !photos.length} onClick={handleAnalyzePhotos} type="button"><Sparkles size={15} />{analyzing ? "分析中" : "开始 AI 分析"}</button>
+                <p className="entryHint">
+                  {photos.length && analysisHint.trim()
+                    ? "点下面按钮后，AI 会结合照片和你写的文字说明估算，文字说明和照片对不上的地方以文字为准。"
+                    : photos.length
+                      ? "点下面按钮后，AI 会估算每个食物的重量、热量和营养成分。"
+                      : analysisHint.trim()
+                        ? "没有照片也可以，AI 会直接根据你写的文字估算，写得越具体（食物、大概份量）估算越准。"
+                        : "上传照片，或者至少写一句文字说明（比如“一根玉米”），二选一即可。"}
+                </p>
+                <button disabled={analyzing || (!photos.length && !analysisHint.trim())} onClick={handleAnalyzePhotos} type="button"><Sparkles size={15} />{analyzing ? "分析中" : "开始 AI 分析"}</button>
               </div>
             </>
           ) : (

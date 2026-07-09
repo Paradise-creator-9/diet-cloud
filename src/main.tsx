@@ -1361,11 +1361,21 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
                   })}</div>
                 </div>
               ) : null}
-              <label className="wide">
-                <span>{editingItem ? "追加照片" : "照片"}</span>
-                <input accept="image/*" disabled={!remainingPhotoQuota} multiple onChange={handlePhotoSelect} type="file" />
+              <section className="wide aiUploadPanel">
+                <span className="entryFieldLabel">{editingItem ? "追加照片" : "照片"}</span>
+                <label className={`aiUploadDrop ${remainingPhotoQuota ? "" : "disabled"}`}>
+                  <input accept="image/*" disabled={!remainingPhotoQuota} multiple onChange={handlePhotoSelect} type="file" />
+                  <CloudUpload size={22} />
+                  <strong>{photos.length ? `已选择 ${photos.length} 张照片` : remainingPhotoQuota ? "点击选择或拖入餐食照片" : "今日上传已达上限"}</strong>
+                  <span>{remainingPhotoQuota ? "支持多选，会先压缩再上传保存。" : "明天可以继续上传，或直接手动填写热量保存。"}</span>
+                </label>
+                {photos.length ? (
+                  <div className="aiSelectedPhotos">
+                    {photos.map((photo) => <span key={`${photo.name}-${photo.size}`}>{photo.name}</span>)}
+                  </div>
+                ) : null}
                 <small className="uploadQuotaHint">每人每天最多上传 {DAILY_PHOTO_LIMIT} 张照片，今天还能上传 {remainingPhotoQuota} 张</small>
-              </label>
+              </section>
               <div className="analysisAction">
                 <p className="entryHint">{photos.length ? `已选择 ${photos.length} 张照片。可以先让 AI 估算，再确认保存。` : "如果你不知道热量，可以先上传照片让 AI 分析；也可以继续发给我估算。"}</p>
                 <button disabled={analyzing || !photos.length} onClick={handleAnalyzePhotos} type="button"><Sparkles size={15} />{analyzing ? "分析中" : "AI 分析照片"}</button>

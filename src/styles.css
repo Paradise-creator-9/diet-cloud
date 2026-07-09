@@ -3971,9 +3971,16 @@ tr:last-child td {
   display: grid;
   gap: 6px;
   align-content: start;
+  min-width: 0;
 }
 
-.entryForm label span {
+.entryForm > label input,
+.entryForm > label select {
+  min-width: 0;
+}
+
+.entryForm label span,
+.entryFieldLabel {
   font-size: 12.5px;
   font-weight: 500;
   color: var(--text-2);
@@ -4099,27 +4106,31 @@ tr:last-child td {
 .aiUploadDrop {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 26px 16px;
-  border-radius: var(--r-sm);
-  border: 1.5px dashed var(--sep-strong);
-  background: var(--surface);
+  gap: 8px;
+  padding: 30px 18px;
+  border-radius: var(--r-md);
+  border: 2px dashed var(--accent);
+  background: var(--accent-tint);
   cursor: pointer;
   text-align: center;
-  transition: border-color 0.15s var(--ease);
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease), transform 0.15s var(--ease);
 }
 
 .aiUploadDrop:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-strong);
+  transform: translateY(-1px);
 }
 
 .aiUploadDrop.disabled {
   cursor: default;
   opacity: 0.55;
+  border-color: var(--sep-strong);
+  background: var(--surface);
 }
 
 .aiUploadDrop.disabled:hover {
   border-color: var(--sep-strong);
+  transform: none;
 }
 
 .aiUploadDrop input {
@@ -4128,10 +4139,12 @@ tr:last-child td {
 
 .aiUploadDrop svg {
   color: var(--accent);
+  width: 26px;
+  height: 26px;
 }
 
 .aiUploadDrop strong {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 

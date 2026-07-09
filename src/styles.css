@@ -11,7 +11,7 @@
    3. Primitives      卡片 · 按钮 · 芯片 · 区块标题
    4. App shell       头部大标题 · 内容列 · 底部悬浮玻璃 Tab Bar
    5. Auth
-   6. Overview        今日 Hero 卡 · 四餐列表 · 常吃食物 · 右侧信息栏
+   6. Overview        问候语 · 渐变环形 Hero · 宏量条/AI 卡 · mini-ring 统计 · 餐次网格(浓烈 Liquid Glass 试点,--ov-* token)
    7. Detail          分组账本
    8. Trend           复盘与图表
    9. Photos          照片库
@@ -83,6 +83,25 @@
   --d-body-tint: rgba(50, 173, 230, 0.12);
   --d-heart: #ff2d55;
   --d-heart-tint: rgba(255, 45, 85, 0.1);
+
+  /* 全站浓烈 Liquid Glass 配色(渐变环 / plasma 背景 / 渐变数字,不影响业务色 --d-*) */
+  --ov-emerald: #34d399;
+  --ov-cyan: #22d3ee;
+  --ov-violet: #8b5cf6;
+  --ov-amber: #f59e0b;
+  --ov-emerald-tint: rgba(52, 211, 153, 0.14);
+  --ov-cyan-tint: rgba(34, 211, 238, 0.14);
+  --ov-violet-tint: rgba(139, 92, 246, 0.14);
+  --ov-amber-tint: rgba(245, 158, 11, 0.16);
+  --ov-gradient-cal: linear-gradient(135deg, #34d399, #22d3ee);
+  --ov-gradient-protein: linear-gradient(135deg, #22d3ee, #0a7cff);
+  --ov-gradient-fiber: linear-gradient(135deg, #8b5cf6, #22d3ee);
+  --ov-gradient-fat: linear-gradient(135deg, #f59e0b, #ffd08a);
+  --ov-gradient-text: linear-gradient(135deg, #34d399 0%, #22d3ee 45%, #8b5cf6 100%);
+  --ov-plasma-a: rgba(34, 211, 238, 0.4);
+  --ov-plasma-b: rgba(139, 92, 246, 0.32);
+  --ov-plasma-c: rgba(52, 211, 153, 0.36);
+  --ov-plasma-d: rgba(245, 158, 11, 0.18);
 
   /* 阴影三档:静置 / 抬起 / 悬浮 */
   --shadow-card: 0 1px 1px rgba(22, 38, 44, 0.03), 0 4px 16px rgba(22, 38, 44, 0.06);
@@ -159,6 +178,24 @@
   --d-heart: #ff375f;
   --d-heart-tint: rgba(255, 55, 95, 0.16);
 
+  --ov-emerald: #2ee6ab;
+  --ov-cyan: #37e4ff;
+  --ov-violet: #a78bfa;
+  --ov-amber: #ffb224;
+  --ov-emerald-tint: rgba(46, 230, 171, 0.16);
+  --ov-cyan-tint: rgba(55, 228, 255, 0.16);
+  --ov-violet-tint: rgba(167, 139, 250, 0.18);
+  --ov-amber-tint: rgba(255, 178, 36, 0.18);
+  --ov-gradient-cal: linear-gradient(135deg, #2ee6ab, #37e4ff);
+  --ov-gradient-protein: linear-gradient(135deg, #37e4ff, #3d95ff);
+  --ov-gradient-fiber: linear-gradient(135deg, #a78bfa, #37e4ff);
+  --ov-gradient-fat: linear-gradient(135deg, #ffb224, #ffd08a);
+  --ov-gradient-text: linear-gradient(135deg, #2ee6ab 0%, #37e4ff 45%, #a78bfa 100%);
+  --ov-plasma-a: rgba(55, 228, 255, 0.22);
+  --ov-plasma-b: rgba(167, 139, 250, 0.18);
+  --ov-plasma-c: rgba(46, 230, 171, 0.2);
+  --ov-plasma-d: rgba(255, 178, 36, 0.1);
+
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
   --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.45), 0 18px 52px rgba(0, 0, 0, 0.6);
@@ -228,6 +265,85 @@ body::after {
   from { transform: translate3d(3%, 4%, 0) rotate(0deg) scale(1.08); }
   50% { transform: translate3d(-4%, -2%, 0) rotate(-7deg) scale(1); }
   to { transform: translate3d(4%, -4%, 0) rotate(5deg) scale(1.14); }
+}
+
+/* 全站浓烈玻璃:复用 Aurora 机制,每个视图换一组更浓烈的多色 plasma 光斑位置,配色统一取自 --ov-plasma-* */
+html[data-active-view="overview"] body::before {
+  background:
+    radial-gradient(46% 40% at 18% 22%, var(--ov-plasma-a), transparent 68%),
+    radial-gradient(40% 36% at 82% 14%, var(--ov-plasma-b), transparent 66%),
+    radial-gradient(48% 44% at 66% 88%, var(--ov-plasma-c), transparent 70%);
+}
+
+html[data-active-view="overview"] body::after {
+  background:
+    radial-gradient(34% 30% at 20% 82%, var(--ov-plasma-d), transparent 68%),
+    radial-gradient(30% 28% at 54% 46%, var(--ov-plasma-a), transparent 72%);
+}
+
+html[data-active-view="detail"] body::before {
+  background:
+    radial-gradient(44% 38% at 78% 20%, var(--ov-plasma-b), transparent 68%),
+    radial-gradient(38% 34% at 16% 30%, var(--ov-plasma-c), transparent 66%),
+    radial-gradient(42% 40% at 60% 90%, var(--ov-plasma-a), transparent 70%);
+}
+
+html[data-active-view="detail"] body::after {
+  background:
+    radial-gradient(32% 28% at 84% 86%, var(--ov-plasma-d), transparent 68%),
+    radial-gradient(28% 26% at 40% 52%, var(--ov-plasma-b), transparent 72%);
+}
+
+html[data-active-view="trend"] body::before {
+  background:
+    radial-gradient(46% 40% at 24% 16%, var(--ov-plasma-c), transparent 68%),
+    radial-gradient(40% 36% at 88% 30%, var(--ov-plasma-a), transparent 66%),
+    radial-gradient(44% 42% at 54% 92%, var(--ov-plasma-b), transparent 70%);
+}
+
+html[data-active-view="trend"] body::after {
+  background:
+    radial-gradient(34% 30% at 12% 84%, var(--ov-plasma-d), transparent 68%),
+    radial-gradient(30% 28% at 68% 50%, var(--ov-plasma-c), transparent 72%);
+}
+
+html[data-active-view="photos"] body::before {
+  background:
+    radial-gradient(44% 38% at 70% 14%, var(--ov-plasma-a), transparent 68%),
+    radial-gradient(38% 34% at 12% 46%, var(--ov-plasma-d), transparent 66%),
+    radial-gradient(46% 42% at 58% 92%, var(--ov-plasma-c), transparent 70%);
+}
+
+html[data-active-view="photos"] body::after {
+  background:
+    radial-gradient(32% 28% at 88% 78%, var(--ov-plasma-b), transparent 68%),
+    radial-gradient(28% 26% at 30% 20%, var(--ov-plasma-a), transparent 72%);
+}
+
+html[data-active-view="body"] body::before {
+  background:
+    radial-gradient(46% 40% at 20% 18%, var(--ov-plasma-d), transparent 68%),
+    radial-gradient(40% 36% at 84% 24%, var(--ov-plasma-c), transparent 66%),
+    radial-gradient(42% 40% at 62% 88%, var(--ov-plasma-a), transparent 70%);
+}
+
+html[data-active-view="body"] body::after {
+  background:
+    radial-gradient(34% 30% at 14% 80%, var(--ov-plasma-b), transparent 68%),
+    radial-gradient(30% 28% at 70% 48%, var(--ov-plasma-d), transparent 72%);
+}
+
+html[data-active-view="exercise"] body::before {
+  background:
+    radial-gradient(46% 40% at 76% 18%, var(--ov-plasma-a), transparent 68%),
+    radial-gradient(40% 36% at 18% 26%, var(--ov-plasma-b), transparent 66%),
+    radial-gradient(44% 42% at 56% 90%, var(--ov-plasma-d), transparent 70%);
+}
+
+html[data-active-view="exercise"] body::after {
+  background:
+    radial-gradient(32% 28% at 82% 82%, var(--ov-plasma-c), transparent 68%),
+    radial-gradient(28% 26% at 34% 50%, var(--ov-plasma-a), transparent 72%);
 }
 
 body.modal-open {
@@ -448,6 +564,14 @@ tr:last-child td {
     inset -2px -2.5px 1px -2.5px var(--glass-rim-soft),
     inset 0 -8px 14px -10px var(--glass-inner-shade),
     var(--shadow-card);
+}
+
+/* 全站浓烈渐变数字/文字工具类,配色取自 --ov-gradient-text */
+.gradText {
+  background: var(--ov-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 /* 区块小标题(eyebrow) */
@@ -926,267 +1050,484 @@ tr:last-child td {
   color: var(--text-2);
 }
 
-/* ---------- 6. Overview ---------- */
+/* ---------- 6. Overview(总览页 Liquid Glass 视觉试点,2026-07) ---------- */
 
 .overviewLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 20px;
-  align-items: start;
 }
 
-.journalColumn {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
-}
-
-/* 今日摄入卡 */
-/* 今日摄入 Hero:更强的主色染色 + 更大圆角(保留玻璃光泽层) */
-.todayCard {
-  padding: 22px 20px;
-  display: grid;
-  gap: 14px;
-  border-radius: var(--r-lg);
-  background-image:
-    linear-gradient(160deg, var(--accent-tint), transparent 52%),
-    radial-gradient(130% 90% at 50% -12%, var(--glass-card-tint), transparent 58%),
-    linear-gradient(115deg, var(--glass-gloss) 0%, rgba(255, 255, 255, 0) 38%),
-    linear-gradient(180deg, var(--glass-gloss), rgba(255, 255, 255, 0) 22%);
-}
-
-.todayHead {
+/* 问候语 */
+.overviewGreeting {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-}
-
-.todayActions {
-  display: flex;
-  gap: 8px;
-}
-
-.todayNumber {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.todayNumber strong {
-  font-size: 44px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.todayNumber small {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--text-2);
-}
-
-.todayNumber em {
-  font-style: normal;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--d-fiber);
-  margin-left: 8px;
-}
-
-.todayNumber em.over {
-  color: var(--d-cal);
-}
-
-.todayMacros {
+.overviewGreetingActions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 18px;
-  font-size: 13px;
-  color: var(--text-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.todayMacros b {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.todayPhotos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 8px;
-}
-
-.todayPhotos .photoTile {
-  height: 120px;
-  border-radius: var(--r-sm);
-}
-
-/* 四餐列表(分组卡) */
-.mealList {
-  overflow: hidden;
-}
-
-.timelineMeal {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--sep);
-  display: grid;
-  gap: 12px;
-}
-
-.timelineMeal:last-child {
-  border-bottom: none;
-}
-
-.mealRowHead {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.mealIcon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-  color: var(--text-2);
-  display: grid;
-  place-items: center;
   flex: none;
 }
 
-.timelineMeal.hasItems .mealIcon {
-  background: var(--accent-tint);
-  color: var(--accent);
+.overviewGreeting h2 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
-.timelineMealMeta {
+.overviewGreeting .grad {
+  background: var(--ov-gradient-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.overviewGreeting p {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--text-2);
+}
+
+/* Hero 网格:环形卡 + 右侧宏量/AI 卡 */
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.ringsCard {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 28px;
+  background-image:
+    linear-gradient(150deg, var(--ov-emerald-tint), transparent 55%),
+    linear-gradient(115deg, var(--glass-gloss) 0%, rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, var(--glass-gloss), rgba(255, 255, 255, 0) 24%);
+}
+
+.ringsStage {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  flex: none;
+}
+
+.ringsStage svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ringTrack {
+  fill: none;
+  stroke: var(--surface-2);
+}
+
+.ringVal {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.2s var(--ease-spring);
+}
+
+.ringsCenter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.ringsCenter .big {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.ringsCenter .sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-top: 2px;
+}
+
+.ringsLegend {
   flex: 1;
   min-width: 0;
   display: grid;
-  gap: 1px;
+  gap: 16px;
 }
 
-.timelineMealMeta h3 {
-  font-size: 16px;
-  font-weight: 600;
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.timelineMealMeta p {
-  font-size: 13px;
+.legendDot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 10px 2px currentColor;
+}
+
+.legendMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.legendMeta .label {
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--text-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.mealRowKcal {
+.legendMeta .value {
   font-size: 15px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+}
+
+.legendMeta .value span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.legendPct {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: var(--surface-2);
   flex: none;
 }
 
-.ghostAdd {
-  flex: none;
-  color: var(--accent);
-  background: var(--accent-tint);
+.heroSideCol {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
 }
 
-.ghostAdd:hover {
-  background: var(--accent-tint);
-  opacity: 0.8;
+/* 宏量营养条卡 */
+.macroBarsCard {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
 }
 
-.timelineMealContent {
+.macroBarsCard .cardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.macroBarsCard .cardTitleRow h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.macroBarsCard .cardTitleRow span {
+  font-size: 12px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.macroBarRow .macroHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+  font-size: 12.5px;
+}
+
+.macroBarRow .macroHead span:first-child {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.macroBarRow .macroHead span:last-child {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.macroBarTrack {
+  height: 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.macroBarFill {
+  height: 100%;
+  border-radius: 999px;
+  width: 0;
+  transition: width 1s var(--ease-spring);
+}
+
+.macroBarFill.protein {
+  background-image: var(--ov-gradient-protein);
+  box-shadow: 0 0 12px var(--ov-cyan-tint);
+}
+
+.macroBarFill.carbs {
+  background-image: var(--ov-gradient-fiber);
+  box-shadow: 0 0 12px var(--ov-violet-tint);
+}
+
+.macroBarFill.fat {
+  background-image: var(--ov-gradient-fat);
+  box-shadow: 0 0 12px var(--ov-amber-tint);
+}
+
+/* AI 建议卡 */
+.aiInsightCard {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
   display: grid;
   gap: 10px;
 }
 
-.foodChips {
+.aiInsightCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 10% 0%, var(--ov-violet-tint), transparent 60%);
+  pointer-events: none;
+}
+
+.aiInsightHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aiGlyph {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background-image: linear-gradient(135deg, var(--ov-violet), var(--ov-cyan));
+  box-shadow: 0 6px 18px var(--ov-violet-tint);
+  flex: none;
+}
+
+.aiGlyph svg {
+  width: 15px;
+  height: 15px;
+  color: #fff;
+}
+
+.aiInsightHead span {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ov-violet);
+}
+
+.aiInsightCard p {
+  position: relative;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+/* 4 项 mini-ring 统计行 */
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.miniRingStat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.miniRing {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  flex: none;
+}
+
+.miniRing svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.miniRing .icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.miniRing .icon svg {
+  width: 16px;
+  height: 16px;
+  transform: none;
+}
+
+.miniRingStat .statMeta .label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.miniRingStat .statMeta .value {
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.miniRingStat .statMeta .value span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+/* 分区标题 */
+.overviewSectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.overviewSectionHead h2 {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* 3-up 餐次卡片网格 */
+.mealsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.mealGridCard {
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.mealGridCard .mealPhoto {
+  position: relative;
+  height: 140px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.mealGridCard .mealPhoto .photoTile {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.mealGridCard .mealKcalBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-stroke);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.mealGridCard .mealCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mealGridCard .mealCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mealGridCard .mealCardTitle svg {
+  color: var(--text-2);
+  flex: none;
+}
+
+.mealGridCard .mealCardTop h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mealGridCard .mealCardHint {
+  font-size: 12px;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+.mealGridCard .mealChips {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.foodChips span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: var(--text-2);
-  background: var(--surface-2);
+.mealGridCard .mealChips span {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 10px;
   border-radius: 999px;
-  padding: 5px 11px;
-}
-
-.foodChips b {
-  font-weight: 600;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-/* 本餐营养进度条 */
-.mealNutrients {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
-}
-
-.mealNutrientRow > div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: var(--text-2);
-  margin-bottom: 4px;
-}
-
-.mealNutrientRow span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.mealNutrientRow strong {
-  font-weight: 600;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.mealNutrientRow i {
-  display: block;
-  height: 4px;
-  border-radius: 2px;
   background: var(--surface-2);
-  overflow: hidden;
+  color: var(--text-2);
 }
 
-.mealNutrientRow b {
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  background: var(--accent);
+.mealGridCard .mealChips span b {
+  font-weight: 600;
+  color: var(--text);
 }
 
-.mealNutrientRow.protein b {
-  background: var(--d-protein);
+.mealGridCard.empty {
+  border-style: dashed;
+  align-items: center;
+  justify-items: center;
+  text-align: center;
+  gap: 8px;
+  color: var(--text-3);
+  min-height: 220px;
+  place-content: center;
 }
 
-.mealNutrientRow.carbs b {
-  background: var(--d-carbs);
+.mealGridCard.empty svg {
+  color: var(--text-3);
 }
 
-.mealNutrientRow.fat b {
-  background: var(--d-fat);
-}
-
-.mealNutrientRow.fiber b {
-  background: var(--d-fiber);
+.mealGridCard.empty button {
+  margin-top: 4px;
 }
 
 /* 照片条 */
@@ -1316,149 +1657,7 @@ tr:last-child td {
   color: var(--text-2);
 }
 
-/* 右侧信息栏 */
-.nutritionRail {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
-}
-
-.railPanel {
-  padding: 18px;
-  display: grid;
-  gap: 14px;
-}
-
-.railHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.railHead h3 {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.railHead svg {
-  color: var(--text-3);
-}
-
-/* 目标面板 */
-.goalDashboard {
-  padding: 18px;
-  display: grid;
-  gap: 14px;
-}
-
-.goalHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.goalHeader h3 {
-  font-size: 17px;
-  font-weight: 600;
-  margin-top: 2px;
-  line-height: 1.3;
-}
-
-.goalHeader > div > p {
-  font-size: 12.5px;
-  color: var(--text-2);
-  margin-top: 2px;
-}
-
-.goalHeader button {
-  flex: none;
-}
-
-.goalRings {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.goalRing {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  padding: 10px 4px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-  text-align: center;
-}
-
-.goalRingDial {
-  width: 56px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(closest-side, var(--surface-2) 76%, transparent 77% 100%),
-    conic-gradient(var(--ring-color, var(--accent)) var(--progress, 0%), var(--surface-3) 0);
-}
-
-.goalRing.calorie {
-  --ring-color: var(--d-cal);
-}
-
-.goalRing.protein {
-  --ring-color: var(--d-protein);
-}
-
-.goalRing.fiber {
-  --ring-color: var(--d-fiber);
-}
-
-.goalRingDial strong {
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.goalRing span {
-  font-size: 12px;
-  color: var(--text-2);
-}
-
-.goalRing em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--text-3);
-  font-variant-numeric: tabular-nums;
-}
-
-.goalStats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.goalStats span {
-  display: grid;
-  gap: 1px;
-  padding: 10px 12px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-}
-
-.goalStats strong {
-  font-size: 15px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.goalStats em {
-  font-style: normal;
-  font-size: 11.5px;
-  color: var(--text-2);
-}
-
-/* 7 日复盘卡(右栏) */
+/* 7 日复盘卡 */
 .periodReportCard {
   padding: 18px;
   display: grid;
@@ -1586,8 +1785,28 @@ tr:last-child td {
 }
 
 .ledgerCard.hasItems .ledgerIcon {
-  background: var(--accent-tint);
-  color: var(--accent);
+  color: #fff;
+  box-shadow: 0 6px 16px var(--ov-emerald-tint);
+}
+
+.ledgerCard.hasItems[data-meal="breakfast"] .ledgerIcon {
+  background-image: linear-gradient(135deg, var(--ov-amber), var(--ov-emerald));
+  box-shadow: 0 6px 16px var(--ov-amber-tint);
+}
+
+.ledgerCard.hasItems[data-meal="lunch"] .ledgerIcon {
+  background-image: linear-gradient(135deg, var(--ov-emerald), var(--ov-cyan));
+  box-shadow: 0 6px 16px var(--ov-emerald-tint);
+}
+
+.ledgerCard.hasItems[data-meal="dinner"] .ledgerIcon {
+  background-image: linear-gradient(135deg, var(--ov-violet), var(--ov-cyan));
+  box-shadow: 0 6px 16px var(--ov-violet-tint);
+}
+
+.ledgerCard.hasItems[data-meal="snack"] .ledgerIcon {
+  background-image: linear-gradient(135deg, var(--ov-cyan), var(--ov-violet));
+  box-shadow: 0 6px 16px var(--ov-cyan-tint);
 }
 
 .ledgerTitle h3 {
@@ -1662,7 +1881,8 @@ tr:last-child td {
 }
 
 .mobileFoodDetail.highCalorie .foodDot {
-  background: var(--d-cal);
+  background: var(--ov-amber);
+  box-shadow: 0 0 0 4px var(--ov-amber-tint);
 }
 
 .mobileFoodMain strong {
@@ -1730,7 +1950,7 @@ tr:last-child td {
 }
 
 .highCalorieRow .calorieCell {
-  color: var(--d-cal);
+  color: var(--ov-amber);
 }
 
 .foodNote summary {
@@ -1858,18 +2078,18 @@ tr:last-child td {
   color: var(--text-2);
 }
 
-.statTile.amber .statTileIcon { background: var(--d-cal-tint); color: var(--d-cal); }
-.statTile.blue .statTileIcon { background: var(--d-protein-tint); color: var(--d-protein); }
-.statTile.teal .statTileIcon { background: var(--d-fiber-tint); color: var(--d-fiber); }
-.statTile.cyan .statTileIcon { background: var(--d-body-tint); color: var(--d-body); }
-.statTile.purple .statTileIcon { background: var(--d-fat-tint); color: var(--d-fat); }
+.statTile.amber .statTileIcon { background-image: linear-gradient(135deg, var(--ov-amber), #ffd08a); color: #fff; box-shadow: 0 4px 14px var(--ov-amber-tint); }
+.statTile.blue .statTileIcon { background-image: var(--ov-gradient-protein); color: #fff; box-shadow: 0 4px 14px var(--ov-cyan-tint); }
+.statTile.teal .statTileIcon { background-image: linear-gradient(135deg, var(--ov-emerald), var(--ov-cyan)); color: #fff; box-shadow: 0 4px 14px var(--ov-emerald-tint); }
+.statTile.cyan .statTileIcon { background-image: linear-gradient(135deg, var(--ov-cyan), var(--ov-violet)); color: #fff; box-shadow: 0 4px 14px var(--ov-cyan-tint); }
+.statTile.purple .statTileIcon { background-image: linear-gradient(135deg, var(--ov-violet), var(--ov-cyan)); color: #fff; box-shadow: 0 4px 14px var(--ov-violet-tint); }
 .statTile.rose .statTileIcon { background: var(--d-heart-tint); color: var(--d-heart); }
 
-.statTile.amber strong { color: var(--d-cal); }
-.statTile.blue strong { color: var(--d-protein); }
-.statTile.teal strong { color: var(--d-fiber); }
-.statTile.cyan strong { color: var(--d-body); }
-.statTile.purple strong { color: var(--d-fat); }
+.statTile.amber strong { color: var(--ov-amber); }
+.statTile.blue strong { color: var(--ov-cyan); }
+.statTile.teal strong { color: var(--ov-emerald); }
+.statTile.cyan strong { color: var(--ov-violet); }
+.statTile.purple strong { color: var(--ov-violet); }
 .statTile.rose strong { color: var(--d-heart); }
 
 .statTile > div {
@@ -1928,12 +2148,13 @@ tr:last-child td {
 .barWrap .bar {
   width: min(34px, 70%);
   border-radius: 8px;
-  background: var(--d-cal-tint);
-  transition: height 0.3s var(--ease), background 0.2s var(--ease);
+  background: var(--ov-emerald-tint);
+  transition: height 0.3s var(--ease), background 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 .barWrap .bar.active {
-  background: var(--d-cal);
+  background-image: var(--ov-gradient-cal);
+  box-shadow: 0 6px 16px var(--ov-emerald-tint);
 }
 
 .barWrap span {
@@ -2215,11 +2436,27 @@ tr:last-child td {
 
 .photoCard {
   overflow: hidden;
+  transition: box-shadow 0.25s var(--ease), transform 0.25s var(--ease);
 }
 
 .photoCard.expanded {
   grid-column: 1 / -1;
 }
+
+.photoCard:hover,
+.photoCard.expanded {
+  box-shadow: 0 10px 28px var(--ov-cyan-tint), var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.photoCard[data-meal="breakfast"]:hover,
+.photoCard[data-meal="breakfast"].expanded { box-shadow: 0 10px 28px var(--ov-amber-tint), var(--shadow-card); }
+
+.photoCard[data-meal="lunch"]:hover,
+.photoCard[data-meal="lunch"].expanded { box-shadow: 0 10px 28px var(--ov-emerald-tint), var(--shadow-card); }
+
+.photoCard[data-meal="dinner"]:hover,
+.photoCard[data-meal="dinner"].expanded { box-shadow: 0 10px 28px var(--ov-violet-tint), var(--shadow-card); }
 
 .photoPreviewButton {
   display: block;
@@ -2255,7 +2492,24 @@ tr:last-child td {
 
 .photoCard figcaption span {
   color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
+
+.photoCard figcaption span::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ov-cyan);
+  flex: none;
+}
+
+.photoCard[data-meal="breakfast"] figcaption span::before { background: var(--ov-amber); }
+.photoCard[data-meal="lunch"] figcaption span::before { background: var(--ov-emerald); }
+.photoCard[data-meal="dinner"] figcaption span::before { background: var(--ov-violet); }
+.photoCard[data-meal="snack"] figcaption span::before { background: var(--ov-cyan); }
 
 .photoCard figcaption strong {
   font-weight: 600;
@@ -2357,28 +2611,33 @@ tr:last-child td {
 }
 
 .bodyMetricCard.blue > span {
-  background: var(--d-protein-tint);
-  color: var(--d-protein);
+  background-image: var(--ov-gradient-protein);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--ov-cyan-tint);
 }
 
 .bodyMetricCard.purple > span {
-  background: var(--d-fat-tint);
-  color: var(--d-fat);
+  background-image: var(--ov-gradient-fiber);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--ov-violet-tint);
 }
 
 .bodyMetricCard.cyan > span {
-  background: var(--d-body-tint);
-  color: var(--d-body);
+  background-image: var(--ov-gradient-cal);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--ov-emerald-tint);
 }
 
 .bodyMetricCard.amber > span {
-  background: var(--d-cal-tint);
-  color: var(--d-cal);
+  background-image: var(--ov-gradient-fat);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--ov-amber-tint);
 }
 
 .bodyMetricCard.teal > span {
-  background: var(--d-fiber-tint);
-  color: var(--d-fiber);
+  background-image: linear-gradient(135deg, var(--ov-emerald), var(--ov-violet));
+  color: #fff;
+  box-shadow: 0 4px 14px var(--ov-emerald-tint);
 }
 
 .bodyMetricCard.slate > span {
@@ -2479,13 +2738,13 @@ tr:last-child td {
 }
 
 .bodyWeightArea {
-  fill: var(--d-body-tint);
+  fill: url(#bodyWeightAreaGrad);
   stroke: none;
 }
 
 .bodyWeightLine {
   fill: none;
-  stroke: var(--d-body);
+  stroke: url(#bodyWeightLineGrad);
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -2493,12 +2752,12 @@ tr:last-child td {
 
 .bodyWeightChart circle {
   fill: var(--surface);
-  stroke: var(--d-body);
+  stroke: var(--ov-cyan);
   stroke-width: 2;
 }
 
 .bodyWeightChart g.active circle {
-  fill: var(--d-body);
+  fill: var(--ov-cyan);
 }
 
 .bodyWeightValue {
@@ -2543,7 +2802,7 @@ tr:last-child td {
 }
 
 .scanGradientEnd {
-  stop-color: var(--d-body);
+  stop-color: var(--ov-cyan);
   stop-opacity: 0.3;
 }
 
@@ -2565,19 +2824,19 @@ tr:last-child td {
 }
 
 .scanConnector {
-  stroke: var(--d-body);
+  stroke: var(--ov-cyan);
   stroke-width: 1.25;
   stroke-dasharray: 2 4;
   opacity: 0.55;
 }
 
 .scanPointRing {
-  fill: var(--d-body-tint);
+  fill: var(--ov-cyan-tint);
 }
 
 .scanPoint {
   fill: var(--surface);
-  stroke: var(--d-body);
+  stroke: var(--ov-cyan);
   stroke-width: 2;
 }
 
@@ -2632,11 +2891,11 @@ tr:last-child td {
 }
 
 .fatDot {
-  background: var(--d-body);
+  background: var(--ov-violet);
 }
 
 .muscleDot {
-  background: var(--d-fiber);
+  background: var(--ov-emerald);
 }
 
 .bodyMapLegend {
@@ -3203,12 +3462,13 @@ tr:last-child td {
   width: min(28px, 70%);
   align-self: end;
   border-radius: 7px;
-  background: var(--surface-3);
-  transition: height 0.3s var(--ease);
+  background: var(--ov-emerald-tint);
+  transition: height 0.3s var(--ease), background 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 .exerciseBarWrap.active i {
-  background: var(--d-fiber);
+  background-image: var(--ov-gradient-cal);
+  box-shadow: 0 6px 16px var(--ov-emerald-tint);
 }
 
 .exerciseBarWrap em {
@@ -4234,13 +4494,20 @@ tr:last-child td {
 /* ---------- 14. Responsive ---------- */
 
 @media (max-width: 1024px) {
-  .overviewLayout,
   .bodyLayout {
     grid-template-columns: 1fr;
   }
 
   .healthDashboardGrid {
     grid-template-columns: 1fr;
+  }
+
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .mealsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -4300,11 +4567,20 @@ tr:last-child td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .todayNumber strong {
-    font-size: 38px;
+  .ringsCard {
+    flex-direction: column;
+    text-align: center;
   }
 
-  .mealNutrients {
+  .ringsCenter .big {
+    font-size: 30px;
+  }
+
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mealsGrid {
     grid-template-columns: 1fr;
   }
 

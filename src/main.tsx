@@ -213,6 +213,10 @@ function App() {
   }, [themeMode]);
 
   useEffect(() => {
+    document.documentElement.dataset.activeView = activeView;
+  }, [activeView]);
+
+  useEffect(() => {
     writeStoredJson(localStorageKeys.goals, goals);
   }, [goals]);
 
@@ -1513,74 +1517,26 @@ function Overview({
   selectedDate: string;
   totals: ReturnType<typeof totalsFor>;
 }) {
+  const report = buildPeriodReport(allItems, bodyMetrics, dailyActivities, exerciseActivities, goals, selectedDate, 7);
   return (
     <section className="overviewLayout">
-      <div className="journalColumn">
-        <HeroStory goals={goals} items={items} onAiAnalyze={onAiAnalyze} onEdit={onEdit} totals={totals} />
-        <MealTimeline items={items} onRecordMeal={onRecordMeal} />
-        <FavoriteFoodsPanel favoriteFoods={favoriteFoods} onManage={onManageFavorites} onQuickAdd={onQuickAddFavorite} />
-        <ReflectionBox />
-      </div>
-      <NutritionRail allItems={allItems} bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} selectedDate={selectedDate} totals={totals} />
-    </section>
-  );
-}
-
-function GoalDashboard({
-  bodyMetrics,
-  dailyActivities,
-  exerciseActivities,
-  goals,
-  onOpenGoals,
-  selectedDate,
-  totals,
-}: {
-  bodyMetrics: BodyMetric[];
-  dailyActivities: DailyActivity[];
-  exerciseActivities: ExerciseActivity[];
-  goals: UserGoals;
-  onOpenGoals: () => void;
-  selectedDate: string;
-  totals: ReturnType<typeof totalsFor>;
-}) {
-  const currentBody = latestBodyMetricOnOrBefore(bodyMetrics, selectedDate);
-  const previousBody = previousBodyMetric(bodyMetrics, currentBody);
-  const activeCalories = activityCaloriesForDate(dailyActivities, exerciseActivities, selectedDate);
-  const calorieProgress = Math.min(140, Math.round((totals.calories / Math.max(1, goals.dailyCalories)) * 100));
-  const proteinProgress = Math.min(140, Math.round((totals.protein / Math.max(1, goals.protein)) * 100));
-  const fiberProgress = Math.min(140, Math.round((totals.fiber / Math.max(1, goals.fiber)) * 100));
-  const remainingCalories = Math.round(goals.dailyCalories - totals.calories);
-  const exerciseAdjusted = Math.round(goals.dailyCalories + activeCalories - totals.calories);
-  const weightDelta = currentBody && previousBody ? currentBody.weightKg - previousBody.weightKg : 0;
-  const targetGap = currentBody ? currentBody.weightKg - goals.targetWeightKg : 0;
-  const daysLeft = daysBetween(selectedDate, goals.targetDate);
-  const weeklyNeeded = currentBody && daysLeft > 0 ? Math.max(0, targetGap / Math.max(1, daysLeft / 7)) : 0;
-  const status = remainingCalories >= 0
-    ? `今天还可安排约 ${remainingCalories.toLocaleString()} kcal`
-    : `今天已超出目标约 ${Math.abs(remainingCalories).toLocaleString()} kcal`;
-
-  return (
-    <GlassCard className="goalDashboard">
-      <div className="goalHeader">
-        <div>
-          <span>目标系统</span>
-          <h3>{status}</h3>
-          <p>{activeCalories ? `计入运动后余量约 ${exerciseAdjusted.toLocaleString()} kcal` : "同步运动后会自动计算活动余量"}</p>
+      <OverviewGreeting goals={goals} onAiAnalyze={onAiAnalyze} onEdit={onEdit} totals={totals} />
+      <div className="heroGrid">
+        <RingsHeroCard goals={goals} onOpenGoals={onOpenGoals} totals={totals} />
+        <div className="heroSideCol">
+          <MacroBarsCard totals={totals} />
+          <AIInsightCard insight={report.insights[0]} />
         </div>
-        <button onClick={onOpenGoals} type="button"><Settings size={15} />调整目标</button>
       </div>
-      <div className="goalRings">
-        <GoalRing label="热量" progress={calorieProgress} value={`${round(totals.calories)} / ${goals.dailyCalories}`} tone="calorie" />
-        <GoalRing label="蛋白质" progress={proteinProgress} value={`${round(totals.protein)} / ${goals.protein}g`} tone="protein" />
-        <GoalRing label="膳食纤维" progress={fiberProgress} value={`${round(totals.fiber)} / ${goals.fiber}g`} tone="fiber" />
+      <MacroStatsRow totals={totals} />
+      <div className="overviewSectionHead">
+        <h2>今日饮食</h2>
       </div>
-      <div className="goalStats">
-        <span><strong>{currentBody ? `${currentBody.weightKg.toFixed(2)}kg` : "--"}</strong><em>当前体重</em></span>
-        <span><strong>{currentBody ? `${targetGap.toFixed(2)}kg` : "--"}</strong><em>距目标</em></span>
-        <span><strong>{previousBody ? `${weightDelta > 0 ? "+" : ""}${weightDelta.toFixed(2)}kg` : "--"}</strong><em>较上次</em></span>
-        <span><strong>{weeklyNeeded ? `${weeklyNeeded.toFixed(2)}kg/周` : "--"}</strong><em>所需速度</em></span>
-      </div>
-    </GlassCard>
+      <MealsGrid items={items} onRecordMeal={onRecordMeal} />
+      <FavoriteFoodsPanel favoriteFoods={favoriteFoods} onManage={onManageFavorites} onQuickAdd={onQuickAddFavorite} />
+      <ReflectionBox />
+      <PeriodReportCard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={allItems} selectedDate={selectedDate} />
+    </section>
   );
 }
 
@@ -1608,19 +1564,6 @@ function AnimatedNumber({ value, duration = 700 }: { value: number; duration?: n
   }, [value, duration]);
 
   return <>{display.toLocaleString()}</>;
-}
-
-function GoalRing({ label, progress, value, tone }: { label: string; progress: number; value: string; tone: string }) {
-  const displayProgress = Math.min(100, progress);
-  return (
-    <div className={`goalRing ${tone}`} style={{ "--progress": `${displayProgress}%` } as React.CSSProperties}>
-      <div className="goalRingDial">
-        <strong><AnimatedNumber value={Math.round(progress)} />%</strong>
-      </div>
-      <span>{label}</span>
-      <em>{value}</em>
-    </div>
-  );
 }
 
 function FavoriteFoodsPanel({ favoriteFoods, onManage, onQuickAdd }: { favoriteFoods: FavoriteFood[]; onManage: () => void; onQuickAdd: (food: FavoriteFood) => void }) {
@@ -1695,116 +1638,228 @@ function scaleFavoriteForServing(food: FavoriteFood, servingGrams: number): Favo
   };
 }
 
-function HeroStory({ goals, items, onAiAnalyze, onEdit, totals }: { goals: UserGoals; items: FoodItem[]; onAiAnalyze: () => void; onEdit: () => void; totals: ReturnType<typeof totalsFor> }) {
-  const photos = uniquePhotos(items);
+function OverviewGreeting({ goals, onAiAnalyze, onEdit, totals }: { goals: UserGoals; onAiAnalyze: () => void; onEdit: () => void; totals: ReturnType<typeof totalsFor> }) {
+  const hour = new Date().getHours();
+  const greeting = hour < 11 ? "早上好" : hour < 14 ? "中午好" : hour < 18 ? "下午好" : "晚上好";
   const remaining = Math.round(goals.dailyCalories - totals.calories);
   return (
-    <GlassCard className="todayCard">
-      <div className="todayHead">
-        <span className="todayLabel">今日摄入</span>
-        <div className="todayActions">
-          <button className="aiAnalyzeButton" onClick={onAiAnalyze} type="button"><Sparkles size={15} />AI 分析</button>
-          <button className="secondaryButton" onClick={onEdit} type="button"><PenLine size={15} />明细</button>
-        </div>
-      </div>
-      <div className="todayNumber">
-        <strong><AnimatedNumber value={round(totals.calories)} /></strong>
-        <small>kcal</small>
-        <em className={remaining >= 0 ? "" : "over"}>
+    <div className="overviewGreeting">
+      <div>
+        <h2>{greeting}<span className="grad">{remaining >= 0 ? "，今天还很从容。" : "，今天已经超出目标。"}</span></h2>
+        <p>
           {remaining >= 0
-            ? <>还可安排 <AnimatedNumber value={remaining} /> kcal</>
-            : <>超出目标 <AnimatedNumber value={Math.abs(remaining)} /> kcal</>}
-        </em>
+            ? <>还可以安排约 <b>{remaining.toLocaleString()}</b> kcal。</>
+            : <>已经超出目标约 <b>{Math.abs(remaining).toLocaleString()}</b> kcal。</>}
+          {totals.protein < goals.protein * 0.6 ? " 蛋白质摄入偏低，记得补一些。" : ""}
+        </p>
       </div>
-      <div className="todayMacros">
-        <span>蛋白质 <b>{round(totals.protein)}g</b></span>
-        <span>碳水 <b>{round(totals.carbs)}g</b></span>
-        <span>脂肪 <b>{round(totals.fat)}g</b></span>
-        <span>膳食纤维 <b>{round(totals.fiber)}g</b></span>
+      <div className="overviewGreetingActions">
+        <button className="aiAnalyzeButton" onClick={onAiAnalyze} type="button"><Sparkles size={15} />AI 分析</button>
+        <button className="secondaryButton" onClick={onEdit} type="button"><PenLine size={15} />明细</button>
       </div>
-      {photos.length ? (
-        <div className="todayPhotos">
-          {photos.slice(0, 4).map((photo) => (
-            <div className="photoTile" key={photo} style={{ backgroundImage: `url("${photo}")` }} />
-          ))}
+    </div>
+  );
+}
+
+function RingPair({ progress, radius, stroke }: { progress: number; radius: number; stroke: string }) {
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(100, Math.max(0, progress));
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setDisplay(clamped);
+      return;
+    }
+    const frame = requestAnimationFrame(() => setDisplay(clamped));
+    return () => cancelAnimationFrame(frame);
+  }, [clamped]);
+  const offset = circumference * (1 - display / 100);
+  return (
+    <>
+      <circle className="ringTrack" cx="110" cy="110" r={radius} strokeWidth={16} />
+      <circle className="ringVal" cx="110" cy="110" r={radius} strokeWidth={16} stroke={stroke} strokeDasharray={circumference} strokeDashoffset={offset} />
+    </>
+  );
+}
+
+function RingsHeroCard({ goals, onOpenGoals, totals }: { goals: UserGoals; onOpenGoals: () => void; totals: ReturnType<typeof totalsFor> }) {
+  const calorieProgress = Math.min(140, Math.round((totals.calories / Math.max(1, goals.dailyCalories)) * 100));
+  const proteinProgress = Math.min(140, Math.round((totals.protein / Math.max(1, goals.protein)) * 100));
+  const fiberProgress = Math.min(140, Math.round((totals.fiber / Math.max(1, goals.fiber)) * 100));
+  const rings = [
+    { key: "cal", label: "热量", value: `${round(totals.calories).toLocaleString()} / ${goals.dailyCalories.toLocaleString()} kcal`, progress: calorieProgress, radius: 92, gradient: "url(#ovGradCal)", color: "var(--ov-emerald)" },
+    { key: "protein", label: "蛋白质", value: `${round(totals.protein)} / ${goals.protein}g`, progress: proteinProgress, radius: 72, gradient: "url(#ovGradProtein)", color: "var(--ov-cyan)" },
+    { key: "fiber", label: "膳食纤维", value: `${round(totals.fiber)} / ${goals.fiber}g`, progress: fiberProgress, radius: 52, gradient: "url(#ovGradFiber)", color: "var(--ov-violet)" },
+  ];
+  return (
+    <GlassCard className="ringsCard">
+      <div className="ringsStage">
+        <svg viewBox="0 0 220 220">
+          <defs>
+            <linearGradient id="ovGradCal" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#34D399" />
+              <stop offset="100%" stopColor="#22D3EE" />
+            </linearGradient>
+            <linearGradient id="ovGradProtein" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#22D3EE" />
+              <stop offset="100%" stopColor="#0A7CFF" />
+            </linearGradient>
+            <linearGradient id="ovGradFiber" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#8B5CF6" />
+              <stop offset="100%" stopColor="#22D3EE" />
+            </linearGradient>
+          </defs>
+          {rings.map((ring) => <RingPair key={ring.key} progress={ring.progress} radius={ring.radius} stroke={ring.gradient} />)}
+        </svg>
+        <div className="ringsCenter">
+          <div>
+            <div className="big"><AnimatedNumber value={round(totals.calories)} /></div>
+            <div className="sub">/ {goals.dailyCalories.toLocaleString()} kcal</div>
+          </div>
         </div>
-      ) : null}
+      </div>
+      <div className="ringsLegend">
+        {rings.map((ring) => (
+          <div className="legendRow" key={ring.key}>
+            <span className="legendDot" style={{ color: ring.color, background: ring.color }} />
+            <div className="legendMeta">
+              <div className="label">{ring.label}</div>
+              <div className="value">{ring.value}</div>
+            </div>
+            <span className="legendPct"><AnimatedNumber value={ring.progress} />%</span>
+          </div>
+        ))}
+        <button className="secondaryButton" onClick={onOpenGoals} type="button"><Settings size={15} />调整目标</button>
+      </div>
     </GlassCard>
   );
 }
 
-function MealTimeline({ items, onRecordMeal }: { items: FoodItem[]; onRecordMeal: (meal: MealType) => void }) {
+function MacroBarsCard({ totals }: { totals: ReturnType<typeof totalsFor> }) {
+  const rows = [
+    { key: "protein", label: "蛋白质", value: totals.protein, target: nutrientTargets.protein },
+    { key: "carbs", label: "碳水化合物", value: totals.carbs, target: nutrientTargets.carbs },
+    { key: "fat", label: "脂肪", value: totals.fat, target: nutrientTargets.fat },
+  ];
   return (
-    <GlassCard className="mealList">
-      {mealMeta.map((meal) => (
-        <MealTimelineCard key={meal.key} meal={meal.key} onRecordMeal={onRecordMeal} title={meal.title} hint={meal.hint} items={itemsByMeal(items, meal.key)} />
-      ))}
+    <GlassCard className="macroBarsCard">
+      <div className="cardTitleRow">
+        <h3>宏量营养素</h3>
+        <span>今日</span>
+      </div>
+      {rows.map((row) => {
+        const percent = Math.min(100, Math.round((row.value / Math.max(1, row.target)) * 100));
+        return (
+          <div className="macroBarRow" key={row.key}>
+            <div className="macroHead">
+              <span>{row.label}</span>
+              <span>{round(row.value)} / {row.target}g</span>
+            </div>
+            <div className="macroBarTrack">
+              <div className={`macroBarFill ${row.key}`} style={{ width: `${percent}%` }} />
+            </div>
+          </div>
+        );
+      })}
     </GlassCard>
+  );
+}
+
+function AIInsightCard({ insight }: { insight?: string }) {
+  return (
+    <GlassCard className="aiInsightCard">
+      <div className="aiInsightHead">
+        <span className="aiGlyph"><Sparkles size={15} /></span>
+        <span>AI 建议</span>
+      </div>
+      <p>{insight || "记录更多饮食后，这里会自动给出针对性建议。"}</p>
+    </GlassCard>
+  );
+}
+
+function MiniRingStat({ color, icon, label, percent, unit, value }: { color: string; icon: React.ReactNode; label: string; percent: number; unit: string; value: number }) {
+  const radius = 24;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - Math.min(100, Math.max(0, percent)) / 100);
+  return (
+    <GlassCard className="miniRingStat">
+      <div className="miniRing">
+        <svg viewBox="0 0 56 56">
+          <circle className="ringTrack" cx="28" cy="28" r={radius} strokeWidth={5} />
+          <circle className="ringVal" cx="28" cy="28" r={radius} strokeWidth={5} stroke={color} strokeDasharray={circumference} strokeDashoffset={offset} />
+        </svg>
+        <span className="icon" style={{ color }}>{icon}</span>
+      </div>
+      <div className="statMeta">
+        <div className="label">{label}</div>
+        <div className="value">{round(value)}<span> {unit}</span></div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function MacroStatsRow({ totals }: { totals: ReturnType<typeof totalsFor> }) {
+  const rows = [
+    { key: "protein", label: "蛋白质", value: totals.protein, target: nutrientTargets.protein, unit: "g", color: "var(--ov-emerald)", icon: <Dumbbell size={16} /> },
+    { key: "carbs", label: "碳水", value: totals.carbs, target: nutrientTargets.carbs, unit: "g", color: "var(--ov-cyan)", icon: <Wheat size={16} /> },
+    { key: "fat", label: "脂肪", value: totals.fat, target: nutrientTargets.fat, unit: "g", color: "var(--ov-amber)", icon: <Droplets size={16} /> },
+    { key: "fiber", label: "膳食纤维", value: totals.fiber, target: nutrientTargets.fiber, unit: "g", color: "var(--ov-violet)", icon: <Leaf size={16} /> },
+  ];
+  return (
+    <div className="statsRow">
+      {rows.map((row) => (
+        <MiniRingStat color={row.color} icon={row.icon} key={row.key} label={row.label} percent={Math.round((row.value / Math.max(1, row.target)) * 100)} unit={row.unit} value={row.value} />
+      ))}
+    </div>
   );
 }
 
 function mealIcon(meal: MealType) {
-  if (meal === "breakfast") return <Sun size={22} />;
-  if (meal === "lunch") return <Utensils size={22} />;
-  if (meal === "dinner") return <Coffee size={22} />;
-  return <Moon size={22} />;
+  if (meal === "breakfast") return <Sun size={18} />;
+  if (meal === "lunch") return <Utensils size={18} />;
+  if (meal === "dinner") return <Coffee size={18} />;
+  return <Moon size={18} />;
 }
 
-function MealTimelineCard({ meal, onRecordMeal, title, hint, items }: { meal: MealType; onRecordMeal: (meal: MealType) => void; title: string; hint: string; items: FoodItem[] }) {
-  const totals = totalsFor(items);
-  const photos = uniquePhotos(items);
-  const hasItems = items.length > 0;
+function MealsGrid({ items, onRecordMeal }: { items: FoodItem[]; onRecordMeal: (meal: MealType) => void }) {
   return (
-    <article className={hasItems ? "timelineMeal hasItems" : "timelineMeal"}>
-      <div className="mealRowHead">
-        <div className="mealIcon">{mealIcon(meal)}</div>
-        <div className="timelineMealMeta">
-          <h3>{title}</h3>
-          <p>{hasItems ? `${items.length} 个食物` : hint}</p>
-        </div>
-        {hasItems ? (
-          <strong className="mealRowKcal">{round(totals.calories).toLocaleString()} kcal</strong>
-        ) : (
-          <button className="ghostAdd" onClick={() => onRecordMeal(meal)} type="button"><Plus size={14} />记录{title}</button>
-        )}
-      </div>
-      {hasItems ? (
-        <div className="timelineMealContent">
-          {photos.length ? <PhotoStrip photos={photos} empty="" /> : null}
-          <div className="foodChips">
-            {items.slice(0, 4).map((item) => (
-              <span key={item.id}>{item.name} <b>{round(item.calories)}kcal</b></span>
-            ))}
-          </div>
-          <MealNutrientStrip totals={totals} />
-        </div>
-      ) : null}
-    </article>
+    <div className="mealsGrid">
+      {mealMeta.map((meal) => (
+        <MealGridCard hint={meal.hint} items={itemsByMeal(items, meal.key)} key={meal.key} meal={meal.key} onRecordMeal={onRecordMeal} title={meal.title} />
+      ))}
+    </div>
   );
 }
 
-function MealNutrientStrip({ totals }: { totals: ReturnType<typeof totalsFor> }) {
-  const rows = [
-    { label: "蛋白质", value: totals.protein, target: 45, unit: "g", tone: "protein", icon: <Dumbbell size={13} /> },
-    { label: "碳水", value: totals.carbs, target: 95, unit: "g", tone: "carbs", icon: <Wheat size={13} /> },
-    { label: "脂肪", value: totals.fat, target: 28, unit: "g", tone: "fat", icon: <Droplets size={13} /> },
-    { label: "膳食纤维", value: totals.fiber, target: 12, unit: "g", tone: "fiber", icon: <Leaf size={13} /> },
-  ];
+function MealGridCard({ hint, items, meal, onRecordMeal, title }: { hint: string; items: FoodItem[]; meal: MealType; onRecordMeal: (meal: MealType) => void; title: string }) {
+  const hasItems = items.length > 0;
+  if (!hasItems) {
+    return (
+      <GlassCard className="mealGridCard empty">
+        {mealIcon(meal)}
+        <span>{hint}</span>
+        <button className="ghostAdd" onClick={() => onRecordMeal(meal)} type="button"><Plus size={14} />记录{title}</button>
+      </GlassCard>
+    );
+  }
+  const totals = totalsFor(items);
+  const photos = uniquePhotos(items);
   return (
-    <div className="mealNutrients" aria-label="本餐营养构成">
-      {rows.map((row) => {
-        const percent = Math.min(100, Math.round((row.value / row.target) * 100));
-        return (
-          <div className={`mealNutrientRow ${row.tone}`} key={row.label}>
-            <div>
-              <span>{row.icon}{row.label}</span>
-              <strong>{round(row.value)}{row.unit}</strong>
-            </div>
-            <i><b style={{ width: `${percent}%` }} /></i>
-          </div>
-        );
-      })}
-    </div>
+    <GlassCard className="mealGridCard">
+      <div className="mealPhoto">
+        {photos.length ? <div className="photoTile" style={{ backgroundImage: `url("${photos[0]}")` }} /> : null}
+        <span className="mealKcalBadge">{round(totals.calories).toLocaleString()} kcal</span>
+      </div>
+      <div className="mealCardTop">
+        <div className="mealCardTitle">{mealIcon(meal)}<h3>{title}</h3></div>
+        <span className="mealCardHint">{items.length} 个食物</span>
+      </div>
+      <div className="mealChips">
+        <span><b>{round(totals.protein)}</b> g 蛋白</span>
+        <span><b>{round(totals.carbs)}</b> g 碳水</span>
+        <span><b>{round(totals.fat)}</b> g 脂肪</span>
+      </div>
+    </GlassCard>
   );
 }
 
@@ -1822,33 +1877,6 @@ function ReflectionBox() {
       <span>{saved ? "已保存这个提醒。" : "今天的饮食感受如何？记录一下吧..."}</span>
       <button onClick={handleSave} type="button">{saved ? "已保存" : "保存"}</button>
     </GlassCard>
-  );
-}
-
-function NutritionRail({
-  allItems,
-  bodyMetrics,
-  dailyActivities,
-  exerciseActivities,
-  goals,
-  onOpenGoals,
-  selectedDate,
-  totals,
-}: {
-  allItems: FoodItem[];
-  bodyMetrics: BodyMetric[];
-  dailyActivities: DailyActivity[];
-  exerciseActivities: ExerciseActivity[];
-  goals: UserGoals;
-  onOpenGoals: () => void;
-  selectedDate: string;
-  totals: ReturnType<typeof totalsFor>;
-}) {
-  return (
-    <aside className="nutritionRail">
-      <GoalDashboard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} onOpenGoals={onOpenGoals} selectedDate={selectedDate} totals={totals} />
-      <PeriodReportCard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={allItems} selectedDate={selectedDate} />
-    </aside>
   );
 }
 
@@ -1943,12 +1971,12 @@ function BodyDashboard({ bodyMetrics, bodyState, items, onDeleteMetric, onOpenEd
   const maxWeight = Math.max(1, ...recent.map((metric) => metric.weightKg));
   const minWeight = Math.min(...recent.map((metric) => metric.weightKg), maxWeight);
   const metricDefinitions: BodyMetricDefinition[] = [
-    { key: "weightKg", label: "体重", unit: "kg", tone: "blue", color: "#0A84FF", icon: <Scale size={18} />, format: (value) => value.toFixed(2) },
-    { key: "bodyFatPercent", label: "体脂", unit: "%", tone: "purple", color: "#5856D6", icon: <Activity size={18} />, format: (value) => value.toFixed(1) },
-    { key: "muscleKg", label: "肌肉", unit: "kg", tone: "cyan", color: "#00A7C7", icon: <Dumbbell size={18} />, format: (value) => value.toFixed(1) },
-    { key: "bmrKcal", label: "基础代谢", unit: "kcal", tone: "amber", color: "#C48615", icon: <Flame size={18} />, format: (value) => round(value).toLocaleString() },
-    { key: "waterPercent", label: "水分", unit: "%", tone: "teal", color: "#30A46C", icon: <Droplets size={18} />, format: (value) => value.toFixed(1) },
-    { key: "visceralFat", label: "内脏脂肪", unit: "", tone: "slate", color: "#64748B", icon: <ShieldCheck size={18} />, format: (value) => value.toFixed(1) },
+    { key: "weightKg", label: "体重", unit: "kg", tone: "blue", color: "var(--ov-cyan)", icon: <Scale size={18} />, format: (value) => value.toFixed(2) },
+    { key: "bodyFatPercent", label: "体脂", unit: "%", tone: "purple", color: "var(--ov-violet)", icon: <Activity size={18} />, format: (value) => value.toFixed(1) },
+    { key: "muscleKg", label: "肌肉", unit: "kg", tone: "cyan", color: "var(--ov-emerald)", icon: <Dumbbell size={18} />, format: (value) => value.toFixed(1) },
+    { key: "bmrKcal", label: "基础代谢", unit: "kcal", tone: "amber", color: "var(--ov-amber)", icon: <Flame size={18} />, format: (value) => round(value).toLocaleString() },
+    { key: "waterPercent", label: "水分", unit: "%", tone: "teal", color: "var(--ov-emerald)", icon: <Droplets size={18} />, format: (value) => value.toFixed(1) },
+    { key: "visceralFat", label: "内脏脂肪", unit: "", tone: "slate", color: "var(--text-2)", icon: <ShieldCheck size={18} />, format: (value) => value.toFixed(1) },
   ];
   const selectedMetric = metricDefinitions.find((definition) => definition.key === selectedMetricKey);
 
@@ -2085,6 +2113,16 @@ function BodyWeightLineChart({ currentDate, maxWeight, metrics, minWeight }: { c
   return (
     <div className="bodyWeightChart line">
       <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-label="体重折线趋势">
+        <defs>
+          <linearGradient id="bodyWeightLineGrad" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" style={{ stopColor: "var(--ov-cyan)" }} />
+            <stop offset="100%" style={{ stopColor: "var(--ov-emerald)" }} />
+          </linearGradient>
+          <linearGradient id="bodyWeightAreaGrad" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" style={{ stopColor: "var(--ov-cyan)" }} stopOpacity="0.28" />
+            <stop offset="100%" style={{ stopColor: "var(--ov-cyan)" }} stopOpacity="0" />
+          </linearGradient>
+        </defs>
         <line className="metricGridLine" x1={padX} x2={width - padX} y1={padTop} y2={padTop} />
         <line className="metricGridLine" x1={padX} x2={width - padX} y1={padTop + chartHeight / 2} y2={padTop + chartHeight / 2} />
         <line className="metricGridLine" x1={padX} x2={width - padX} y1={padTop + chartHeight} y2={padTop + chartHeight} />
@@ -2126,7 +2164,7 @@ function BodyCompositionFigure({ metric }: { metric: BodyMetric }) {
       <div className="bodySectionHead">
         <div>
           <h3>身体分布图</h3>
-          <p>蓝色为脂肪率，青色为肌肉量</p>
+          <p>紫色为脂肪率，绿色为肌肉量</p>
         </div>
         <strong>{metric.bodyFatPercent.toFixed(1)}% 体脂</strong>
       </div>
@@ -2277,8 +2315,8 @@ function BodyMetricHistoryDialog({ currentDate, definition, metrics, onClose }: 
               <svg aria-label={`${definition.label}历史趋势图`} role="img" viewBox={`0 0 ${chartWidth} ${chartHeight}`}>
                 <defs>
                   <linearGradient id={`metricArea-${definition.key}`} x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor={definition.color} stopOpacity=".22" />
-                    <stop offset="100%" stopColor={definition.color} stopOpacity="0" />
+                    <stop offset="0%" style={{ stopColor: definition.color }} stopOpacity=".22" />
+                    <stop offset="100%" style={{ stopColor: definition.color }} stopOpacity="0" />
                   </linearGradient>
                 </defs>
                 {[46, 90, 134, 178].map((y) => <line key={y} className="metricGridLine" x1="28" x2="612" y1={y} y2={y} />)}
@@ -2612,9 +2650,9 @@ function ExerciseDashboard({
   const maxActiveCalories = Math.max(1, ...recentDates.map((date) => activityCaloriesForDate(dailyActivities, exerciseActivities, date)));
   const netCalories = dayTotals.calories - activeCalories;
   const ringData = [
-    { label: "活动", value: activeCalories, goal: 500, unit: "kcal", color: "#0A84FF" },
-    { label: "锻炼", value: exerciseMinutes, goal: 30, unit: "分钟", color: "#AF52DE" },
-    { label: "步数", value: currentDaily?.steps || 0, goal: 8000, unit: "步", color: "#30D158" },
+    { label: "活动", value: activeCalories, goal: 500, unit: "kcal", color: "var(--ov-cyan)" },
+    { label: "锻炼", value: exerciseMinutes, goal: 30, unit: "分钟", color: "var(--ov-violet)" },
+    { label: "步数", value: currentDaily?.steps || 0, goal: 8000, unit: "步", color: "var(--ov-emerald)" },
   ];
   const balanceValues = recentDates.map((date) => {
     const food = totalsFor(items.filter((item) => item.date === date)).calories;
@@ -2677,7 +2715,7 @@ function ExerciseDashboard({
           </div>
           <strong className={`healthBalanceValue ${netCalories <= 0 ? "negative" : "positive"}`}>{round(netCalories).toLocaleString()}<small>kcal</small></strong>
           <p className="balanceFormula">摄入 {round(dayTotals.calories).toLocaleString()} kcal · 活动 {round(activeCalories).toLocaleString()} kcal</p>
-          <MiniLineChart values={balanceValues} color="#0A84FF" />
+          <MiniLineChart values={balanceValues} color="var(--ov-cyan)" />
         </article>
 
         <article className="lg-glass lg-card healthBodySnapshotCard">
@@ -2689,8 +2727,8 @@ function ExerciseDashboard({
             <Scale size={18} />
           </div>
           <div className="bodySnapshotRows">
-            <BodySnapshotRow color="#0A84FF" icon={<Scale size={17} />} label="体重" status="偏重" value={currentBody?.weightKg ? `${currentBody.weightKg.toFixed(2)} kg` : "--"} values={bodyMetrics.map((metric) => metric.weightKg).slice(-7)} />
-            <BodySnapshotRow color="#30D158" icon={<PercentIcon />} label="体脂率" status="标准" value={currentBody?.bodyFatPercent ? `${currentBody.bodyFatPercent.toFixed(1)}%` : "--"} values={bodyMetrics.map((metric) => metric.bodyFatPercent).slice(-7)} />
+            <BodySnapshotRow color="var(--ov-cyan)" icon={<Scale size={17} />} label="体重" status="偏重" value={currentBody?.weightKg ? `${currentBody.weightKg.toFixed(2)} kg` : "--"} values={bodyMetrics.map((metric) => metric.weightKg).slice(-7)} />
+            <BodySnapshotRow color="var(--ov-violet)" icon={<PercentIcon />} label="体脂率" status="标准" value={currentBody?.bodyFatPercent ? `${currentBody.bodyFatPercent.toFixed(1)}%` : "--"} values={bodyMetrics.map((metric) => metric.bodyFatPercent).slice(-7)} />
           </div>
         </article>
 
@@ -2742,12 +2780,12 @@ function ExerciseDashboard({
             {currentDaily && <button className="miniActionButton danger" onClick={() => onDeleteDaily(currentDaily)} type="button"><Trash2 size={14} />删除</button>}
           </div>
           <div className="compactMetricGrid">
-            <CompactMetric icon={<Flame size={17} />} label="活动消耗" value={`${round(currentDaily?.activeCalories || activeCalories)} kcal`} color="#0A84FF" />
-            <CompactMetric icon={<Footprints size={17} />} label="步数" value={`${round(currentDaily?.steps || 0).toLocaleString()} 步`} color="#30D158" />
-            <CompactMetric icon={<Timer size={17} />} label="运动时间" value={`${round(exerciseMinutes)} 分钟`} color="#AF52DE" />
-            <CompactMetric icon={<Route size={17} />} label="距离" value={`${distanceKm ? distanceKm.toFixed(1) : "0.0"} km`} color="#00C7BE" />
-            <CompactMetric icon={<LineChart size={17} />} label="爬楼" value={`${round(currentDaily?.floors || 0)} 层`} color="#FF9500" />
-            <CompactMetric icon={<Droplets size={17} />} label="站立时间" value={`${round(currentDaily?.standHours || 0)} 小时`} color="#FF2D55" />
+            <CompactMetric icon={<Flame size={17} />} label="活动消耗" value={`${round(currentDaily?.activeCalories || activeCalories)} kcal`} color="var(--ov-cyan)" tint="var(--ov-cyan-tint)" />
+            <CompactMetric icon={<Footprints size={17} />} label="步数" value={`${round(currentDaily?.steps || 0).toLocaleString()} 步`} color="var(--ov-emerald)" tint="var(--ov-emerald-tint)" />
+            <CompactMetric icon={<Timer size={17} />} label="运动时间" value={`${round(exerciseMinutes)} 分钟`} color="var(--ov-violet)" tint="var(--ov-violet-tint)" />
+            <CompactMetric icon={<Route size={17} />} label="距离" value={`${distanceKm ? distanceKm.toFixed(1) : "0.0"} km`} color="var(--ov-amber)" tint="var(--ov-amber-tint)" />
+            <CompactMetric icon={<LineChart size={17} />} label="爬楼" value={`${round(currentDaily?.floors || 0)} 层`} color="var(--ov-cyan)" tint="var(--ov-cyan-tint)" />
+            <CompactMetric icon={<Droplets size={17} />} label="站立时间" value={`${round(currentDaily?.standHours || 0)} 小时`} color="var(--ov-emerald)" tint="var(--ov-emerald-tint)" />
           </div>
         </article>
 
@@ -2908,7 +2946,7 @@ function ActivityRings({ rings }: { rings: Array<{ color: string; goal: number; 
                 cx="90"
                 cy="90"
                 r={radius}
-                stroke={ring.color}
+                style={{ stroke: ring.color }}
                 strokeDasharray={`${circumference} ${circumference}`}
                 strokeDashoffset={circumference * (1 - Math.min(1, progress))}
               />
@@ -2937,7 +2975,7 @@ function MiniLineChart({ color, values }: { color: string; values: number[] }) {
   });
   return (
     <svg className="miniLineChart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-      <polyline points={points.join(" ")} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+      <polyline points={points.join(" ")} fill="none" style={{ stroke: color }} strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
     </svg>
   );
 }
@@ -2997,10 +3035,10 @@ function PercentIcon() {
   return <span className="percentGlyph">%</span>;
 }
 
-function CompactMetric({ color, icon, label, value }: { color: string; icon: React.ReactNode; label: string; value: string }) {
+function CompactMetric({ color, icon, label, tint, value }: { color: string; icon: React.ReactNode; label: string; tint: string; value: string }) {
   return (
     <div className="compactMetric">
-      <i style={{ color, background: `${color}1A` }}>{icon}</i>
+      <i style={{ color, background: tint }}>{icon}</i>
       <span>{label}</span>
       <strong>{value}</strong>
       <b>
@@ -3250,7 +3288,7 @@ function Detail({ items, onDeleteItem, onEditItem }: { items: FoodItem[]; onDele
         const totals = totalsFor(mealItems);
         const isExpanded = expandedMeal === meal.key;
         return (
-          <article className={`lg-glass lg-card ${mealItems.length ? "ledgerCard hasItems" : "ledgerCard empty"} ${isExpanded ? "expanded" : ""}`} key={meal.key}>
+          <article className={`lg-glass lg-card ${mealItems.length ? "ledgerCard hasItems" : "ledgerCard empty"} ${isExpanded ? "expanded" : ""}`} data-meal={meal.key} key={meal.key}>
             <button
               aria-expanded={isExpanded}
               className="ledgerToggle"
@@ -3265,7 +3303,7 @@ function Detail({ items, onDeleteItem, onEditItem }: { items: FoodItem[]; onDele
                     <p>{mealItems.length ? `${mealItems.length} 个食物` : meal.hint}</p>
                   </div>
                 </div>
-                <span className="ledgerEnergy">{round(totals.calories)} kcal</span>
+                <span className={mealItems.length ? "ledgerEnergy gradText" : "ledgerEnergy"}>{round(totals.calories)} kcal</span>
                 <ChevronRight className="ledgerChevron" size={18} />
               </div>
             </button>
@@ -3390,7 +3428,7 @@ function Trend({
         <div className="trendCardHead">
           <div>
             <h3>热量趋势</h3>
-            <p>每天摄入 kcal，红色为当前选择日期</p>
+            <p>每天摄入 kcal，渐变高亮为当前选择日期</p>
           </div>
           <strong>{round(totalsFor(selectedItems).calories).toLocaleString()} kcal</strong>
         </div>
@@ -3488,7 +3526,7 @@ function PhotoLibrary({ items, compact = false }: { items: FoodItem[]; compact?:
             {group.photos.map((photo) => {
               const isExpanded = expandedPhotoUrl === photo.url;
               return (
-              <figure className={isExpanded ? "photoCard expanded" : "photoCard"} key={photo.url}>
+              <figure className={isExpanded ? "photoCard expanded" : "photoCard"} data-meal={photo.meal} key={photo.url}>
                 <button
                   aria-expanded={isExpanded}
                   className="photoPreviewButton"
@@ -3519,7 +3557,7 @@ function buildPhotoGroups(items: FoodItem[]) {
       const linkedItems = dayItems.filter((item) => item.photoUrls.includes(url));
       const first = linkedItems[0];
       const mealTitle = mealMeta.find((meal) => meal.key === first?.meal)?.title || "饮食";
-      return { url, mealTitle, calories: totalsFor(linkedItems).calories };
+      return { url, mealTitle, meal: first?.meal, calories: totalsFor(linkedItems).calories };
     });
     return { date, photos };
   }).filter((group) => group.photos.length);
@@ -3533,21 +3571,6 @@ function topFoodBy(items: FoodItem[], key: keyof Pick<FoodItem, "calories" | "pr
 
 function nutrientGap(value: number, target: number) {
   return Math.max(0, round(target - value));
-}
-
-function daysBetween(startDate: string, endDate: string) {
-  const start = new Date(`${startDate}T00:00:00`);
-  const end = new Date(`${endDate}T00:00:00`);
-  return Math.ceil((end.getTime() - start.getTime()) / 86_400_000);
-}
-
-function latestBodyMetricOnOrBefore(metrics: BodyMetric[], date: string) {
-  return [...metrics].filter((metric) => metric.date <= date).sort((a, b) => b.date.localeCompare(a.date))[0];
-}
-
-function previousBodyMetric(metrics: BodyMetric[], current?: BodyMetric) {
-  if (!current) return undefined;
-  return [...metrics].filter((metric) => metric.date < current.date).sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
 function buildPeriodReport(

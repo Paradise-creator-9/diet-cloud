@@ -332,9 +332,9 @@ export async function getCurrentUser() {
   return data.user;
 }
 
-export function onAuthChange(callback: () => void) {
+export function onAuthChange(callback: (user: { email?: string | null } | null) => void) {
   if (!supabase) return () => undefined;
-  const { data } = supabase.auth.onAuthStateChange(() => callback());
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session?.user ?? null));
   return () => data.subscription.unsubscribe();
 }
 

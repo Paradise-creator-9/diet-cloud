@@ -41,7 +41,7 @@ import {
   Watch,
   Wheat,
 } from "lucide-react";
-import { createExerciseActivity, createFoodItem, createFoodItems, deleteBodyMetric, deleteDailyActivity, deleteExerciseActivity, deleteFoodItem, fetchBodyMetrics, fetchDailyActivities, fetchExerciseActivities, fetchFoodItems, getCurrentUser, importDiaryBundle, importExerciseData, isCloudConfigured, onAuthChange, signInWithEmail, signOut, updateExerciseActivity, updateFoodItem, upsertBodyMetric, upsertDailyActivity } from "./supabase";
+import { createExerciseActivity, createFoodItem, createFoodItems, deleteBodyMetric, deleteDailyActivity, deleteExerciseActivity, deleteFoodItem, fetchBodyMetrics, fetchDailyActivities, fetchExerciseActivities, fetchFoodItems, importDiaryBundle, importExerciseData, isCloudConfigured, onAuthChange, signInWithEmail, signOut, updateExerciseActivity, updateFoodItem, upsertBodyMetric, upsertDailyActivity } from "./supabase";
 import { appleHealthMetricDefinitions, parseAppleHealthExport, type AppleHealthImportResult, type AppleHealthParseProgress, type HealthMetricDefinition } from "./appleHealth";
 import { mealMeta, nutrientTargets, seedItems } from "./data";
 import type { BodyMetric, DailyActivity, ExerciseActivity, FoodItem, MealType } from "./types";
@@ -246,17 +246,21 @@ function App() {
   useEffect(() => {
     if (!isCloudConfigured) return;
     let alive = true;
-    async function refreshUser() {
-      const user = await getCurrentUser();
+    // 兜底:onAuthStateChange 的初始事件正常几乎是同步触发的,
+    // 万一因为网络或浏览器锁迟迟不触发,也不要把登录页卡死。
+    const fallbackTimer = window.setTimeout(() => {
+      if (alive) setAuthReady(true);
+    }, 6000);
+    const unsubscribe = onAuthChange((user) => {
       if (!alive) return;
+      window.clearTimeout(fallbackTimer);
       setUserEmail(user?.email || null);
       setCloudState(user ? "云端已登录" : "需要登录");
       setAuthReady(true);
-    }
-    refreshUser();
-    const unsubscribe = onAuthChange(refreshUser);
+    });
     return () => {
       alive = false;
+      window.clearTimeout(fallbackTimer);
       unsubscribe();
     };
   }, []);

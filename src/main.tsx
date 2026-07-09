@@ -1241,7 +1241,8 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
   }
 
   async function handleAnalyzePhotos() {
-    const userHint = analysisHint.trim();
+    // 手动新增记录没有单独的"文字说明"输入框，直接复用"备注"字段当 AI 提示词。
+    const userHint = (isAiMode ? analysisHint : note).trim();
     if (!photos.length && !userHint) {
       setError("请先选择照片，或者至少写一句文字说明。");
       return;
@@ -1366,7 +1367,7 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
               <label><span>碳水 g</span><input inputMode="decimal" value={carbs} onChange={(event) => setCarbs(event.target.value)} placeholder="0" /></label>
               <label><span>脂肪 g</span><input inputMode="decimal" value={fat} onChange={(event) => setFat(event.target.value)} placeholder="0" /></label>
               <label><span>膳食纤维 g</span><input inputMode="decimal" value={fiber} onChange={(event) => setFiber(event.target.value)} placeholder="0" /></label>
-              <label className="wide"><span>备注</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="可写估算来源、品牌、份量说明" /></label>
+              <label className="wide"><span>备注</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="可写估算来源、品牌、份量说明；没有照片时，写清楚吃了什么也能用 AI 估算" /></label>
               {editingItem?.photoUrls.length ? (
                 <div className="wide existingPhotos">
                   <span>已有照片</span>
@@ -1398,8 +1399,16 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
                 <small className="uploadQuotaHint">每人每天最多上传 {DAILY_PHOTO_LIMIT} 张照片，今天还能上传 {remainingPhotoQuota} 张</small>
               </section>
               <div className="analysisAction">
-                <p className="entryHint">{photos.length ? `已选择 ${photos.length} 张照片。可以先让 AI 估算，再确认保存。` : "如果你不知道热量，可以先上传照片让 AI 分析；也可以继续发给我估算。"}</p>
-                <button disabled={analyzing || !photos.length} onClick={handleAnalyzePhotos} type="button"><Sparkles size={15} />{analyzing ? "分析中" : "AI 分析照片"}</button>
+                <p className="entryHint">
+                  {photos.length && note.trim()
+                    ? `已选择 ${photos.length} 张照片，AI 会结合照片和备注估算，备注和照片对不上的地方以备注为准。`
+                    : photos.length
+                      ? `已选择 ${photos.length} 张照片。可以先让 AI 估算，再确认保存。`
+                      : note.trim()
+                        ? "没有照片也可以，AI 会直接根据备注里的文字估算，写得越具体估算越准。"
+                        : "如果你不知道热量，可以先上传照片，或者在备注里写清楚吃了什么，让 AI 分析；也可以继续发给我估算。"}
+                </p>
+                <button disabled={analyzing || (!photos.length && !note.trim())} onClick={handleAnalyzePhotos} type="button"><Sparkles size={15} />{analyzing ? "分析中" : "AI 分析"}</button>
               </div>
             </>
           )}

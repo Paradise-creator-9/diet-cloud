@@ -40,3 +40,5 @@ Thumbs.db
 output/
 output-*.png
 concept-cloud.png
+.vercel
+.env*

@@ -4545,6 +4545,14 @@ tr:last-child td {
 }
 
 @media (max-width: 720px) {
+  /* 移动端 Safari 上,这个背景一直在漂移,叠加页面里一堆毛玻璃卡片(backdrop-filter)会
+     导致浏览器每一帧都要重新合成所有玻璃层,长时间停留会越用越卡。手机上直接停掉动画,
+     背景保留渐变但不再持续漂移,消除这个持续重绘的开销;桌面端 GPU 余量更充足,不受影响。 */
+  body::before,
+  body::after {
+    animation: none;
+  }
+
   .appShell {
     padding: 6px 14px calc(104px + env(safe-area-inset-bottom));
   }

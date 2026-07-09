@@ -1512,22 +1512,41 @@ tr:last-child td {
 }
 
 .mealGridCard.empty {
-  border-style: dashed;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-items: center;
-  text-align: center;
-  gap: 8px;
+  justify-content: space-between;
+  text-align: left;
+  gap: 10px;
+  padding: 12px 14px;
+  border-style: dashed;
   color: var(--text-3);
-  min-height: 220px;
-  place-content: center;
+  align-self: start;
+}
+
+.mealGridCard.empty .mealEmptyInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mealGridCard.empty .mealEmptyInfo span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
 }
 
 .mealGridCard.empty svg {
+  flex: none;
   color: var(--text-3);
 }
 
 .mealGridCard.empty button {
-  margin-top: 4px;
+  flex: none;
+  margin-top: 0;
+  white-space: nowrap;
 }
 
 /* 照片条 */
@@ -4513,15 +4532,27 @@ tr:last-child td {
 
 @media (max-width: 720px) {
   .appShell {
-    padding: 8px 14px calc(104px + env(safe-area-inset-bottom));
+    padding: 6px 14px calc(104px + env(safe-area-inset-bottom));
   }
 
   .appHeader {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 4px;
     margin: 0 -14px;
-    padding: 8px 14px 14px;
+    padding: 6px 14px 8px;
+  }
+
+  .overviewLayout {
+    gap: 12px;
+  }
+
+  .overviewGreeting h2 {
+    font-size: 18px;
+  }
+
+  .overviewGreeting p {
+    margin-top: 2px;
   }
 
   .appHeaderActions {
@@ -4568,12 +4599,47 @@ tr:last-child td {
   }
 
   .ringsCard {
-    flex-direction: column;
-    text-align: center;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .ringsStage {
+    width: 132px;
+    height: 132px;
   }
 
   .ringsCenter .big {
-    font-size: 30px;
+    font-size: 22px;
+  }
+
+  .ringsCenter .sub {
+    font-size: 10.5px;
+  }
+
+  .ringsLegend {
+    gap: 10px;
+  }
+
+  .legendRow {
+    gap: 8px;
+  }
+
+  .legendDot {
+    width: 9px;
+    height: 9px;
+  }
+
+  .legendMeta .label {
+    font-size: 11.5px;
+  }
+
+  .legendMeta .value {
+    font-size: 13.5px;
+  }
+
+  .legendPct {
+    padding: 2px 8px;
+    font-size: 11.5px;
   }
 
   .statsRow {

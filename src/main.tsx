@@ -1836,8 +1836,10 @@ function MealGridCard({ hint, items, meal, onRecordMeal, title }: { hint: string
   if (!hasItems) {
     return (
       <GlassCard className="mealGridCard empty">
-        {mealIcon(meal)}
-        <span>{hint}</span>
+        <div className="mealEmptyInfo">
+          {mealIcon(meal)}
+          <span>{hint}</span>
+        </div>
         <button className="ghostAdd" onClick={() => onRecordMeal(meal)} type="button"><Plus size={14} />记录{title}</button>
       </GlassCard>
     );

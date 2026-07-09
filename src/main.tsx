@@ -1092,10 +1092,15 @@ const DAILY_PHOTO_LIMIT = 5;
 
 function countPhotosUploadedToday(items: FoodItem[]) {
   const today = dateKey(new Date());
-  return items.reduce((sum, item) => {
-    if (!item.createdAt || dateKey(new Date(item.createdAt)) !== today) return sum;
-    return sum + item.photoUrls.length;
-  }, 0);
+  // AI 拆分一张照片保存成多个食物时，每条食物记录都会带上同一张照片的 URL，
+  // 所以要按去重后的照片 URL 计数，而不是把每条食物记录的 photoUrls.length 直接相加，
+  // 否则一张照片拆成 3 个食物就会被误算成 3 张。
+  const uniquePhotoUrls = new Set<string>();
+  items.forEach((item) => {
+    if (!item.createdAt || dateKey(new Date(item.createdAt)) !== today) return;
+    item.photoUrls.forEach((url) => uniquePhotoUrls.add(url));
+  });
+  return uniquePhotoUrls.size;
 }
 
 function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode = "manual", onClose, onSaved }: { defaultDate: string; defaultMeal: MealType; editingItem?: FoodItem; items: FoodItem[]; mode?: "manual" | "ai"; onClose: () => void; onSaved: (savedDate: string) => Promise<void> }) {

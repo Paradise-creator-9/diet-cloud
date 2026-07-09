@@ -4590,9 +4590,10 @@ tr:last-child td {
   }
 
   .appHeader {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin: 0 -14px;
     padding: 6px 14px 8px;
   }
@@ -4609,17 +4610,21 @@ tr:last-child td {
     margin-top: 2px;
   }
 
-  .appHeaderActions {
-    grid-row: 1;
-    justify-self: end;
+  .appHeader > div:first-child {
+    min-width: 0;
   }
 
-  .appHeader > div:first-child {
-    grid-row: 2;
+  .appEyebrow {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .appTitle {
-    font-size: 26px;
+    font-size: 22px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .tabBar {

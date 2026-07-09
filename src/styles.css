@@ -3243,7 +3243,6 @@ tr:last-child td {
 
 .healthRingCard,
 .healthBalanceCard,
-.healthBodySnapshotCard,
 .healthTrendCard,
 .healthWorkoutCard,
 .healthSummaryCard,
@@ -3271,13 +3270,12 @@ tr:last-child td {
 .activityRingLayout {
   display: flex;
   align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
+  gap: 14px;
 }
 
 .activityRings {
   position: relative;
-  width: 150px;
+  width: 108px;
   flex: none;
 }
 
@@ -3287,13 +3285,13 @@ tr:last-child td {
   transform: rotate(-90deg);
 }
 
-.ringTrack {
+.activityRingTrack {
   fill: none;
   stroke: var(--surface-2);
   stroke-width: 11;
 }
 
-.ringProgress {
+.activityRingProgress {
   fill: none;
   stroke-width: 11;
   stroke-linecap: round;
@@ -3310,22 +3308,22 @@ tr:last-child td {
 }
 
 .activityRings > div strong {
-  font-size: 22px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.015em;
   font-variant-numeric: tabular-nums;
 }
 
 .activityRings > div span {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-2);
 }
 
 .ringLegend {
   flex: 1;
-  min-width: 180px;
+  min-width: 0;
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .ringLegend > div {
@@ -3375,8 +3373,12 @@ tr:last-child td {
 }
 
 /* 差值卡 */
+.healthBalanceCard {
+  gap: 6px;
+}
+
 .healthBalanceValue {
-  font-size: 34px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
@@ -3384,7 +3386,7 @@ tr:last-child td {
 }
 
 .healthBalanceValue small {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-2);
   margin-left: 4px;
@@ -3395,7 +3397,7 @@ tr:last-child td {
 }
 
 .balanceFormula {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
@@ -3405,56 +3407,8 @@ tr:last-child td {
   height: 52px;
 }
 
-/* 身体快照 */
-.bodySnapshotRows {
-  display: grid;
-  gap: 10px;
-}
-
-.bodySnapshotRow {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 6px 12px;
-  padding: 12px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-}
-
-.bodySnapshotRow > span {
-  display: grid;
-  place-items: center;
-}
-
-.bodySnapshotRow p {
-  font-size: 12px;
-  color: var(--text-2);
-}
-
-.bodySnapshotRow strong {
-  font-size: 16px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.bodySnapshotRow em {
-  font-style: normal;
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--text-2);
-  background: var(--surface);
-  border-radius: 999px;
-  padding: 3px 9px;
-}
-
-.bodySnapshotRow .miniLineChart {
-  grid-column: 1 / -1;
-  height: 36px;
-}
-
-.percentGlyph {
-  font-size: 15px;
-  font-weight: 700;
+.healthBalanceCard .miniLineChart {
+  height: 32px;
 }
 
 /* 7 日活动趋势 */

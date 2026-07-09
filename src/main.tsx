@@ -614,7 +614,6 @@ function App() {
         )}
         {activeView === "exercise" && (
           <ExerciseDashboard
-            bodyMetrics={bodyMetrics}
             dailyActivities={dailyActivities}
             exerciseActivities={exerciseActivities}
             exerciseState={exerciseState}
@@ -2663,7 +2662,6 @@ function BodyMetricDialog({ defaultDate, metric, onClose, onSaved }: { defaultDa
 
 function ExerciseDashboard({
   appleHealthImporting,
-  bodyMetrics,
   dailyActivities,
   exerciseActivities,
   exerciseState,
@@ -2679,7 +2677,6 @@ function ExerciseDashboard({
   selectedDate,
 }: {
   appleHealthImporting: boolean;
-  bodyMetrics: BodyMetric[];
   dailyActivities: DailyActivity[];
   exerciseActivities: ExerciseActivity[];
   exerciseState: string;
@@ -2702,7 +2699,6 @@ function ExerciseDashboard({
   const activeCalories = currentDaily?.activeCalories || workoutCalories;
   const exerciseMinutes = currentDaily?.exerciseMinutes || workouts.reduce((sum, workout) => sum + workout.durationMinutes, 0);
   const distanceKm = currentDaily?.distanceKm || workouts.reduce((sum, workout) => sum + workout.distanceKm, 0);
-  const currentBody = [...bodyMetrics].sort((a, b) => b.date.localeCompare(a.date)).find((metric) => metric.date <= selectedDate);
   const recentDates = recentDateKeys(selectedDate, 7);
   const maxActiveCalories = Math.max(1, ...recentDates.map((date) => activityCaloriesForDate(dailyActivities, exerciseActivities, date)));
   const netCalories = dayTotals.calories - activeCalories;
@@ -2736,11 +2732,7 @@ function ExerciseDashboard({
         <div className="exerciseHeroActions">
           <div className="exerciseImportGroup">
             <span className="exerciseImportLabel">Apple 健康导入</span>
-            <div className="segmentedGlass">
-              <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button">1 个月</button>
-              <button className="glassButton primaryGlassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(3)} type="button">{appleHealthImporting ? "导入中" : "3 个月"}</button>
-              <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(6)} type="button">6 个月</button>
-            </div>
+            <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button">{appleHealthImporting ? "导入中" : "1 个月"}</button>
           </div>
           <button className="glassButton" onClick={onOpenShortcutInfo} type="button"><Smartphone size={16} />快捷同步</button>
           <button className="glassButton" onClick={onOpenDaily} type="button"><Watch size={16} />记录活动摘要</button>
@@ -2783,20 +2775,6 @@ function ExerciseDashboard({
           <strong className={`healthBalanceValue ${netCalories <= 0 ? "negative" : "positive"}`}>{round(netCalories).toLocaleString()}<small>kcal</small></strong>
           <p className="balanceFormula">摄入 {round(dayTotals.calories).toLocaleString()} kcal · 活动 {round(activeCalories).toLocaleString()} kcal</p>
           <MiniLineChart values={balanceValues} color="var(--ov-cyan)" />
-        </article>
-
-        <article className="lg-glass lg-card healthBodySnapshotCard">
-          <div className="bodySectionHead">
-            <div>
-              <h3>身体快照</h3>
-              <p>{currentBody ? `${currentBody.date} 记录` : "暂无身体数据"}</p>
-            </div>
-            <Scale size={18} />
-          </div>
-          <div className="bodySnapshotRows">
-            <BodySnapshotRow color="var(--ov-cyan)" icon={<Scale size={17} />} label="体重" status="偏重" value={currentBody?.weightKg ? `${currentBody.weightKg.toFixed(2)} kg` : "--"} values={bodyMetrics.map((metric) => metric.weightKg).slice(-7)} />
-            <BodySnapshotRow color="var(--ov-violet)" icon={<PercentIcon />} label="体脂率" status="标准" value={currentBody?.bodyFatPercent ? `${currentBody.bodyFatPercent.toFixed(1)}%` : "--"} values={bodyMetrics.map((metric) => metric.bodyFatPercent).slice(-7)} />
-          </div>
         </article>
 
         <article className="lg-glass lg-card healthTrendCard">
@@ -2856,6 +2834,8 @@ function ExerciseDashboard({
           </div>
         </article>
 
+        <AppleHealthMetricsPanel activity={currentDaily} />
+
         <SyncDiagnosticsPanel
           activity={currentDaily}
           appleHealthImporting={appleHealthImporting}
@@ -2864,8 +2844,6 @@ function ExerciseDashboard({
           selectedDate={selectedDate}
           workouts={workouts}
         />
-
-        <AppleHealthMetricsPanel activity={currentDaily} />
       </section>
       {selectedExerciseMetric && (
         <MetricHistoryDialog
@@ -3015,9 +2993,9 @@ function ActivityRings({ rings }: { rings: Array<{ color: string; goal: number; 
           const progress = Math.max(0, Math.min(1.15, ring.goal ? ring.value / ring.goal : 0));
           return (
             <g key={ring.label}>
-              <circle className="ringTrack" cx="90" cy="90" r={radius} />
+              <circle className="activityRingTrack" cx="90" cy="90" r={radius} />
               <circle
-                className="ringProgress"
+                className="activityRingProgress"
                 cx="90"
                 cy="90"
                 r={radius}
@@ -3090,24 +3068,6 @@ function CompactWorkoutList({
       ))}
     </div>
   );
-}
-
-function BodySnapshotRow({ color, icon, label, status, value, values }: { color: string; icon: React.ReactNode; label: string; status: string; value: string; values: number[] }) {
-  return (
-    <div className="bodySnapshotRow">
-      <span style={{ color }}>{icon}</span>
-      <div>
-        <p>{label}</p>
-        <strong>{value}</strong>
-      </div>
-      <em>{status}</em>
-      <MiniLineChart color={color} values={values.length ? values : [0, 0, 0, 0, 0, 0, 0]} />
-    </div>
-  );
-}
-
-function PercentIcon() {
-  return <span className="percentGlyph">%</span>;
 }
 
 function CompactMetric({ color, icon, label, onClick, tint, value }: { color: string; icon: React.ReactNode; label: string; onClick?: () => void; tint: string; value: string }) {

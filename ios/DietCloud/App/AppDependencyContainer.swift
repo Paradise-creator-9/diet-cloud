@@ -71,6 +71,9 @@ final class AppDependencyContainer: @unchecked Sendable {
             foodRepository: foodItemRepository,
             photoRepository: mealPhotoRepository,
             analyzeAPI: analyzeAPI,
+            bodyRepository: bodyMetricsRepository,
+            dailyActivityRepository: dailyActivityRepository,
+            exerciseRepository: exerciseActivityRepository,
             diaryCalendar: diaryCalendar
         )
     }

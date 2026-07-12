@@ -41,11 +41,40 @@ final class TodayMealsViewModel {
     /// Short success summary after AI fill (not an error).
     private(set) var analysisSummary: String?
 
+    // MARK: Body / activity / exercise (selectedDate)
+
+    private(set) var bodyMetric: BodyMetric?
+    private(set) var dailyActivity: DailyActivity?
+    private(set) var exercises: [ExerciseActivity] = []
+
+    var isPresentingBodySheet = false
+    var isPresentingActivitySheet = false
+    var isPresentingExerciseSheet = false
+
+    var draftWeightKg = ""
+    var draftBodyFatPercent = ""
+    var draftBodyNote = ""
+
+    var draftSteps = ""
+    var draftActiveCalories = ""
+    var draftDistanceKm = ""
+    var draftActivityNote = ""
+
+    var draftExerciseType = "骑行"
+    var draftExerciseTitle = ""
+    var draftExerciseDuration = ""
+    var draftExerciseCalories = ""
+    var draftExerciseDistance = ""
+    var draftExerciseNote = ""
+
     let user: AuthUser
 
     private let foodRepository: FoodItemRepositoryProtocol
     private let photoRepository: MealPhotoRepositoryProtocol
     private let analyzeAPI: AnalyzeAPIClienting
+    private let bodyRepository: BodyMetricsRepositoryProtocol
+    private let dailyActivityRepository: DailyActivityRepositoryProtocol
+    private let exerciseRepository: ExerciseActivityRepositoryProtocol
     private let diaryCalendar: DiaryCalendar
     /// Guards against out-of-order loads when the user flips dates quickly.
     private var loadGeneration = 0
@@ -76,6 +105,19 @@ final class TodayMealsViewModel {
         foodRepository.nutritionSummary(for: items)
     }
 
+    /// Food + exercise + daily activity rollup for the selected day only.
+    var dayEnergySummary: DayEnergySummary {
+        let exerciseBurn = exercises.reduce(0) { $0 + $1.activeCalories }
+        let activity = dailyActivity
+        return DayEnergySummary(
+            foodIntakeKcal: summary.calories,
+            exerciseBurnKcal: exerciseBurn,
+            activityBurnKcal: activity?.activeCalories ?? 0,
+            steps: activity?.steps ?? 0,
+            weightKg: bodyMetric.map(\.weightKg)
+        )
+    }
+
     /// All meal slots in Web display order (empty sections included when loaded).
     var mealSections: [MealGroup] {
         let key = selectedDateKey
@@ -98,6 +140,9 @@ final class TodayMealsViewModel {
         foodRepository: FoodItemRepositoryProtocol,
         photoRepository: MealPhotoRepositoryProtocol,
         analyzeAPI: AnalyzeAPIClienting,
+        bodyRepository: BodyMetricsRepositoryProtocol = MockBodyMetricsRepository(),
+        dailyActivityRepository: DailyActivityRepositoryProtocol = MockDailyActivityRepository(),
+        exerciseRepository: ExerciseActivityRepositoryProtocol = MockExerciseActivityRepository(),
         diaryCalendar: DiaryCalendar = DiaryCalendar(),
         dateKey: String? = nil
     ) {
@@ -105,6 +150,9 @@ final class TodayMealsViewModel {
         self.foodRepository = foodRepository
         self.photoRepository = photoRepository
         self.analyzeAPI = analyzeAPI
+        self.bodyRepository = bodyRepository
+        self.dailyActivityRepository = dailyActivityRepository
+        self.exerciseRepository = exerciseRepository
         self.diaryCalendar = diaryCalendar
         if let dateKey, let parsed = diaryCalendar.date(fromDateKey: dateKey) {
             self.selectedDate = diaryCalendar.startOfDay(for: parsed)
@@ -143,11 +191,12 @@ final class TodayMealsViewModel {
         await selectDate(date)
     }
 
-    /// Closes add sheet / AI work so date switches stay consistent.
+    /// Closes sheets / AI work so date switches stay consistent.
     private func prepareForDateChange() {
-        if isPresentingAddSheet {
-            cancelAdd()
-        }
+        if isPresentingAddSheet { cancelAdd() }
+        if isPresentingBodySheet { cancelBodySheet() }
+        if isPresentingActivitySheet { cancelActivitySheet() }
+        if isPresentingExerciseSheet { cancelExerciseSheet() }
         isAnalyzing = false
         analysisSummary = nil
     }
@@ -161,9 +210,21 @@ final class TodayMealsViewModel {
         loadState = .loading
         errorMessage = nil
         do {
-            let fetched = try await foodRepository.fetchByDateKey(key)
+            async let foodTask = foodRepository.fetchByDateKey(key)
+            async let bodyTask = bodyRepository.fetchByDateKey(key)
+            async let dailyTask = dailyActivityRepository.fetchByDateKey(key)
+            async let exerciseTask = exerciseRepository.fetchByDateKey(key)
+
+            let fetched = try await foodTask
+            let body = try await bodyTask
+            let dailies = try await dailyTask
+            let workouts = try await exerciseTask
+
             guard generation == loadGeneration else { return }
             items = fetched
+            bodyMetric = body
+            dailyActivity = Self.preferredDailyActivity(from: dailies)
+            exercises = workouts
             loadState = fetched.isEmpty ? .empty : .loaded
         } catch {
             guard generation == loadGeneration else { return }
@@ -171,7 +232,15 @@ final class TodayMealsViewModel {
             errorMessage = mapped.userMessage
             loadState = .error(mapped.userMessage)
             items = []
+            bodyMetric = nil
+            dailyActivity = nil
+            exercises = []
         }
+    }
+
+    /// Prefer manual source when multiple rows exist for a day.
+    private static func preferredDailyActivity(from rows: [DailyActivity]) -> DailyActivity? {
+        rows.first(where: { $0.source == "manual" }) ?? rows.first
     }
 
     // MARK: - Add form
@@ -346,11 +415,235 @@ final class TodayMealsViewModel {
         AnalyzeAPIErrorMapping.map(error)
     }
 
+    // MARK: - Body metrics
+
+    func openBodySheet() {
+        draftWeightKg = bodyMetric.map { formatDraftNumber($0.weightKg) } ?? ""
+        draftBodyFatPercent = bodyMetric.map { formatDraftNumber($0.bodyFatPercent) } ?? ""
+        draftBodyNote = bodyMetric?.note ?? ""
+        errorMessage = nil
+        isPresentingBodySheet = true
+    }
+
+    func cancelBodySheet() {
+        isPresentingBodySheet = false
+        draftWeightKg = ""
+        draftBodyFatPercent = ""
+        draftBodyNote = ""
+    }
+
+    func saveBodyMetric() async {
+        guard let weight = parseRequiredPositive(draftWeightKg) else {
+            errorMessage = "请输入有效的体重（正数）。"
+            return
+        }
+        let fatText = draftBodyFatPercent.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fat: Double
+        if fatText.isEmpty {
+            fat = bodyMetric?.bodyFatPercent ?? 0
+        } else if let value = Double(fatText), value.isFinite, value >= 0, value <= 100 {
+            fat = value
+        } else {
+            errorMessage = "体脂率需在 0–100 之间。"
+            return
+        }
+
+        isMutating = true
+        defer { isMutating = false }
+        let key = selectedDateKey
+        do {
+            let write = BodyMetricWrite.manual(
+                dateKey: key,
+                weightKg: weight,
+                bodyFatPercent: fat,
+                note: draftBodyNote,
+                existing: bodyMetric
+            )
+            _ = try await bodyRepository.upsert(write)
+            isPresentingBodySheet = false
+            errorMessage = nil
+            await load()
+        } catch {
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    func deleteBodyMetric() async {
+        guard let id = bodyMetric?.id else { return }
+        isMutating = true
+        defer { isMutating = false }
+        do {
+            try await bodyRepository.delete(id: id)
+            errorMessage = nil
+            await load()
+        } catch {
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    // MARK: - Daily activity
+
+    func openActivitySheet() {
+        draftSteps = dailyActivity.map { formatDraftNumber($0.steps) } ?? ""
+        draftActiveCalories = dailyActivity.map { formatDraftNumber($0.activeCalories) } ?? ""
+        draftDistanceKm = dailyActivity.map { formatDraftNumber($0.distanceKm) } ?? ""
+        draftActivityNote = dailyActivity?.note ?? ""
+        errorMessage = nil
+        isPresentingActivitySheet = true
+    }
+
+    func cancelActivitySheet() {
+        isPresentingActivitySheet = false
+        draftSteps = ""
+        draftActiveCalories = ""
+        draftDistanceKm = ""
+        draftActivityNote = ""
+    }
+
+    func saveDailyActivity() async {
+        guard let steps = parseNonNegative(draftSteps) else {
+            errorMessage = "步数需为大于等于 0 的数字。"
+            return
+        }
+        guard let active = parseNonNegative(draftActiveCalories.isEmpty ? "0" : draftActiveCalories) else {
+            errorMessage = "活动热量需为大于等于 0 的数字。"
+            return
+        }
+        guard let distance = parseNonNegative(draftDistanceKm.isEmpty ? "0" : draftDistanceKm) else {
+            errorMessage = "距离需为大于等于 0 的数字。"
+            return
+        }
+
+        isMutating = true
+        defer { isMutating = false }
+        let key = selectedDateKey
+        do {
+            let write = DailyActivityWrite.manual(
+                dateKey: key,
+                steps: steps,
+                activeCalories: active,
+                distanceKm: distance,
+                note: draftActivityNote,
+                existing: dailyActivity
+            )
+            _ = try await dailyActivityRepository.upsert(write)
+            isPresentingActivitySheet = false
+            errorMessage = nil
+            await load()
+        } catch {
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    func deleteDailyActivity() async {
+        guard let id = dailyActivity?.id else { return }
+        isMutating = true
+        defer { isMutating = false }
+        do {
+            try await dailyActivityRepository.delete(id: id)
+            errorMessage = nil
+            await load()
+        } catch {
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    // MARK: - Exercise
+
+    func openExerciseSheet() {
+        draftExerciseType = "骑行"
+        draftExerciseTitle = ""
+        draftExerciseDuration = ""
+        draftExerciseCalories = ""
+        draftExerciseDistance = ""
+        draftExerciseNote = ""
+        errorMessage = nil
+        isPresentingExerciseSheet = true
+    }
+
+    func cancelExerciseSheet() {
+        isPresentingExerciseSheet = false
+        draftExerciseType = "骑行"
+        draftExerciseTitle = ""
+        draftExerciseDuration = ""
+        draftExerciseCalories = ""
+        draftExerciseDistance = ""
+        draftExerciseNote = ""
+    }
+
+    func saveExercise() async {
+        guard let duration = parseRequiredPositive(draftExerciseDuration) else {
+            errorMessage = "请输入有效的运动时长（分钟，正数）。"
+            return
+        }
+        guard let calories = parseNonNegative(draftExerciseCalories.isEmpty ? "0" : draftExerciseCalories) else {
+            errorMessage = "运动热量需为大于等于 0 的数字。"
+            return
+        }
+        guard let distance = parseNonNegative(draftExerciseDistance.isEmpty ? "0" : draftExerciseDistance) else {
+            errorMessage = "运动距离需为大于等于 0 的数字。"
+            return
+        }
+
+        isMutating = true
+        defer { isMutating = false }
+        let key = selectedDateKey
+        do {
+            let write = ExerciseActivityWrite.manual(
+                dateKey: key,
+                type: draftExerciseType,
+                title: draftExerciseTitle,
+                durationMinutes: duration,
+                activeCalories: calories,
+                distanceKm: distance,
+                note: draftExerciseNote
+            )
+            _ = try await exerciseRepository.create(write)
+            isPresentingExerciseSheet = false
+            errorMessage = nil
+            await load()
+        } catch {
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    func deleteExercise(_ exercise: ExerciseActivity) async {
+        isMutating = true
+        defer { isMutating = false }
+        do {
+            try await exerciseRepository.delete(id: exercise.id)
+            errorMessage = nil
+            await load()
+        } catch {
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    // MARK: - Parsing
+
     private func parseNumber(_ text: String) -> Double {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let value = Double(trimmed), value.isFinite, value >= 0 else {
             return 0
         }
         return value
+    }
+
+    private func parseNonNegative(_ text: String) -> Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = Double(trimmed), value.isFinite, value >= 0 else { return nil }
+        return value
+    }
+
+    private func parseRequiredPositive(_ text: String) -> Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let value = Double(trimmed), value.isFinite, value > 0 else { return nil }
+        return value
+    }
+
+    private func formatDraftNumber(_ value: Double) -> String {
+        if value == 0 { return "" }
+        if value.rounded() == value { return String(Int(value)) }
+        return String(format: "%.1f", value)
     }
 }

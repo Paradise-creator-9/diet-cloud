@@ -2,6 +2,32 @@ import XCTest
 @testable import DietCloud
 
 final class ActivityMapperTests: XCTestCase {
+    func testDailyUpsertPayloadUsesSessionUserId() {
+        let write = DailyActivityWrite.manual(dateKey: "2026-07-13", steps: 1000, activeCalories: 50)
+        let session = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        let payload = DailyActivityMapper.upsertPayload(from: write, sessionUserId: session)
+        XCTAssertEqual(payload.user_id, session)
+        XCTAssertEqual(payload.activity_on, "2026-07-13")
+        XCTAssertEqual(payload.source, "manual")
+        XCTAssertEqual(payload.steps, 1000)
+    }
+
+    func testExerciseInsertPayloadUsesSessionUserId() {
+        let write = ExerciseActivityWrite.manual(
+            dateKey: "2026-07-13",
+            type: "骑行",
+            title: "Cycling",
+            durationMinutes: 30,
+            activeCalories: 250
+        )
+        let session = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        let payload = ExerciseActivityMapper.insertPayload(from: write, sessionUserId: session)
+        XCTAssertEqual(payload.user_id, session)
+        XCTAssertEqual(payload.activity_on, "2026-07-13")
+        XCTAssertNil(payload.external_id)
+        XCTAssertEqual(payload.duration_minutes, 30)
+    }
+
     func testDailyActivityNulls() throws {
         let row = DailyActivityRow(
             id: "d1",

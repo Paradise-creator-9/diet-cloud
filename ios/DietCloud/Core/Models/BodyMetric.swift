@@ -60,4 +60,44 @@ struct BodyMetricWrite: Equatable, Sendable {
     var rightLegFatPercent: Double
     var rightLegMuscleKg: Double
     var note: String
+
+    /// Manual entry for iOS UI — preserves segment fields when editing an existing row.
+    static func manual(
+        dateKey: String,
+        weightKg: Double,
+        bodyFatPercent: Double = 0,
+        note: String = "",
+        existing: BodyMetric? = nil
+    ) -> BodyMetricWrite {
+        BodyMetricWrite(
+            dateKey: dateKey,
+            measuredAt: existing?.measuredAt.isEmpty == false
+                ? existing!.measuredAt
+                : "\(dateKey)T12:00:00",
+            score: existing?.score ?? 0,
+            weightKg: weightKg,
+            bmi: existing?.bmi ?? 0,
+            bodyFatPercent: bodyFatPercent,
+            bodyAge: existing?.bodyAge ?? 0,
+            bodyType: existing?.bodyType ?? "",
+            muscleKg: existing?.muscleKg ?? 0,
+            skeletalMuscleKg: existing?.skeletalMuscleKg ?? 0,
+            boneMassKg: existing?.boneMassKg ?? 0,
+            waterPercent: existing?.waterPercent ?? 0,
+            visceralFat: existing?.visceralFat ?? 0,
+            bmrKcal: existing?.bmrKcal ?? 0,
+            proteinPercent: existing?.proteinPercent ?? 0,
+            trunkFatPercent: existing?.trunkFatPercent ?? 0,
+            trunkMuscleKg: existing?.trunkMuscleKg ?? 0,
+            leftArmFatPercent: existing?.leftArmFatPercent ?? 0,
+            leftArmMuscleKg: existing?.leftArmMuscleKg ?? 0,
+            rightArmFatPercent: existing?.rightArmFatPercent ?? 0,
+            rightArmMuscleKg: existing?.rightArmMuscleKg ?? 0,
+            leftLegFatPercent: existing?.leftLegFatPercent ?? 0,
+            leftLegMuscleKg: existing?.leftLegMuscleKg ?? 0,
+            rightLegFatPercent: existing?.rightLegFatPercent ?? 0,
+            rightLegMuscleKg: existing?.rightLegMuscleKg ?? 0,
+            note: note
+        )
+    }
 }

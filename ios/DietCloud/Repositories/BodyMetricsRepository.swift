@@ -100,22 +100,34 @@ final class MockBodyMetricsRepository: BodyMetricsRepositoryProtocol, @unchecked
     private var items: [BodyMetric] = []
     private let sessionUserId: String
     private(set) var lastUpsertUserId: String?
+    private(set) var lastUpsertDateKey: String?
+    private(set) var lastFetchDateKey: String?
+    var forcedError: Error?
 
-    init(sessionUserId: String = "11111111-1111-1111-1111-111111111111") {
+    init(
+        sessionUserId: String = "11111111-1111-1111-1111-111111111111",
+        seed: [BodyMetric] = []
+    ) {
         self.sessionUserId = sessionUserId
+        self.items = seed
     }
 
     func fetchAll() async throws -> [BodyMetric] {
-        items.sorted { $0.dateKey > $1.dateKey }
+        try throwIfForced()
+        return items.sorted { $0.dateKey > $1.dateKey }
     }
 
     func fetchByDateKey(_ dateKey: String) async throws -> BodyMetric? {
-        items.first { $0.dateKey == dateKey }
+        try throwIfForced()
+        lastFetchDateKey = dateKey
+        return items.first { $0.dateKey == dateKey }
     }
 
     func upsert(_ write: BodyMetricWrite) async throws -> BodyMetric {
+        try throwIfForced()
         let payload = BodyMetricMapper.upsertPayload(from: write, sessionUserId: sessionUserId)
         lastUpsertUserId = payload.user_id
+        lastUpsertDateKey = payload.measured_on
         guard payload.user_id == sessionUserId else { throw AppError.unauthorized }
         let metric = try BodyMetricMapper.domain(from: BodyMetricRow(
             id: UUID().uuidString.lowercased(),
@@ -154,6 +166,11 @@ final class MockBodyMetricsRepository: BodyMetricsRepositoryProtocol, @unchecked
     }
 
     func delete(id: String) async throws {
+        try throwIfForced()
         items.removeAll { $0.id == id }
+    }
+
+    private func throwIfForced() throws {
+        if let forcedError { throw forcedError }
     }
 }

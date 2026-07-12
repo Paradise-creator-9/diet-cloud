@@ -32,6 +32,15 @@ struct TodayMealsView: View {
                     AddFoodItemView(viewModel: viewModel)
                         .interactiveDismissDisabled(viewModel.isAnalyzing || viewModel.isMutating)
                 }
+                .sheet(isPresented: $viewModel.isPresentingBodySheet) {
+                    BodyMetricEditView(viewModel: viewModel)
+                }
+                .sheet(isPresented: $viewModel.isPresentingActivitySheet) {
+                    DailyActivityEditView(viewModel: viewModel)
+                }
+                .sheet(isPresented: $viewModel.isPresentingExerciseSheet) {
+                    ExerciseEditView(viewModel: viewModel)
+                }
                 .task {
                     await viewModel.load()
                 }
@@ -89,13 +98,18 @@ struct TodayMealsView: View {
                         }
 
                         Section(viewModel.isToday ? "今日汇总" : "当日汇总") {
+                            DayEnergySummaryCard(energy: viewModel.dayEnergySummary)
                             DailySummaryCard(summary: viewModel.summary)
                         }
+
+                        BodyMetricSection(viewModel: viewModel)
+                        DailyActivitySection(viewModel: viewModel)
+                        ExerciseSection(viewModel: viewModel)
 
                         if case .empty = viewModel.loadState {
                             Section {
                                 ContentUnavailableView(
-                                    "还没有记录",
+                                    "还没有饮食记录",
                                     systemImage: "fork.knife",
                                     description: Text(
                                         viewModel.isToday
@@ -134,6 +148,288 @@ struct TodayMealsView: View {
     }
 }
 
+// MARK: - Energy / body / activity sections
+
+struct DayEnergySummaryCard: View {
+    let energy: DayEnergySummary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            metric("食物摄入", "\(format(energy.foodIntakeKcal)) kcal")
+            metric("运动消耗", "\(format(energy.exerciseBurnKcal)) kcal")
+            metric("活动消耗", "\(format(energy.activityBurnKcal)) kcal")
+            metric("净热量", "\(format(energy.netKcal)) kcal")
+            if energy.steps > 0 {
+                metric("步数", format(energy.steps))
+            }
+            if let weight = energy.weightKg, weight > 0 {
+                metric("体重", "\(format(weight)) kg")
+            }
+            Text("净热量 = 摄入 − 运动 − 活动（active calories）")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func metric(_ title: String, _ value: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value).fontWeight(.semibold).monospacedDigit()
+        }
+        .font(.subheadline)
+    }
+
+    private func format(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+struct BodyMetricSection: View {
+    @Bindable var viewModel: TodayMealsViewModel
+
+    var body: some View {
+        Section {
+            if let body = viewModel.bodyMetric {
+                VStack(alignment: .leading, spacing: 6) {
+                    LabeledContent("体重", value: "\(format(body.weightKg)) kg")
+                    if body.bodyFatPercent > 0 {
+                        LabeledContent("体脂", value: "\(format(body.bodyFatPercent)) %")
+                    }
+                    if !body.note.isEmpty {
+                        Text(body.note).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Button("编辑") { viewModel.openBodySheet() }
+                Button("删除", role: .destructive) {
+                    Task { await viewModel.deleteBodyMetric() }
+                }
+                .disabled(viewModel.isMutating)
+            } else {
+                Text("暂无身体数据").foregroundStyle(.secondary)
+                Button("添加体重") { viewModel.openBodySheet() }
+            }
+        } header: {
+            Text("身体数据")
+        }
+    }
+
+    private func format(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+struct DailyActivitySection: View {
+    @Bindable var viewModel: TodayMealsViewModel
+
+    var body: some View {
+        Section {
+            if let day = viewModel.dailyActivity {
+                VStack(alignment: .leading, spacing: 6) {
+                    LabeledContent("步数", value: format(day.steps))
+                    LabeledContent("活动热量", value: "\(format(day.activeCalories)) kcal")
+                    if day.distanceKm > 0 {
+                        LabeledContent("距离", value: "\(format(day.distanceKm)) km")
+                    }
+                    if !day.note.isEmpty {
+                        Text(day.note).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Button("编辑") { viewModel.openActivitySheet() }
+                Button("删除", role: .destructive) {
+                    Task { await viewModel.deleteDailyActivity() }
+                }
+                .disabled(viewModel.isMutating)
+            } else {
+                Text("暂无每日活动").foregroundStyle(.secondary)
+                Button("添加活动") { viewModel.openActivitySheet() }
+            }
+        } header: {
+            Text("每日活动")
+        }
+    }
+
+    private func format(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+struct ExerciseSection: View {
+    @Bindable var viewModel: TodayMealsViewModel
+
+    var body: some View {
+        Section {
+            if viewModel.exercises.isEmpty {
+                Text("暂无运动记录").foregroundStyle(.secondary)
+            } else {
+                ForEach(viewModel.exercises) { exercise in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(exercise.title).font(.body.weight(.medium))
+                            Spacer()
+                            Text("\(format(exercise.activeCalories)) kcal")
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Text("\(exercise.type) · \(format(exercise.durationMinutes)) 分钟")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            Task { await viewModel.deleteExercise(exercise) }
+                        } label: {
+                            Label("删除", systemImage: "trash")
+                        }
+                        .disabled(viewModel.isMutating)
+                    }
+                }
+            }
+            Button {
+                viewModel.openExerciseSheet()
+            } label: {
+                Label("添加运动", systemImage: "plus")
+            }
+        } header: {
+            Text("运动记录")
+        }
+    }
+
+    private func format(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+struct BodyMetricEditView: View {
+    @Bindable var viewModel: TodayMealsViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("身体指标 · \(viewModel.selectedDateKey)") {
+                    TextField("体重 kg", text: $viewModel.draftWeightKg)
+                        .keyboardType(.decimalPad)
+                    TextField("体脂 %（可选）", text: $viewModel.draftBodyFatPercent)
+                        .keyboardType(.decimalPad)
+                    TextField("备注", text: $viewModel.draftBodyNote)
+                }
+                if let error = viewModel.errorMessage {
+                    Section { Text(error).foregroundStyle(.red).font(.footnote) }
+                }
+            }
+            .navigationTitle("身体数据")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        viewModel.cancelBodySheet()
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        Task {
+                            await viewModel.saveBodyMetric()
+                            if !viewModel.isPresentingBodySheet { dismiss() }
+                        }
+                    }
+                    .disabled(viewModel.isMutating)
+                }
+            }
+        }
+    }
+}
+
+struct DailyActivityEditView: View {
+    @Bindable var viewModel: TodayMealsViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("每日活动 · \(viewModel.selectedDateKey)") {
+                    TextField("步数", text: $viewModel.draftSteps)
+                        .keyboardType(.numberPad)
+                    TextField("活动热量 kcal", text: $viewModel.draftActiveCalories)
+                        .keyboardType(.decimalPad)
+                    TextField("距离 km（可选）", text: $viewModel.draftDistanceKm)
+                        .keyboardType(.decimalPad)
+                    TextField("备注", text: $viewModel.draftActivityNote)
+                }
+                if let error = viewModel.errorMessage {
+                    Section { Text(error).foregroundStyle(.red).font(.footnote) }
+                }
+            }
+            .navigationTitle("每日活动")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        viewModel.cancelActivitySheet()
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        Task {
+                            await viewModel.saveDailyActivity()
+                            if !viewModel.isPresentingActivitySheet { dismiss() }
+                        }
+                    }
+                    .disabled(viewModel.isMutating)
+                }
+            }
+        }
+    }
+}
+
+struct ExerciseEditView: View {
+    @Bindable var viewModel: TodayMealsViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("运动 · \(viewModel.selectedDateKey)") {
+                    TextField("类型", text: $viewModel.draftExerciseType)
+                    TextField("标题（可选）", text: $viewModel.draftExerciseTitle)
+                    TextField("时长 分钟", text: $viewModel.draftExerciseDuration)
+                        .keyboardType(.decimalPad)
+                    TextField("消耗 kcal", text: $viewModel.draftExerciseCalories)
+                        .keyboardType(.decimalPad)
+                    TextField("距离 km（可选）", text: $viewModel.draftExerciseDistance)
+                        .keyboardType(.decimalPad)
+                    TextField("备注", text: $viewModel.draftExerciseNote)
+                }
+                if let error = viewModel.errorMessage {
+                    Section { Text(error).foregroundStyle(.red).font(.footnote) }
+                }
+            }
+            .navigationTitle("添加运动")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        viewModel.cancelExerciseSheet()
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        Task {
+                            await viewModel.saveExercise()
+                            if !viewModel.isPresentingExerciseSheet { dismiss() }
+                        }
+                    }
+                    .disabled(viewModel.isMutating)
+                }
+            }
+        }
+    }
+}
+
 /// Date navigation: previous / next / label / today / DatePicker.
 struct DiaryDateBar: View {
     @Bindable var viewModel: TodayMealsViewModel
@@ -148,7 +444,7 @@ struct DiaryDateBar: View {
                         .font(.title2)
                 }
                 .accessibilityLabel("前一天")
-                .disabled(viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+                .disabled(viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
 
                 Spacer(minLength: 4)
 
@@ -170,7 +466,7 @@ struct DiaryDateBar: View {
                         .font(.title2)
                 }
                 .accessibilityLabel("后一天")
-                .disabled(viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+                .disabled(viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
             }
 
             HStack(spacing: 12) {
@@ -178,7 +474,7 @@ struct DiaryDateBar: View {
                     Task { await viewModel.goToToday() }
                 }
                 .buttonStyle(.bordered)
-                .disabled(viewModel.isToday || viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+                .disabled(viewModel.isToday || viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
 
                 DatePicker(
                     "选择日期",
@@ -191,7 +487,7 @@ struct DiaryDateBar: View {
                     displayedComponents: [.date]
                 )
                 .labelsHidden()
-                .disabled(viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+                .disabled(viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
             }
         }
     }

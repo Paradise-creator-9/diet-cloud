@@ -14,6 +14,19 @@ final class AppErrorTests: XCTestCase {
         } else {
             XCTFail("Expected server error")
         }
+
+        if case .server(let code, let message) = AppError.fromHTTP(statusCode: 413) {
+            XCTAssertEqual(code, 413)
+            XCTAssertEqual(message, "图片过大，请换小图。")
+        } else {
+            XCTFail("Expected 413 mapping")
+        }
+
+        if case .server(_, let message) = AppError.fromHTTP(statusCode: 503) {
+            XCTAssertEqual(message, "AI 服务暂时不可用。")
+        } else {
+            XCTFail("Expected 503 mapping")
+        }
     }
 
     func testUserMessageNeverEmpty() {

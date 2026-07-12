@@ -33,11 +33,17 @@ final class TodayMealsViewModel {
     private(set) var draftPhotoPreview: UIImage?
     private(set) var isPreparingPhoto = false
 
+    /// AI analysis in progress (does not write DB).
+    private(set) var isAnalyzing = false
+    /// Short success summary after AI fill (not an error).
+    private(set) var analysisSummary: String?
+
     let dateKey: String
     let user: AuthUser
 
     private let foodRepository: FoodItemRepositoryProtocol
     private let photoRepository: MealPhotoRepositoryProtocol
+    private let analyzeAPI: AnalyzeAPIClienting
     private let diaryCalendar: DiaryCalendar
 
     var summary: DailyNutritionSummary {
@@ -52,16 +58,26 @@ final class TodayMealsViewModel {
         }
     }
 
+    /// True when user provided enough input for AI (hint and/or photo).
+    var canRunAIAnalysis: Bool {
+        let hasHint = !draftNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasPhoto = draftPhotoData != nil
+        return (hasHint || hasPhoto) && !isAnalyzing && !isPreparingPhoto && !isMutating
+    }
+
     init(
         user: AuthUser,
         foodRepository: FoodItemRepositoryProtocol,
         photoRepository: MealPhotoRepositoryProtocol,
+        analyzeAPI: AnalyzeAPIClienting,
         diaryCalendar: DiaryCalendar = DiaryCalendar(),
         dateKey: String? = nil
     ) {
         self.user = user
         self.foodRepository = foodRepository
         self.photoRepository = photoRepository
+        self.analyzeAPI = analyzeAPI
         self.diaryCalendar = diaryCalendar
         self.dateKey = dateKey ?? diaryCalendar.dateKey()
     }
@@ -92,6 +108,7 @@ final class TodayMealsViewModel {
         draftNote = ""
         clearDraftPhoto()
         errorMessage = nil
+        analysisSummary = nil
         isPresentingAddSheet = true
     }
 
@@ -99,6 +116,7 @@ final class TodayMealsViewModel {
         isPresentingAddSheet = false
         clearDraftPhoto()
         errorMessage = nil
+        analysisSummary = nil
     }
 
     func clearDraftPhoto() {
@@ -110,7 +128,7 @@ final class TodayMealsViewModel {
         errorMessage = message
     }
 
-    /// Compresses picker data to JPEG before upload (HEIC → JPEG).
+    /// Compresses picker data to JPEG before upload / AI (HEIC → JPEG).
     func setDraftPhoto(rawData: Data) async {
         isPreparingPhoto = true
         defer { isPreparingPhoto = false }
@@ -122,6 +140,36 @@ final class TodayMealsViewModel {
         } catch {
             clearDraftPhoto()
             errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    /// Calls `/api/analyze-meal` and fills draft fields only — does **not** save.
+    func runAIAnalysis() async {
+        errorMessage = nil
+        analysisSummary = nil
+
+        let hint = preferredAIHint()
+        guard canRunAIAnalysis || (!hint.isEmpty || draftPhotoData != nil) else {
+            errorMessage = "请先选择照片，或者至少写一句文字说明。"
+            return
+        }
+
+        isAnalyzing = true
+        defer { isAnalyzing = false }
+
+        do {
+            let request = try MealAnalysisRequest.make(
+                hint: hint,
+                jpegData: draftPhotoData,
+                contentType: ImageCompressor.allowedContentType,
+                fileName: "meal.jpg"
+            )
+            let result = try await analyzeAPI.analyzeMeal(request)
+            applyAnalysisToDraft(result, userHint: hint)
+        } catch {
+            let mapped = mapAnalyzeError(error)
+            errorMessage = mapped.userMessage
+            // Do not clear draft fields on failure — manual entry still works.
         }
     }
 
@@ -165,6 +213,7 @@ final class TodayMealsViewModel {
             isPresentingAddSheet = false
             clearDraftPhoto()
             errorMessage = nil
+            analysisSummary = nil
             await load()
         } catch {
             errorMessage = DataErrorMapping.map(error).userMessage
@@ -181,6 +230,40 @@ final class TodayMealsViewModel {
         } catch {
             errorMessage = DataErrorMapping.map(error).userMessage
         }
+    }
+
+    // MARK: - AI helpers
+
+    /// Prefer dedicated note as hint; fall back to draft name if it looks like a description.
+    private func preferredAIHint() -> String {
+        let note = draftNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !note.isEmpty { return note }
+        return draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func applyAnalysisToDraft(_ result: MealAnalysisResult, userHint: String) {
+        let fill = MealAnalysisMapper.formFill(from: result, userHint: userHint)
+        draftName = fill.name
+        draftCalories = fill.calories
+        draftProtein = fill.protein
+        draftCarbs = fill.carbs
+        draftFat = fill.fat
+        draftGrams = fill.grams
+        draftNote = fill.note
+        analysisSummary = fill.summary
+        errorMessage = nil
+        // meal type left as user selection; API does not return mealType.
+    }
+
+    private func mapAnalyzeError(_ error: Error) -> AppError {
+        if let app = error as? AppError {
+            // Soften rate-limit copy for AI context without leaking details.
+            if case .rateLimited = app {
+                return .rateLimited(retryAfterSeconds: nil)
+            }
+            return app
+        }
+        return DataErrorMapping.map(error)
     }
 
     private func parseNumber(_ text: String) -> Double {

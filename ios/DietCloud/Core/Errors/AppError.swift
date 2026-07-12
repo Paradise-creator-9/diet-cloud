@@ -83,8 +83,15 @@ enum AppError: Error, Equatable, Sendable {
         switch statusCode {
         case 401, 403:
             return .unauthorized
+        case 413:
+            return .server(statusCode: 413, message: "图片过大，请换小图。")
         case 429:
             return .rateLimited(retryAfterSeconds: nil)
+        case 500, 502, 503, 504:
+            return .server(
+                statusCode: statusCode,
+                message: message.isEmpty ? "AI 服务暂时不可用。" : message
+            )
         case 400 ..< 500:
             return .server(statusCode: statusCode, message: message.isEmpty ? "请求无效。" : message)
         case 500 ..< 600:

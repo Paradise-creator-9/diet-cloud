@@ -8,7 +8,7 @@ struct AuthSendOTPParameters: Equatable, Sendable {
 }
 
 /// Auth operations used by the feature layer. Implementations must not log tokens.
-protocol AuthRepositoryProtocol: Sendable {
+protocol AuthRepositoryProtocol: AccessTokenProviding, Sendable {
     /// Restore session from secure storage (Keychain via SDK storage).
     func restoreSession() async throws -> AuthSessionSnapshot?
     /// Builds send parameters (email + redirect). Exposed for unit tests without network.
@@ -18,6 +18,7 @@ protocol AuthRepositoryProtocol: Sendable {
     /// Magic-link / deep-link completion when Supabase redirects into the app.
     func handleAuthURL(_ url: URL) async throws -> AuthSessionSnapshot?
     func signOut() async throws
+    /// Inherited from `AccessTokenProviding` — session access token for Vercel AI only.
     func currentAccessToken() async throws -> String?
 }
 

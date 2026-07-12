@@ -315,6 +315,29 @@ struct AddFoodItemView: View {
                         .keyboardType(.decimalPad)
                 }
 
+                Section("AI 分析（可选）") {
+                    Text("在备注中写描述（如「一碗牛肉饭」），或先选照片，再点分析。结果只填入表单，需你确认后保存。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button {
+                        Task { await viewModel.runAIAnalysis() }
+                    } label: {
+                        if viewModel.isAnalyzing {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Label("AI 分析餐食", systemImage: "sparkles")
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .disabled(!viewModel.canRunAIAnalysis)
+                    if let summary = viewModel.analysisSummary {
+                        Text(summary)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Section("照片（可选）") {
                     PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
                         Label(
@@ -350,7 +373,7 @@ struct AddFoodItemView: View {
                         }
                     }
 
-                    Text("照片将上传到私有 meal-photos，路径为当前用户目录；列表通过 signed URL 显示。")
+                    Text("照片将上传到私有 meal-photos，路径为当前用户目录；列表通过 signed URL 显示。AI 分析使用本地压缩图，不发送 signed URL。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -364,7 +387,8 @@ struct AddFoodItemView: View {
                         .keyboardType(.decimalPad)
                     TextField("重量 g", text: $viewModel.draftGrams)
                         .keyboardType(.decimalPad)
-                    TextField("备注", text: $viewModel.draftNote)
+                    TextField("备注 / AI 文字说明", text: $viewModel.draftNote, axis: .vertical)
+                        .lineLimit(2 ... 5)
                 }
 
                 if let error = viewModel.errorMessage {
@@ -399,6 +423,7 @@ struct AddFoodItemView: View {
                         .disabled(
                             viewModel.draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                 || viewModel.isPreparingPhoto
+                                || viewModel.isAnalyzing
                         )
                     }
                 }

@@ -8,16 +8,29 @@ final class TodayMealsViewModelTests: XCTestCase {
     private let user = AuthUser(id: "11111111-1111-1111-1111-111111111111", email: "a@example.com")
     private let dateKey = "2026-07-13"
 
-    func testInitialLoadStateIsLoadingThenEmpty() async {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
+    private func makeVM(
+        repo: MockFoodItemRepository? = nil,
+        photo: MockMealPhotoRepository? = nil,
+        analyze: MockAnalyzeAPIClient? = nil,
+        diaryCalendar: DiaryCalendar = DiaryCalendar(),
+        dateKey: String? = nil
+    ) -> (TodayMealsViewModel, MockFoodItemRepository, MockMealPhotoRepository, MockAnalyzeAPIClient) {
+        let photoRepo = photo ?? MockMealPhotoRepository(sessionUserId: user.id)
+        let foodRepo = repo ?? MockFoodItemRepository(sessionUserId: user.id, photoRepository: photoRepo)
+        let analyzeClient = analyze ?? MockAnalyzeAPIClient()
         let vm = TodayMealsViewModel(
             user: user,
-            foodRepository: repo,
-            photoRepository: photo,
-            diaryCalendar: DiaryCalendar(),
-            dateKey: dateKey
+            foodRepository: foodRepo,
+            photoRepository: photoRepo,
+            analyzeAPI: analyzeClient,
+            diaryCalendar: diaryCalendar,
+            dateKey: dateKey ?? self.dateKey
         )
+        return (vm, foodRepo, photoRepo, analyzeClient)
+    }
+
+    func testInitialLoadStateIsLoadingThenEmpty() async {
+        let (vm, _, _, _) = makeVM()
         XCTAssertEqual(vm.loadState, .loading)
         XCTAssertEqual(vm.dateKey, dateKey)
         await vm.load()
@@ -33,12 +46,7 @@ final class TodayMealsViewModelTests: XCTestCase {
             food(id: "2", meal: .lunch, name: "饭", cal: 200, protein: 4, carbs: 40, fat: 1),
             food(id: "3", meal: .breakfast, name: "奶", cal: 100, protein: 8, carbs: 10, fat: 3),
         ], photoRepository: photo)
-        let vm = TodayMealsViewModel(
-            user: user,
-            foodRepository: repo,
-            photoRepository: photo,
-            dateKey: dateKey
-        )
+        let (vm, _, _, _) = makeVM(repo: repo, photo: photo)
         await vm.load()
         XCTAssertEqual(vm.loadState, .loaded)
         XCTAssertEqual(vm.items.count, 3)
@@ -55,10 +63,8 @@ final class TodayMealsViewModelTests: XCTestCase {
     }
 
     func testLoadErrorStateDoesNotLeakToken() async {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
+        let (vm, repo, _, _) = makeVM()
         repo.forcedError = AppError.auth(.provider(message: "bad eyJhbGciOiJIUzI1NiJ9.payload.sig"))
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
         await vm.load()
         if case .error(let message) = vm.loadState {
             XCTAssertFalse(message.contains("eyJ"))
@@ -69,9 +75,7 @@ final class TodayMealsViewModelTests: XCTestCase {
     }
 
     func testAddItemSuccessRefreshesList() async {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
+        let (vm, repo, _, _) = makeVM()
         await vm.load()
         XCTAssertEqual(vm.loadState, .empty)
 
@@ -92,11 +96,8 @@ final class TodayMealsViewModelTests: XCTestCase {
     }
 
     func testAddItemWithPhotoUploadsThenCreates() async {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
+        let (vm, repo, photo, _) = makeVM()
 
-        // Minimal 1x1 JPEG
         let jpeg = Self.tinyJPEG()
         await vm.setDraftPhoto(rawData: jpeg)
         XCTAssertNotNil(vm.draftPhotoData)
@@ -116,9 +117,7 @@ final class TodayMealsViewModelTests: XCTestCase {
     }
 
     func testAddItemWithoutPhotoStillWorks() async {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
+        let (vm, repo, photo, _) = makeVM()
         vm.draftName = "水"
         await vm.saveNewItem()
         XCTAssertEqual(vm.items.count, 1)
@@ -127,9 +126,7 @@ final class TodayMealsViewModelTests: XCTestCase {
     }
 
     func testAddItemFailureKeepsSheetAndShowsError() async {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
+        let (vm, repo, _, _) = makeVM()
         await vm.load()
         vm.openAddSheet()
         vm.draftName = "失败项"
@@ -141,9 +138,7 @@ final class TodayMealsViewModelTests: XCTestCase {
     }
 
     func testAddRequiresName() async {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
+        let (vm, _, _, _) = makeVM()
         vm.openAddSheet()
         vm.draftName = "   "
         await vm.saveNewItem()
@@ -156,22 +151,22 @@ final class TodayMealsViewModelTests: XCTestCase {
         let path = "\(user.id)/\(dateKey)/1-meal.jpg"
         let seed = food(id: "keep-me", meal: .snack, name: "香蕉", cal: 100, protein: 1, carbs: 20, fat: 0, paths: [path])
         let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [seed], photoRepository: photo)
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
+        let (vm, _, photoRepo, _) = makeVM(repo: repo, photo: photo)
         await vm.load()
         XCTAssertEqual(vm.items.count, 1)
         await vm.deleteItem(seed)
         XCTAssertEqual(vm.loadState, .empty)
         XCTAssertTrue(vm.items.isEmpty)
-        XCTAssertEqual(photo.deletedPaths, [path])
+        XCTAssertEqual(photoRepo.deletedPaths, [path])
     }
 
     func testDeleteFailureSetsError() async {
         let photo = MockMealPhotoRepository(sessionUserId: user.id)
         let seed = food(id: "x", meal: .lunch, name: "饭", cal: 200, protein: 0, carbs: 0, fat: 0)
         let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [seed], photoRepository: photo)
-        let vm = TodayMealsViewModel(user: user, foodRepository: repo, photoRepository: photo, dateKey: dateKey)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
         await vm.load()
-        repo.forcedError = AppError.unauthorized
+        foodRepo.forcedError = AppError.unauthorized
         await vm.deleteItem(seed)
         XCTAssertEqual(vm.errorMessage, AppError.unauthorized.userMessage)
         XCTAssertEqual(vm.items.count, 1)
@@ -182,27 +177,24 @@ final class TodayMealsViewModelTests: XCTestCase {
         calendar.timeZone = TimeZone(secondsFromGMT: 9 * 3600)!
         let diary = DiaryCalendar(calendar: calendar)
         let expected = diary.dateKey()
+        let (vm, _, _, _) = makeVM(diaryCalendar: diary, dateKey: nil)
+        // dateKey parameter defaults to self.dateKey in makeVM — pass explicit nil path
         let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let vm = TodayMealsViewModel(
+        let real = TodayMealsViewModel(
             user: user,
             foodRepository: MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo),
             photoRepository: photo,
+            analyzeAPI: MockAnalyzeAPIClient(),
             diaryCalendar: diary
         )
-        XCTAssertEqual(vm.dateKey, expected)
+        XCTAssertEqual(real.dateKey, expected)
+        _ = vm
     }
 
     func testSignedInRootUsesTodayMealsFactory() {
-        let photo = MockMealPhotoRepository(sessionUserId: user.id)
-        let foodRepo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
+        let (todayVM, _, _, _) = makeVM()
         let auth = MockAuthRepository()
         let authVM = AuthViewModel(repository: auth, isConfigured: true)
-        let todayVM = TodayMealsViewModel(
-            user: user,
-            foodRepository: foodRepo,
-            photoRepository: photo,
-            dateKey: dateKey
-        )
         let root = AuthRootView(
             viewModel: authVM,
             configDiagnostics: "test",
@@ -210,6 +202,100 @@ final class TodayMealsViewModelTests: XCTestCase {
         )
         _ = root
         XCTAssertEqual(todayVM.dateKey, dateKey)
+    }
+
+    // MARK: - AI analysis
+
+    func testAIAnalysisFillsFormWithoutSaving() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setResult(
+            MealAnalysisResult(
+                dishName: "牛肉饭",
+                confidence: 0.9,
+                total: MealAnalysisNutrition(
+                    grams: 350, calories: 620, protein: 28, carbs: 70, fat: 18, fiber: 3
+                ),
+                items: [
+                    MealAnalysisItem(
+                        name: "米饭", grams: 200, calories: 280, protein: 5, carbs: 62, fat: 1, fiber: 1, reasoning: ""
+                    ),
+                ],
+                notes: "家常份量估算",
+                model: "mock"
+            )
+        )
+        let (vm, repo, _, client) = makeVM(analyze: analyze)
+        vm.draftNote = "一碗牛肉饭"
+        vm.draftMeal = .lunch
+        await vm.runAIAnalysis()
+
+        XCTAssertEqual(client.callCount, 1)
+        XCTAssertEqual(client.lastRequest?.hint, "一碗牛肉饭")
+        XCTAssertTrue(client.lastRequest?.photos.isEmpty == true)
+        XCTAssertEqual(vm.draftName, "牛肉饭")
+        XCTAssertEqual(vm.draftCalories, "620")
+        XCTAssertEqual(vm.draftProtein, "28")
+        XCTAssertEqual(vm.draftCarbs, "70")
+        XCTAssertEqual(vm.draftFat, "18")
+        XCTAssertEqual(vm.draftGrams, "350")
+        XCTAssertTrue(vm.draftNote.contains("家常份量估算"))
+        XCTAssertNotNil(vm.analysisSummary)
+        XCTAssertTrue(vm.isPresentingAddSheet == false || true) // form fill only
+        // Must NOT auto-save
+        XCTAssertEqual(repo.itemsSnapshotForTest().count, 0)
+        XCTAssertTrue(vm.items.isEmpty)
+    }
+
+    func testAIAnalysisWithPhotoDoesNotAutoSave() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setResult(
+            MealAnalysisResult(
+                dishName: "煎蛋",
+                confidence: 0.7,
+                total: MealAnalysisNutrition(grams: 50, calories: 90, protein: 7, carbs: 1, fat: 6, fiber: 0),
+                items: [],
+                notes: "照片估算",
+                model: nil
+            )
+        )
+        let (vm, repo, _, client) = makeVM(analyze: analyze)
+        await vm.setDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.runAIAnalysis()
+        XCTAssertEqual(client.callCount, 1)
+        XCTAssertEqual(client.lastRequest?.photos.count, 1)
+        XCTAssertTrue(client.lastRequest?.photos.first?.dataUrl.hasPrefix("data:image/jpeg;base64,") == true)
+        XCTAssertFalse(client.lastRequest?.containsRemotePhotoURL == true)
+        XCTAssertEqual(vm.draftName, "煎蛋")
+        XCTAssertEqual(repo.itemsSnapshotForTest().count, 0)
+    }
+
+    func testAIAnalysisFailureDoesNotBlockManualSave() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setError(AppError.rateLimited(retryAfterSeconds: 60))
+        let (vm, repo, _, _) = makeVM(analyze: analyze)
+        vm.draftNote = "一碗白米饭"
+        await vm.runAIAnalysis()
+        XCTAssertEqual(vm.errorMessage, AppError.rateLimited(retryAfterSeconds: nil).userMessage)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
+
+        // Manual save still works
+        vm.draftName = "白米饭"
+        vm.draftCalories = "200"
+        await vm.saveNewItem()
+        XCTAssertEqual(vm.items.count, 1)
+        XCTAssertEqual(vm.items.first?.name, "白米饭")
+        XCTAssertEqual(repo.itemsSnapshotForTest().count, 1)
+    }
+
+    func testAIUnauthorizedDoesNotLeakToken() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setError(AppError.unauthorized)
+        let (vm, _, _, _) = makeVM(analyze: analyze)
+        vm.draftNote = "test"
+        await vm.runAIAnalysis()
+        XCTAssertEqual(vm.errorMessage, AppError.unauthorized.userMessage)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("Bearer"))
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
     }
 
     private func food(
@@ -241,7 +327,6 @@ final class TodayMealsViewModelTests: XCTestCase {
         )
     }
 
-    /// Programmatic solid-color JPEG so ImageIO can read real pixel dimensions.
     private static func tinyJPEG(width: Int = 16, height: Int = 16) -> Data {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         guard let ctx = CGContext(

@@ -14,6 +14,11 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     private(set) var lastWriteSessionUserId: String?
     private(set) var lastCreatePhotoPaths: [String] = []
 
+    /// Test-only snapshot of stored items (no network).
+    func itemsSnapshotForTest() -> [FoodItem] {
+        withLock { items }
+    }
+
     init(
         sessionUserId: String = "11111111-1111-1111-1111-111111111111",
         seed: [FoodItem] = [],

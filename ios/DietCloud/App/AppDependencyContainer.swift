@@ -37,8 +37,11 @@ final class AppDependencyContainer: @unchecked Sendable {
         self.credentialStore = credentialStore
         let provider = supabase ?? SupabaseClientProvider(config: config, credentialStore: credentialStore)
         self.supabase = provider
-        self.analyzeAPI = analyzeAPI ?? AnalyzeAPIClient(provider: provider)
-        self.authRepository = authRepository ?? AuthRepository(provider: provider)
+        let auth = authRepository ?? AuthRepository(provider: provider)
+        self.authRepository = auth
+        // AnalyzeAPIClient uses session access token as Bearer — never Gemini key.
+        self.analyzeAPI = analyzeAPI
+            ?? AnalyzeAPIClient(provider: provider, tokenProvider: auth)
         self.diaryCalendar = diaryCalendar
 
         let identity = sessionIdentity ?? SupabaseSessionIdentity(provider: provider)
@@ -67,6 +70,7 @@ final class AppDependencyContainer: @unchecked Sendable {
             user: user,
             foodRepository: foodItemRepository,
             photoRepository: mealPhotoRepository,
+            analyzeAPI: analyzeAPI,
             diaryCalendar: diaryCalendar
         )
     }

@@ -2,8 +2,10 @@ import Foundation
 
 /// Lightweight protocol-based DI root. Features depend on protocols, not
 /// concrete Supabase SDK types beyond the repository boundary.
-@MainActor
-final class AppDependencyContainer {
+///
+/// Not @MainActor: App property initializers must not require MainActor or
+/// launch can fail before the first frame (white screen).
+final class AppDependencyContainer: @unchecked Sendable {
     let config: AppConfig
     let supabase: SupabaseClientProviding
     let analyzeAPI: AnalyzeAPIClienting
@@ -28,12 +30,12 @@ final class AppDependencyContainer {
         self.diaryCalendar = diaryCalendar
     }
 
+    @MainActor
     func makeAuthViewModel() -> AuthViewModel {
         AuthViewModel(repository: authRepository, isConfigured: supabase.isConfigured)
     }
 
-    /// Bootstrap from the main bundle; falls back to a non-crashing placeholder
-    /// only if Info.plist is broken (should not happen in a correct build).
+    /// Bootstrap from the main bundle; always returns a container (never throws).
     static func makeDefault() -> AppDependencyContainer {
         do {
             let config = try AppConfigLoader.loadFromBundle()

@@ -2,15 +2,29 @@ import SwiftUI
 
 struct AuthRootView: View {
     @Bindable var viewModel: AuthViewModel
+    var configDiagnostics: String = ""
 
     var body: some View {
         Group {
             switch viewModel.phase {
             case .loading:
-                ProgressView("正在确认登录状态…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 16) {
+                    ProgressView()
+                    Text("正在确认登录状态…")
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                    if !configDiagnostics.isEmpty {
+                        Text(configDiagnostics)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.systemBackground))
             case .signedOut:
-                AuthEmailView(viewModel: viewModel)
+                AuthEmailView(viewModel: viewModel, configDiagnostics: configDiagnostics)
             case .awaitingOTP:
                 AuthOTPView(viewModel: viewModel)
             case .signedIn(let user):
@@ -23,6 +37,7 @@ struct AuthRootView: View {
 
 struct AuthEmailView: View {
     @Bindable var viewModel: AuthViewModel
+    var configDiagnostics: String = ""
 
     var body: some View {
         NavigationStack {
@@ -32,6 +47,14 @@ struct AuthEmailView: View {
                         .font(.largeTitle.bold())
                     Text("登录后查看你的饮食、照片和营养分析")
                         .foregroundStyle(.secondary)
+                }
+
+                if !configDiagnostics.isEmpty {
+                    Section("配置") {
+                        Text(configDiagnostics)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("邮箱登录") {
@@ -72,6 +95,9 @@ struct AuthEmailView: View {
 
                 Section("说明") {
                     Text("主路径：打开邮件中的登录链接（Magic Link）回到本 App。请先在 Supabase Dashboard 的 Redirect URLs 中添加 dietcloud://auth-callback。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Text("Secrets.xcconfig 中 URL 必须写成 https:$(SLASH)$(SLASH)host（不要写裸的 https://，// 会被 xcconfig 当成注释）。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

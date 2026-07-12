@@ -1,25 +1,23 @@
 // Shared build settings for DietCloud (public client config only).
 // Do NOT put SERVICE_ROLE, GEMINI_API_KEY, or DIARY_INGEST_TOKEN here.
 //
-// xcconfig treats // as comments, so URLs use https:/$()/host form.
+// IMPORTANT: In xcconfig, // starts a comment. Never write https:// literally.
+// Use $(SLASH)$(SLASH) so URLs survive preprocessing.
+
+SLASH = /
 
 // Public Supabase project URL (safe to ship; protected by RLS).
-SUPABASE_URL = https:/$()/YOUR_PROJECT.supabase.co
+SUPABASE_URL = https:$(SLASH)$(SLASH)YOUR_PROJECT.supabase.co
 
 // Supabase anonymous / publishable key (safe to ship; protected by RLS).
 SUPABASE_ANON_KEY = YOUR_SUPABASE_ANON_KEY
 
 // Absolute Vercel (or local preview) origin for /api/analyze-* only.
-// Never point this at secrets; App never embeds Gemini or ingest tokens.
-API_BASE_URL = https:/$()/diet-cloud.vercel.app
+API_BASE_URL = https:$(SLASH)$(SLASH)diet-cloud.vercel.app
 
 // Private meal-photos bucket name (default matches Web).
 STORAGE_BUCKET = meal-photos
 
 // Magic Link redirect back into the iOS app (not a secret).
-// Must be added manually in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs.
-// xcconfig: "://" uses /$()/ so // is not treated as a comment.
-DIETCLOUD_AUTH_REDIRECT_URL = dietcloud:/$()/auth-callback
-
-// Expose the values into Info.plist substitution.
-INFOPLIST_PREPROCESSOR_DEFINITIONS =
+// Must also be listed in Supabase Dashboard → Auth → Redirect URLs.
+DIETCLOUD_AUTH_REDIRECT_URL = dietcloud:$(SLASH)$(SLASH)auth-callback

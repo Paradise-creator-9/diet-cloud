@@ -103,6 +103,48 @@ final class AppConfigTests: XCTestCase {
         }
     }
 
+    /// Regression: xcconfig `//` comments truncated URLs to `https:` → launch white screen.
+    func testTruncatedHTTPSURLIsRejected() {
+        XCTAssertThrowsError(
+            try AppConfigLoader.load(from: [
+                "SUPABASE_URL": "https:",
+                "SUPABASE_ANON_KEY": "anon-public-key",
+                "API_BASE_URL": "https://diet-cloud.vercel.app",
+                "STORAGE_BUCKET": "meal-photos",
+                "DIETCLOUD_AUTH_REDIRECT_URL": "dietcloud://auth-callback",
+            ])
+        ) { error in
+            guard let appError = error as? AppError else {
+                return XCTFail("Expected AppError")
+            }
+            XCTAssertEqual(appError.code, "configuration")
+            // Must not echo long secrets
+            XCTAssertFalse(appError.userMessage.contains("anon-public-key"))
+        }
+    }
+
+    func testTruncatedDietCloudRedirectIsRejected() {
+        XCTAssertThrowsError(
+            try AppConfigLoader.resolveAuthRedirectURL(from: [
+                "DIETCLOUD_AUTH_REDIRECT_URL": "dietcloud:",
+            ])
+        )
+    }
+
+    func testPlaceholderWhenHostMissingIsNotNetworkReady() {
+        // Constructed only if loader is bypassed; still must not look "ready".
+        let config = AppConfig(
+            supabaseURL: URL(string: "https://example.invalid")!,
+            supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY",
+            apiBaseURL: URL(string: "https://diet-cloud.vercel.app")!,
+            storageBucket: "meal-photos",
+            authRedirectURL: AppConfig.defaultAuthRedirectURL
+        )
+        XCTAssertTrue(config.isPlaceholder)
+        XCTAssertFalse(config.isReadyForNetwork)
+        XCTAssertFalse(config.safeDiagnostics.contains("YOUR_SUPABASE"))
+    }
+
     func testExampleConfigValuesAreNotSecrets() {
         // Guard that committed examples never look like JWTs or service keys.
         let exampleRedirect = "dietcloud://auth-callback"

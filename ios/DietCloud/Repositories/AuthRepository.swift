@@ -52,7 +52,6 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
 
     func makeSendOTPParameters(email: String) async throws -> AuthSendOTPParameters {
         let normalized = try Self.normalizedEmail(email)
-        // Always use configured Magic Link redirect (default dietcloud://auth-callback).
         let redirect = provider.config.authRedirectURL
         return AuthSendOTPParameters(email: normalized, redirectTo: redirect)
     }
@@ -61,9 +60,6 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
         let params = try await makeSendOTPParameters(email: email)
         let client = try requireClient()
         do {
-            // Web: signInWithOtp + emailRedirectTo: origin (browser Magic Link).
-            // iOS: same API family with redirectTo → dietcloud://auth-callback (app Magic Link).
-            // Requires Supabase Dashboard Redirect URLs to include this value (manual; not in repo).
             try await client.auth.signInWithOTP(
                 email: params.email,
                 redirectTo: params.redirectTo
@@ -95,7 +91,6 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
         }
     }
 
-    /// Completes Magic Link when OS opens the auth callback URL into the app.
     func handleAuthURL(_ url: URL) async throws -> AuthSessionSnapshot? {
         let client = try requireClient()
         do {

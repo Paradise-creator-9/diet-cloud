@@ -1,4 +1,4 @@
 #include "Base.xcconfig"
 
-// Optional production overrides (still only public client values).
-// #include? "Secrets.xcconfig"
+// Optional local overrides for release builds (still gitignored if present).
+#include? "Secrets.xcconfig"

@@ -28,8 +28,27 @@ open DietCloud.xcodeproj
 
 1. 复制 `Config/Secrets.xcconfig.example` → `Config/Secrets.xcconfig`（已 gitignore）。
 2. 填入真实 **公开** 值。
-3. 在 `Config/Debug.xcconfig` 中取消 `#include? "Secrets.xcconfig"` 注释。
+3. `Debug.xcconfig` / `Release.xcconfig` 已 `#include? "Secrets.xcconfig"`。
 4. 重新 `xcodegen generate` 并编译。
+
+### xcconfig URL 写法（必读 — 白屏根因）
+
+在 `.xcconfig` 里，`//` **会开启注释**。若写成：
+
+```text
+SUPABASE_URL = https://xxx.supabase.co
+```
+
+实际进 Info.plist 的值会变成 **`https:`**（后面全被注释掉），App 用无效 URL 初始化 Supabase 时可能卡死/崩溃 → **整屏白屏**。
+
+正确写法（`SLASH` 已在 Base/Secrets 中定义）：
+
+```text
+SLASH = /
+SUPABASE_URL = https:$(SLASH)$(SLASH)xxxx.supabase.co
+API_BASE_URL = https:$(SLASH)$(SLASH)diet-cloud.vercel.app
+DIETCLOUD_AUTH_REDIRECT_URL = dietcloud:$(SLASH)$(SLASH)auth-callback
+```
 
 **禁止**写入：`SUPABASE_SERVICE_ROLE_KEY`、`GEMINI_API_KEY`、`DIARY_INGEST_TOKEN`、access/refresh token。
 

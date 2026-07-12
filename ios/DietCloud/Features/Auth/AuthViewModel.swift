@@ -15,6 +15,9 @@ final class AuthViewModel {
     private let repository: AuthRepositoryProtocol
     private let isConfigured: Bool
 
+    /// Session restore must not hang forever (invalid Supabase URL / network).
+    private let restoreTimeoutNanoseconds: UInt64 = 8_000_000_000
+
     init(repository: AuthRepositoryProtocol, isConfigured: Bool) {
         self.repository = repository
         self.isConfigured = isConfigured
@@ -29,11 +32,13 @@ final class AuthViewModel {
         guard isConfigured else {
             phase = .signedOut
             errorMessage = AppError.auth(.notConfigured).userMessage
+            statusMessage = "请在 Secrets.xcconfig 中填写公开的 Supabase URL 与 anon key（勿写入 service role）。"
             return
         }
 
         do {
-            if let session = try await repository.restoreSession(), !session.isExpired {
+            let session = try await restoreSessionWithTimeout()
+            if let session, !session.isExpired {
                 phase = .signedIn(session.user)
             } else {
                 phase = .signedOut
@@ -42,6 +47,24 @@ final class AuthViewModel {
         } catch {
             phase = .signedOut
             errorMessage = AuthErrorSanitizer.mapAuthFailure(error).userMessage
+            statusMessage = "无法恢复登录状态，请重新登录。"
+        }
+    }
+
+    private func restoreSessionWithTimeout() async throws -> AuthSessionSnapshot? {
+        let repository = self.repository
+        let timeout = restoreTimeoutNanoseconds
+        return try await withThrowingTaskGroup(of: AuthSessionSnapshot?.self) { group in
+            group.addTask {
+                try await repository.restoreSession()
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: timeout)
+                throw AppError.network(message: "登录状态恢复超时，请检查网络或配置。")
+            }
+            defer { group.cancelAll() }
+            guard let result = try await group.next() else { return nil }
+            return result
         }
     }
 
@@ -100,7 +123,6 @@ final class AuthViewModel {
         } catch {
             let mapped = AuthErrorSanitizer.mapAuthFailure(error)
             errorMessage = mapped.userMessage
-            // Stay on current phase (often awaitingOTP) so user can retry or use code.
             if case .loading = phase {
                 phase = .signedOut
             }

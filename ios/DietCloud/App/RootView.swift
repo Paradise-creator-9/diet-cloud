@@ -1,17 +1,23 @@
 import SwiftUI
 
 /// App shell: routes on auth phase. Stage 1 only — no diary features.
+/// Always renders a visible state (loading / login / signed-in / config error).
 struct RootView: View {
     let container: AppDependencyContainer
     @State private var authViewModel: AuthViewModel
 
     init(container: AppDependencyContainer, authViewModel: AuthViewModel? = nil) {
         self.container = container
-        _authViewModel = State(initialValue: authViewModel ?? container.makeAuthViewModel())
+        _authViewModel = State(
+            initialValue: authViewModel ?? AuthViewModel(
+                repository: container.authRepository,
+                isConfigured: container.supabase.isConfigured
+            )
+        )
     }
 
     var body: some View {
-        AuthRootView(viewModel: authViewModel)
+        AuthRootView(viewModel: authViewModel, configDiagnostics: container.config.safeDiagnostics)
             .task {
                 await authViewModel.bootstrap()
             }

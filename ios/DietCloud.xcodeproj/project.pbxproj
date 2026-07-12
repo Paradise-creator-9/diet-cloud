@@ -31,6 +31,7 @@
 		B10296039BACEFB61B7DC408 /* DietCloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */; };
 		C1CA40D9C597D2BA2CF70DEA /* InMemoryCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CC2DDC9FD796F57E37A75C /* InMemoryCredentialStore.swift */; };
 		C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */; };
+		D5BAD5D575A28918A63E2BE9 /* LaunchUISmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */; };
 		D62E64746D379E3F1726ADBF /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51578621B12841023EA296BA /* AuthViewModelTests.swift */; };
 		D79A32118F3018A0D65F6799 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90817DE265258D5318F64D48 /* AuthViewModel.swift */; };
 		E3FCA953FE00662D53869C50 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B9FB0CE62D1B9E68E18884 /* AuthRepository.swift */; };
@@ -83,6 +84,7 @@
 		F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIClient.swift; sourceTree = "<group>"; };
 		F6DB7F44637EEE8A8B766538 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		F7FED1D03128CC0B6FBDDAE9 /* AuthErrorSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorSanitizer.swift; sourceTree = "<group>"; };
+		FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchUISmokeTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -215,6 +217,7 @@
 				960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */,
 				B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */,
 				7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */,
+				FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */,
 				21702E88765536EB03176846 /* MockAuthRepository.swift */,
 			);
 			path = DietCloudTests;
@@ -386,6 +389,7 @@
 				AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */,
 				10B72269E2ED85C9F29D51A7 /* DependencyContainerTests.swift in Sources */,
 				690FBF7CF4FF0EB84F804862 /* DiaryCalendarTests.swift in Sources */,
+				D5BAD5D575A28918A63E2BE9 /* LaunchUISmokeTests.swift in Sources */,
 				813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

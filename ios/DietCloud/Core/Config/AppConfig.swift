@@ -18,14 +18,26 @@ struct AppConfig: Equatable, Sendable {
     var isPlaceholder: Bool {
         let urlHost = supabaseURL.host?.lowercased() ?? ""
         return urlHost.contains("your_project")
+            || urlHost.isEmpty
             || supabaseAnonKey.contains("YOUR_SUPABASE")
             || supabaseAnonKey == "placeholder-anon-key"
+            || !isUsableHTTPURL(supabaseURL)
     }
 
     var isReadyForNetwork: Bool {
         !isPlaceholder
             && !supabaseAnonKey.isEmpty
             && !storageBucket.isEmpty
+            && isUsableHTTPURL(supabaseURL)
+            && isUsableHTTPURL(apiBaseURL)
+            && isUsableAuthRedirectURL(authRedirectURL)
+    }
+
+    /// Safe summary for UI — host only, never keys/tokens.
+    var safeDiagnostics: String {
+        let host = supabaseURL.host?.isEmpty == false ? (supabaseURL.host ?? "—") : "无效 URL"
+        let ready = isReadyForNetwork ? "可联网" : "未就绪"
+        return "Supabase: \(host) · \(ready)"
     }
 }
 
@@ -50,12 +62,14 @@ enum AppConfigLoader {
         let anonKey = try requiredString(AppConfigKey.supabaseAnonKey.rawValue, in: dictionary)
         let bucket = try requiredString(AppConfigKey.storageBucket.rawValue, in: dictionary)
 
-        guard let supabaseURL = URL(string: supabaseURLString), supabaseURL.scheme != nil else {
-            throw AppError.configuration(.invalidURL(key: AppConfigKey.supabaseURL.rawValue, value: supabaseURLString))
-        }
-        guard let apiBaseURL = URL(string: apiBaseURLString), apiBaseURL.scheme != nil else {
-            throw AppError.configuration(.invalidURL(key: AppConfigKey.apiBaseURL.rawValue, value: apiBaseURLString))
-        }
+        let supabaseURL = try parseHTTPURL(
+            supabaseURLString,
+            key: AppConfigKey.supabaseURL.rawValue
+        )
+        let apiBaseURL = try parseHTTPURL(
+            apiBaseURLString,
+            key: AppConfigKey.apiBaseURL.rawValue
+        )
         guard !anonKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw AppError.configuration(.missingKey(AppConfigKey.supabaseAnonKey.rawValue))
         }
@@ -74,6 +88,22 @@ enum AppConfigLoader {
         )
     }
 
+    /// Rejects truncated xcconfig values like `https:` (caused by // comments).
+    static func parseHTTPURL(_ raw: String, key: String) throws -> URL {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: text), let scheme = url.scheme?.lowercased() else {
+            throw AppError.configuration(.invalidURL(key: key, value: sanitizeURLForError(text)))
+        }
+        guard scheme == "http" || scheme == "https" else {
+            throw AppError.configuration(.invalidURL(key: key, value: sanitizeURLForError(text)))
+        }
+        // `https:` alone has no host — classic broken xcconfig symptom.
+        guard let host = url.host, !host.isEmpty else {
+            throw AppError.configuration(.invalidURL(key: key, value: sanitizeURLForError(text)))
+        }
+        return url
+    }
+
     /// Validates redirect URL: must be an absolute URL with a scheme, no secrets/tokens in query.
     static func resolveAuthRedirectURL(from dictionary: [String: Any]) throws -> URL {
         let key = AppConfigKey.authRedirectURL.rawValue
@@ -86,15 +116,21 @@ enum AppConfigLoader {
                 raw = text
             }
         } else {
-            // Explicit safe default when key is absent (documented in README).
             raw = AppConfig.defaultAuthRedirectURL.absoluteString
         }
 
         guard let url = URL(string: raw), let scheme = url.scheme, !scheme.isEmpty else {
-            throw AppError.configuration(.invalidURL(key: key, value: raw))
+            throw AppError.configuration(.invalidURL(key: key, value: sanitizeURLForError(raw)))
         }
 
-        // Redirect must never carry tokens or secrets in the template URL.
+        // Broken xcconfig often yields only `dietcloud:` with no path/host.
+        if scheme == "dietcloud" {
+            let path = url.host ?? url.path
+            if path.isEmpty || path == "/" {
+                throw AppError.configuration(.invalidURL(key: key, value: sanitizeURLForError(raw)))
+            }
+        }
+
         if let query = url.query?.lowercased(),
            query.contains("token") || query.contains("access_token") || query.contains("refresh_token") {
             throw AppError.configuration(.invalidURL(key: key, value: "[redacted-query]"))
@@ -113,4 +149,29 @@ enum AppConfigLoader {
         }
         return value
     }
+
+    /// Never put full secrets into error surfaces.
+    private static func sanitizeURLForError(_ raw: String) -> String {
+        if raw.count <= 12 { return raw }
+        if raw.hasPrefix("http") || raw.hasPrefix("dietcloud") {
+            return String(raw.prefix(12)) + "…"
+        }
+        return "[redacted]"
+    }
+}
+
+private func isUsableHTTPURL(_ url: URL) -> Bool {
+    guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https" else {
+        return false
+    }
+    return !(url.host ?? "").isEmpty
+}
+
+private func isUsableAuthRedirectURL(_ url: URL) -> Bool {
+    guard let scheme = url.scheme, !scheme.isEmpty else { return false }
+    if scheme == "dietcloud" {
+        let path = url.host ?? url.path
+        return !path.isEmpty && path != "/"
+    }
+    return true
 }

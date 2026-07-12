@@ -85,6 +85,8 @@ final class TodayMealsViewModel {
     private let healthKitClient: HealthKitClienting
     private let healthKitImporter: HealthKitImportServicing
     private let goalsStore: GoalsStoring
+    private let reminderSettingsStore: ReminderSettingsStoring
+    private let notificationScheduler: NotificationScheduling
     private let diaryCalendar: DiaryCalendar
     /// Guards against out-of-order loads when the user flips dates quickly.
     private var loadGeneration = 0
@@ -179,6 +181,8 @@ final class TodayMealsViewModel {
         healthKitClient: HealthKitClienting = MockHealthKitClient(),
         healthKitImporter: HealthKitImportServicing? = nil,
         goalsStore: GoalsStoring = InMemoryGoalsStore(),
+        reminderSettingsStore: ReminderSettingsStoring = InMemoryReminderSettingsStore(),
+        notificationScheduler: NotificationScheduling = SystemNotificationScheduler(),
         diaryCalendar: DiaryCalendar = DiaryCalendar(),
         dateKey: String? = nil
     ) {
@@ -197,6 +201,8 @@ final class TodayMealsViewModel {
                 exerciseRepository: exerciseRepository
             )
         self.goalsStore = goalsStore
+        self.reminderSettingsStore = reminderSettingsStore
+        self.notificationScheduler = notificationScheduler
         self.diaryCalendar = diaryCalendar
         self.goals = goalsStore.goals
         if let dateKey, let parsed = diaryCalendar.date(fromDateKey: dateKey) {
@@ -212,7 +218,13 @@ final class TodayMealsViewModel {
     }
 
     func makeSettingsViewModel(onSignOut: @escaping () -> Void) -> SettingsViewModel {
-        SettingsViewModel(user: user, goalsStore: goalsStore, onSignOut: onSignOut)
+        SettingsViewModel(
+            user: user,
+            goalsStore: goalsStore,
+            reminderSettingsStore: reminderSettingsStore,
+            notificationScheduler: notificationScheduler,
+            onSignOut: onSignOut
+        )
     }
 
     func makeTrendsViewModel() -> TrendsViewModel {

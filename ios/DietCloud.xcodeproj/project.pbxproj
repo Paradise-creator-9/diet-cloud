@@ -14,6 +14,7 @@
 		086655ED93A487FF955EA772 /* GoalsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E7B55456ACBEC5567A6E4E9 /* GoalsStore.swift */; };
 		0E4A49FA6AFB4C5549EB1BC1 /* FoodItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A931928902FF7BFE0916186F /* FoodItem.swift */; };
 		10B72269E2ED85C9F29D51A7 /* DependencyContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */; };
+		13CE8E907CCB25955DC33998 /* ReminderScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC2ACFD522C4351DF8A181A /* ReminderScheduleTests.swift */; };
 		14638B00BFF40D5FA7C78AD7 /* GoalsSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05144F8B636E28FBCF8FC0B /* GoalsSettingsTests.swift */; };
 		17F4FB6502561A58CDD3D5A5 /* MealPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */; };
 		20F041A712CE71CAE4CEB7F4 /* DataErrorMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFEAEB7F866518E6957AE52A /* DataErrorMapping.swift */; };
@@ -27,6 +28,7 @@
 		37DB9CE240FFB9FDE1E72277 /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */; };
 		4470A086C540CB4255CD14AA /* HealthKitClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54A13C8D07925BDF4638D15F /* HealthKitClient.swift */; };
 		461A6E8D9A60A705BEA1E4B4 /* MealPhotoRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */; };
+		46CA7D9CD7624A46647EACF8 /* NotificationScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8799D54AA937EE3C2C96F88F /* NotificationScheduling.swift */; };
 		47B2DCD492D27E087E7AFFE8 /* AccessTokenProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97D0C67760110133D6EB084 /* AccessTokenProviding.swift */; };
 		48270AE9F881437CCB5F0CBC /* MealAnalysisDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B38DE8CF29E57260531F4B4 /* MealAnalysisDTO.swift */; };
 		4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C4B2FB2471164D47F87342 /* AppConfigTests.swift */; };
@@ -47,7 +49,10 @@
 		7F895EF0E16AB95413A53B50 /* TodayMealsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C86AFB4E4A3BE2BB8A444A3B /* TodayMealsView.swift */; };
 		813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21702E88765536EB03176846 /* MockAuthRepository.swift */; };
 		8187112D3D5ACB424C443A63 /* FoodItemDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = D803A31EB953E909706DAAA8 /* FoodItemDTO.swift */; };
+		860474483BCA084C35E91908 /* ReminderModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 545DC1F13F264D10C31EEE40 /* ReminderModels.swift */; };
+		8A0BF511DF715D28E1016483 /* MockNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF80B513DC7A8DD01777D0C /* MockNotificationScheduler.swift */; };
 		8AEBE92718314B67F9F38643 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C674AF0BFB1426E71DA2BB5 /* AppError.swift */; };
+		8B8C1D795A5FE36EDCD607FA /* ReminderSettingsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5FA52A42111D1489A20DE2 /* ReminderSettingsStoreTests.swift */; };
 		8C81510F9CC102B8B7A84EBD /* TrendsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85C722A141C441C67AA99AF /* TrendsViewModelTests.swift */; };
 		970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */; };
 		9BB251DA8901631C9E532FCC /* TodayMealsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFAB48C59D565787CD10749D /* TodayMealsViewModel.swift */; };
@@ -64,6 +69,7 @@
 		AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */; };
 		B10296039BACEFB61B7DC408 /* DietCloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */; };
 		B7C6783097E209890ADBAE6C /* FoodItemRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E3960AA4F8B4D4F03E1727 /* FoodItemRepositoryTests.swift */; };
+		BA22C21DECBA63074F1D8813 /* ReminderScheduleApplier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E7189F47163AD4A2CB049C /* ReminderScheduleApplier.swift */; };
 		BB05928C4374A72AF3A9673A /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9B4BA6121717C9EB4D775B /* SettingsViewModel.swift */; };
 		C186F6B288162887BDE9C55B /* AnalyzeAPIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1389E782AE726656538F091B /* AnalyzeAPIClientTests.swift */; };
 		C1CA40D9C597D2BA2CF70DEA /* InMemoryCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CC2DDC9FD796F57E37A75C /* InMemoryCredentialStore.swift */; };
@@ -76,6 +82,7 @@
 		D6D91DDC5C093DB533B3EFC0 /* ActivityRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0846C5DA24DC42A159FF8819 /* ActivityRepository.swift */; };
 		D79A32118F3018A0D65F6799 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90817DE265258D5318F64D48 /* AuthViewModel.swift */; };
 		D9944F24A84A66DD64C27A87 /* ActivityDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */; };
+		DBC480B34CBEB2B61F482C04 /* ReminderSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F05F7C0ED7F18D4DBEAFF34 /* ReminderSettingsStore.swift */; };
 		DC6DAD7E1637BB0FB394095E /* MealPhotoRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7878FEC01579FF3062A1BAB8 /* MealPhotoRepositoryTests.swift */; };
 		E3FCA953FE00662D53869C50 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B9FB0CE62D1B9E68E18884 /* AuthRepository.swift */; };
 		E46903CF2B296FFC093B62E4 /* BodyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2938AEB5BC8A6EFB25BD4370 /* BodyMetric.swift */; };
@@ -101,17 +108,20 @@
 		0B358849434F00743448024F /* HealthKitImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitImportTests.swift; sourceTree = "<group>"; };
 		0B61C146B72BDB5D2CFA1F3F /* MealAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealAnalysis.swift; sourceTree = "<group>"; };
 		0E7B55456ACBEC5567A6E4E9 /* GoalsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsStore.swift; sourceTree = "<group>"; };
+		0F05F7C0ED7F18D4DBEAFF34 /* ReminderSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderSettingsStore.swift; sourceTree = "<group>"; };
 		11B8DBABA3253AD7116941FF /* UserGoals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserGoals.swift; sourceTree = "<group>"; };
 		1389E782AE726656538F091B /* AnalyzeAPIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIClientTests.swift; sourceTree = "<group>"; };
 		1B38DE8CF29E57260531F4B4 /* MealAnalysisDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealAnalysisDTO.swift; sourceTree = "<group>"; };
 		1F589EC305863550A8C98F02 /* DailyNutritionSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyNutritionSummary.swift; sourceTree = "<group>"; };
 		21702E88765536EB03176846 /* MockAuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthRepository.swift; sourceTree = "<group>"; };
+		24E7189F47163AD4A2CB049C /* ReminderScheduleApplier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduleApplier.swift; sourceTree = "<group>"; };
 		287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryParametersTests.swift; sourceTree = "<group>"; };
 		2938AEB5BC8A6EFB25BD4370 /* BodyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetric.swift; sourceTree = "<group>"; };
 		2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietCloudApp.swift; sourceTree = "<group>"; };
 		3762E293F50FF63036987FC7 /* DiaryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendar.swift; sourceTree = "<group>"; };
 		37FB025D57FBD426814C83EC /* HealthKitModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitModels.swift; sourceTree = "<group>"; };
 		38007A1DABD0C603A8489C27 /* BodyMetricsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricsRepository.swift; sourceTree = "<group>"; };
+		3AF80B513DC7A8DD01777D0C /* MockNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNotificationScheduler.swift; sourceTree = "<group>"; };
 		3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
 		408833F9E547197115F04318 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClientProvider.swift; sourceTree = "<group>"; };
 		41E5A424C48E249F4CACC137 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
@@ -121,12 +131,14 @@
 		51578621B12841023EA296BA /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
 		533611A60E602AA7CE7D4878 /* KeychainCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainCredentialStore.swift; sourceTree = "<group>"; };
 		53AB94BF6F13B0B022C83B2D /* DietCloud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DietCloud.entitlements; sourceTree = "<group>"; };
+		545DC1F13F264D10C31EEE40 /* ReminderModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderModels.swift; sourceTree = "<group>"; };
 		54A13C8D07925BDF4638D15F /* HealthKitClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitClient.swift; sourceTree = "<group>"; };
 		565E62F2F164A98BB038B28A /* MealType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealType.swift; sourceTree = "<group>"; };
 		5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDTO.swift; sourceTree = "<group>"; };
+		5A5FA52A42111D1489A20DE2 /* ReminderSettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderSettingsStoreTests.swift; sourceTree = "<group>"; };
 		5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhotoRepository.swift; sourceTree = "<group>"; };
 		66C3B5758B800F25C9F13A1D /* DietCloudTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DietCloudTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		68EB4D091D8EA9C16B9F7982 /* DietCloud.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DietCloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		68EB4D091D8EA9C16B9F7982 /* DietCloud.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DietCloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7058D16434745DA311001977 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		70B4D896438CDEA91930486C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		72B9FB0CE62D1B9E68E18884 /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
@@ -137,6 +149,7 @@
 		7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		7E6E3DDC9952ECB8DC603770 /* TrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendsView.swift; sourceTree = "<group>"; };
 		86A46E5BFA7DE7E05E1FF0AC /* SupabaseAuthLocalStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthLocalStorage.swift; sourceTree = "<group>"; };
+		8799D54AA937EE3C2C96F88F /* NotificationScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduling.swift; sourceTree = "<group>"; };
 		8BFE81F892F8613C080BC00A /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		8CD20A4FB837E36B1E20F0A9 /* AuthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViews.swift; sourceTree = "<group>"; };
 		90817DE265258D5318F64D48 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
@@ -154,11 +167,12 @@
 		A97D0C67760110133D6EB084 /* AccessTokenProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessTokenProviding.swift; sourceTree = "<group>"; };
 		AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhoto.swift; sourceTree = "<group>"; };
 		AFAB48C59D565787CD10749D /* TodayMealsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMealsViewModel.swift; sourceTree = "<group>"; };
-		B0F13CBCD5826DBC6312D10A /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+		B0F13CBCD5826DBC6312D10A /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		B40244B35869BA678D5D190C /* HTTPSessioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPSessioning.swift; sourceTree = "<group>"; };
-		B45F44E696C2591A96BD3A88 /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+		B45F44E696C2591A96BD3A88 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainerTests.swift; sourceTree = "<group>"; };
 		B9CC2DDC9FD796F57E37A75C /* InMemoryCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryCredentialStore.swift; sourceTree = "<group>"; };
+		BAC2ACFD522C4351DF8A181A /* ReminderScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduleTests.swift; sourceTree = "<group>"; };
 		C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencyContainer.swift; sourceTree = "<group>"; };
 		C86AFB4E4A3BE2BB8A444A3B /* TodayMealsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMealsView.swift; sourceTree = "<group>"; };
 		CF7D1A42E3826CAA26E4B753 /* MockFoodItemRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFoodItemRepository.swift; sourceTree = "<group>"; };
@@ -364,6 +378,17 @@
 			path = TodayMeals;
 			sourceTree = "<group>";
 		};
+		AC1B163911C748DBF0CD9569 /* Reminders */ = {
+			isa = PBXGroup;
+			children = (
+				8799D54AA937EE3C2C96F88F /* NotificationScheduling.swift */,
+				545DC1F13F264D10C31EEE40 /* ReminderModels.swift */,
+				24E7189F47163AD4A2CB049C /* ReminderScheduleApplier.swift */,
+				0F05F7C0ED7F18D4DBEAFF34 /* ReminderSettingsStore.swift */,
+			);
+			path = Reminders;
+			sourceTree = "<group>";
+		};
 		B00E8991F08684979A782218 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -407,6 +432,9 @@
 				FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */,
 				7878FEC01579FF3062A1BAB8 /* MealPhotoRepositoryTests.swift */,
 				21702E88765536EB03176846 /* MockAuthRepository.swift */,
+				3AF80B513DC7A8DD01777D0C /* MockNotificationScheduler.swift */,
+				BAC2ACFD522C4351DF8A181A /* ReminderScheduleTests.swift */,
+				5A5FA52A42111D1489A20DE2 /* ReminderSettingsStoreTests.swift */,
 				7B4A282D6F77B87B1EAFC1DF /* TodayMealsViewModelTests.swift */,
 				452224BB6B81D4768807D806 /* TrendAggregatorTests.swift */,
 				A85C722A141C441C67AA99AF /* TrendsViewModelTests.swift */,
@@ -476,6 +504,7 @@
 				73D17475E4E0E20639B23A2A /* Models */,
 				1B0FFFBD1AE2E96095D3E05D /* Networking */,
 				8A596FAA8574B93EEC6DBF4D /* Photos */,
+				AC1B163911C748DBF0CD9569 /* Reminders */,
 				EBBCE0910A13033C114518D5 /* Security */,
 				475C5F30379742C972710D89 /* Trends */,
 			);
@@ -530,6 +559,8 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = 7AFF8CF81B7B258E81BE083F /* Build configuration list for PBXProject "DietCloud" */;
 			developmentRegion = en;
@@ -597,6 +628,10 @@
 				461A6E8D9A60A705BEA1E4B4 /* MealPhotoRepository.swift in Sources */,
 				745B3B2CB893EEC11FA099A8 /* MealType.swift in Sources */,
 				054B48A569DDDF8D25B44B63 /* MockFoodItemRepository.swift in Sources */,
+				46CA7D9CD7624A46647EACF8 /* NotificationScheduling.swift in Sources */,
+				860474483BCA084C35E91908 /* ReminderModels.swift in Sources */,
+				BA22C21DECBA63074F1D8813 /* ReminderScheduleApplier.swift in Sources */,
+				DBC480B34CBEB2B61F482C04 /* ReminderSettingsStore.swift in Sources */,
 				77D14F03BCC117246AC20E40 /* RootView.swift in Sources */,
 				539971DF9206A4CA89AFABFC /* SecureCredentialStoring.swift in Sources */,
 				F7266405641246CB776FF535 /* SessionIdentity.swift in Sources */,
@@ -638,6 +673,9 @@
 				D5BAD5D575A28918A63E2BE9 /* LaunchUISmokeTests.swift in Sources */,
 				DC6DAD7E1637BB0FB394095E /* MealPhotoRepositoryTests.swift in Sources */,
 				813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */,
+				8A0BF511DF715D28E1016483 /* MockNotificationScheduler.swift in Sources */,
+				13CE8E907CCB25955DC33998 /* ReminderScheduleTests.swift in Sources */,
+				8B8C1D795A5FE36EDCD607FA /* ReminderSettingsStoreTests.swift in Sources */,
 				9DAF3617C3865BF61A537B2B /* TodayMealsViewModelTests.swift in Sources */,
 				A7A7CB908708902FEFF140E8 /* TrendAggregatorTests.swift in Sources */,
 				8C81510F9CC102B8B7A84EBD /* TrendsViewModelTests.swift in Sources */,

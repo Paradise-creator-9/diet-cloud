@@ -186,7 +186,12 @@ final class GoalsStoreTests: XCTestCase {
 
         // Settings save updates fiber without copying fat into fiber.
         let user = AuthUser(id: "11111111-1111-1111-1111-111111111111", email: "a@b.com")
-        let vm = SettingsViewModel(user: user, goalsStore: store, onSignOut: {})
+        let vm = SettingsViewModel(
+            user: user,
+            goalsStore: store,
+            notificationScheduler: MockNotificationScheduler(status: .authorized),
+            onSignOut: {}
+        )
         vm.draftCalories = "1800"
         vm.draftProtein = "90"
         vm.draftFiber = "25"
@@ -212,7 +217,12 @@ final class SettingsViewModelTests: XCTestCase {
     func testSaveGoalsPersistsAndRejectsInvalid() {
         let store = InMemoryGoalsStore()
         var signedOut = false
-        let vm = SettingsViewModel(user: user, goalsStore: store, onSignOut: { signedOut = true })
+        let vm = SettingsViewModel(
+            user: user,
+            goalsStore: store,
+            notificationScheduler: MockNotificationScheduler(status: .authorized),
+            onSignOut: { signedOut = true }
+        )
         vm.draftCalories = "2000"
         vm.draftWeight = "70"
         vm.draftProtein = "100"
@@ -235,7 +245,12 @@ final class SettingsViewModelTests: XCTestCase {
     func testSignOutRequiresConfirmThenCallsHandler() {
         let store = InMemoryGoalsStore()
         var signedOut = false
-        let vm = SettingsViewModel(user: user, goalsStore: store, onSignOut: { signedOut = true })
+        let vm = SettingsViewModel(
+            user: user,
+            goalsStore: store,
+            notificationScheduler: MockNotificationScheduler(status: .authorized),
+            onSignOut: { signedOut = true }
+        )
         XCTAssertFalse(vm.isPresentingSignOutConfirm)
         vm.requestSignOut()
         XCTAssertTrue(vm.isPresentingSignOutConfirm)

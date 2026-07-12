@@ -23,7 +23,7 @@ struct SettingsView: View {
                         .keyboardType(.decimalPad)
                     TextField("碳水 g", text: $viewModel.draftCarbs)
                         .keyboardType(.decimalPad)
-                    TextField("脂肪 g", text: $viewModel.draftFat)
+                    TextField("膳食纤维 g", text: $viewModel.draftFiber)
                         .keyboardType(.decimalPad)
                     Text("目标保存在本机，不写入云端数据库。留空表示不设置该项。")
                         .font(.caption)

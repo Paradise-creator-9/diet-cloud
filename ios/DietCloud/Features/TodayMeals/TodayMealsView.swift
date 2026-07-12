@@ -94,28 +94,6 @@ struct TodayMealsView: View {
                 .padding(.vertical, 10)
                 .background(Color(.systemBackground))
 
-            // Pinned below date bar so it is always visible (not buried in List).
-            VStack(alignment: .leading, spacing: 8) {
-                DayEnergySummaryCard(
-                    energy: viewModel.dayEnergySummary,
-                    progress: viewModel.goalsProgress
-                )
-                HealthKitImportBar(viewModel: viewModel)
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
-            .background(Color(.systemBackground))
-            .alert("用健康数据更新？", isPresented: $viewModel.isPresentingHealthKitOverwriteConfirm) {
-                Button("取消", role: .cancel) {
-                    viewModel.cancelHealthKitOverwriteImport()
-                }
-                Button("用健康数据更新", role: .destructive) {
-                    Task { await viewModel.confirmHealthKitOverwriteImport() }
-                }
-            } message: {
-                Text("今天（所选日期）已有手动身体或每日活动记录。确认后将用 Apple 健康数据更新这些项；运动记录会去重后追加。不会向健康写入数据。")
-            }
-
             Group {
                 switch viewModel.loadState {
                 case .loading:
@@ -144,6 +122,22 @@ struct TodayMealsView: View {
                     .background(Color(.systemGroupedBackground))
                 case .empty, .loaded:
                     List {
+                        // Compact overview scrolls with the list (not pinned / sticky).
+                        Section {
+                            DayEnergySummaryCard(
+                                energy: viewModel.dayEnergySummary,
+                                progress: viewModel.goalsProgress
+                            )
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 4, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+
+                            HealthKitImportBar(viewModel: viewModel)
+                                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 6, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
+
                         Section {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -215,6 +209,16 @@ struct TodayMealsView: View {
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
                     .background(Color(.systemGroupedBackground))
+                    .alert("用健康数据更新？", isPresented: $viewModel.isPresentingHealthKitOverwriteConfirm) {
+                        Button("取消", role: .cancel) {
+                            viewModel.cancelHealthKitOverwriteImport()
+                        }
+                        Button("用健康数据更新", role: .destructive) {
+                            Task { await viewModel.confirmHealthKitOverwriteImport() }
+                        }
+                    } message: {
+                        Text("今天（所选日期）已有手动身体或每日活动记录。确认后将用 Apple 健康数据更新这些项；运动记录会去重后追加。不会向健康写入数据。")
+                    }
                 }
             }
         }
@@ -255,7 +259,8 @@ struct HealthKitImportBar: View {
     }
 }
 
-/// Day overview with calorie rings + macro bars (native SwiftUI only).
+/// Compact day overview: small rings + metric grid + thin nutrient bars.
+/// Intended height ~220–320pt so body/activity remain visible on first screen.
 struct DayEnergySummaryCard: View {
     let energy: DayEnergySummary
     var progress: GoalsProgress = GoalsProgress(
@@ -263,27 +268,33 @@ struct DayEnergySummaryCard: View {
         netKcal: 0,
         proteinG: 0,
         carbsG: 0,
-        fatG: 0,
+        fiberG: 0,
         goals: .empty
     )
 
+    private let gridColumns = [
+        GridItem(.flexible(), spacing: 8),
+        GridItem(.flexible(), spacing: 8)
+    ]
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
                 Text("当日总览")
-                    .font(.headline)
-                Spacer()
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: 4)
                 if progress.goals.hasAnyGoal {
                     Text("含目标")
                         .font(.caption2.weight(.medium))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
                         .background(Capsule().fill(Color.accentColor.opacity(0.12)))
                         .foregroundStyle(Color.accentColor)
                 }
             }
 
-            HStack(spacing: 20) {
+            // Row 1: compact calorie rings
+            HStack(spacing: 10) {
                 DashboardRingView(
                     title: "摄入",
                     valueText: formatKcal(energy.foodIntakeKcal),
@@ -294,7 +305,9 @@ struct DayEnergySummaryCard: View {
                     tint: progress.isOverGoal(current: progress.intakeKcal, goal: progress.goals.dailyCaloriesKcal)
                         ? .orange
                         : .accentColor,
-                    showTrackOnly: !progress.goals.hasCalorieGoal
+                    showTrackOnly: !progress.goals.hasCalorieGoal,
+                    size: 68,
+                    lineWidth: 6
                 )
                 DashboardRingView(
                     title: "净热量",
@@ -304,27 +317,29 @@ struct DayEnergySummaryCard: View {
                         : "kcal",
                     progress: progress.goals.hasCalorieGoal ? progress.netProgress : 0,
                     tint: .green,
-                    showTrackOnly: !progress.goals.hasCalorieGoal
+                    showTrackOnly: !progress.goals.hasCalorieGoal,
+                    size: 68,
+                    lineWidth: 6
                 )
             }
             .frame(maxWidth: .infinity)
 
-            VStack(spacing: 8) {
-                metricRow("活动消耗", "\(formatKcal(energy.activityBurnKcal)) kcal")
-                metricRow("运动消耗", "\(formatKcal(energy.exerciseBurnKcal)) kcal")
-                metricRow("步数", energy.steps > 0 ? formatNumber(energy.steps) : "—")
-                weightRow
+            // Row 2: metric grid
+            LazyVGrid(columns: gridColumns, spacing: 6) {
+                compactMetric(title: "活动消耗", value: "\(formatKcal(energy.activityBurnKcal)) kcal")
+                compactMetric(title: "运动消耗", value: "\(formatKcal(energy.exerciseBurnKcal)) kcal")
+                compactMetric(title: "步数", value: energy.steps > 0 ? formatNumber(energy.steps) : "—")
+                compactMetric(title: "体重", value: weightValueText)
             }
 
+            // Row 3: compact nutrient bars — protein / carbs / fiber
             if progress.goals.proteinGrams != nil
                 || progress.goals.carbsGrams != nil
-                || progress.goals.fatGrams != nil
+                || progress.goals.fiberGrams != nil
                 || progress.proteinG > 0
                 || progress.carbsG > 0
-                || progress.fatG > 0 {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("营养")
-                        .font(.subheadline.weight(.semibold))
+                || progress.fiberG > 0 {
+                VStack(alignment: .leading, spacing: 5) {
                     macroBar(
                         title: "蛋白质",
                         line: progress.proteinLine,
@@ -340,23 +355,26 @@ struct DayEnergySummaryCard: View {
                         showTrackOnly: progress.goals.carbsGrams == nil
                     )
                     macroBar(
-                        title: "脂肪",
-                        line: progress.fatLine,
-                        progress: progress.goals.fatGrams != nil ? progress.fatProgress : 0,
+                        title: "膳食纤维",
+                        line: progress.fiberLine,
+                        progress: progress.goals.fiberGrams != nil ? progress.fiberProgress : 0,
                         tint: .purple,
-                        showTrackOnly: progress.goals.fatGrams == nil
+                        showTrackOnly: progress.goals.fiberGrams == nil
                     )
                 }
             }
 
             Text(netFormulaCaption)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(.secondarySystemGroupedBackground))
         )
         .accessibilityElement(children: .combine)
@@ -365,35 +383,41 @@ struct DayEnergySummaryCard: View {
 
     private var netFormulaCaption: String {
         if energy.dailyActivitySource == "healthkit" {
-            return "净热量 = 摄入 − 活动消耗（健康 active energy 已含 workout）"
+            return "净热量 = 摄入 − 活动（健康 active energy 已含 workout）"
         }
-        return "净热量 = 摄入 − 活动消耗 − 运动消耗"
+        return "净热量 = 摄入 − 活动 − 运动"
     }
 
-    @ViewBuilder
-    private var weightRow: some View {
+    private var weightValueText: String {
         let current = energy.weightKg.flatMap { $0 > 0 ? formatNumber($0) : nil }
         if let target = progress.goals.targetWeightKg, target > 0 {
             if let current {
-                metricRow("体重", "\(current) / \(formatNumber(target)) kg")
-            } else {
-                metricRow("目标体重", "\(formatNumber(target)) kg")
+                return "\(current)/\(formatNumber(target)) kg"
             }
-        } else {
-            metricRow("体重", current.map { "\($0) kg" } ?? "—")
+            return "目标 \(formatNumber(target)) kg"
         }
+        return current.map { "\($0) kg" } ?? "—"
     }
 
-    private func metricRow(_ title: String, _ value: String) -> some View {
-        HStack {
+    private func compactMetric(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
             Text(title)
-                .font(.subheadline)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
-            Spacer()
+                .lineLimit(1)
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(.caption.weight(.semibold))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color(.tertiarySystemFill).opacity(0.55))
+        )
     }
 
     private func macroBar(
@@ -403,14 +427,14 @@ struct DayEnergySummaryCard: View {
         tint: Color,
         showTrackOnly: Bool
     ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
                 Text(title)
-                    .font(.caption)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
-                Spacer()
+                Spacer(minLength: 4)
                 Text(line)
-                    .font(.caption.weight(.medium))
+                    .font(.caption2.weight(.medium))
                     .monospacedDigit()
             }
             GeometryReader { geo in
@@ -422,7 +446,7 @@ struct DayEnergySummaryCard: View {
                         .frame(width: showTrackOnly ? 0 : geo.size.width * progress)
                 }
             }
-            .frame(height: 6)
+            .frame(height: 4)
         }
     }
 
@@ -437,7 +461,7 @@ struct DayEnergySummaryCard: View {
     }
 }
 
-/// Simple circular progress ring (0...1).
+/// Compact circular progress ring (0...1). Default size is small for home overview.
 struct DashboardRingView: View {
     let title: String
     let valueText: String
@@ -446,6 +470,8 @@ struct DashboardRingView: View {
     var tint: Color = .accentColor
     /// When true, only show empty track (no goal set).
     var showTrackOnly: Bool = false
+    var size: CGFloat = 68
+    var lineWidth: CGFloat = 6
 
     /// Always `0...1` for ring stroke.
     private var clamped: Double {
@@ -454,36 +480,38 @@ struct DashboardRingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
+        HStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .stroke(Color(.tertiarySystemFill), lineWidth: 10)
+                    .stroke(Color(.tertiarySystemFill), lineWidth: lineWidth)
                 Circle()
                     .trim(from: 0, to: showTrackOnly ? 0 : clamped)
                     .stroke(
                         tint,
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                        style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                VStack(spacing: 2) {
+                VStack(spacing: 0) {
                     Text(valueText)
-                        .font(.title3.weight(.semibold))
+                        .font(.subheadline.weight(.semibold))
                         .monospacedDigit()
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.65)
                         .lineLimit(1)
                     Text(subtitle)
-                        .font(.caption2)
+                        .font(.system(size: 9))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
-                .padding(8)
+                .padding(4)
             }
-            .frame(width: 110, height: 110)
+            .frame(width: size, height: size)
             .accessibilityLabel("\(title) \(valueText) \(subtitle)")
 
             Text(title)
-                .font(.caption.weight(.semibold))
+                .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
     }

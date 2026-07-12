@@ -12,7 +12,7 @@ final class SettingsViewModel {
     var draftWeight = ""
     var draftProtein = ""
     var draftCarbs = ""
-    var draftFat = ""
+    var draftFiber = ""
 
     let user: AuthUser
     private let goalsStore: GoalsStoring
@@ -31,7 +31,7 @@ final class SettingsViewModel {
         draftWeight = Self.formatOptional(g.targetWeightKg)
         draftProtein = Self.formatOptional(g.proteinGrams)
         draftCarbs = Self.formatOptional(g.carbsGrams)
-        draftFat = Self.formatOptional(g.fatGrams)
+        draftFiber = Self.formatOptional(g.fiberGrams)
         errorMessage = nil
         statusMessage = nil
     }
@@ -46,9 +46,12 @@ final class SettingsViewModel {
             weightText: draftWeight,
             proteinText: draftProtein,
             carbsText: draftCarbs,
-            fatText: draftFat
+            fiberText: draftFiber
         )
-        if let goals {
+        if var goals {
+            // Preserve legacy fat goal stored before fiber replaced home fat UI.
+            // Never copy fatGrams → fiberGrams (different nutrient semantics).
+            goals.fatGrams = goalsStore.goals.fatGrams
             goalsStore.save(goals)
             loadDraftsFromStore()
             statusMessage = "目标已保存到本机。"

@@ -98,7 +98,7 @@ final class TodayMealsViewModel {
             netKcal: dayEnergySummary.netKcal,
             proteinG: summary.protein,
             carbsG: summary.carbs,
-            fatG: summary.fat,
+            fiberG: summary.fiber,
             goals: goals
         )
     }

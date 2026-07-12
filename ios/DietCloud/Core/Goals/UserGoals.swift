@@ -1,6 +1,13 @@
 import Foundation
 
 /// Local nutrition / weight goals. Not stored in Supabase (no schema change).
+///
+/// **UserDefaults compatibility**
+/// - `fatGrams` is retained so older installs that saved fat goals still decode
+///   and round-trip without data loss.
+/// - `fiberGrams` is the new home-overview third nutrient goal.
+/// - Values are **never** migrated between fat and fiber (different semantics).
+/// - Missing optional keys decode as `nil` (no synthetic default grams).
 struct UserGoals: Equatable, Codable, Sendable {
     /// Daily calorie target (kcal). `nil` = not set.
     var dailyCaloriesKcal: Double?
@@ -8,6 +15,10 @@ struct UserGoals: Equatable, Codable, Sendable {
     var targetWeightKg: Double?
     var proteinGrams: Double?
     var carbsGrams: Double?
+    /// Dietary fiber goal (g). Home overview third nutrient (protein / carbs / fiber).
+    var fiberGrams: Double?
+    /// Legacy fat goal (g). Kept for Codable / UserDefaults compatibility only;
+    /// not shown as a home core nutrient progress target.
     var fatGrams: Double?
 
     static let empty = UserGoals(
@@ -15,6 +26,7 @@ struct UserGoals: Equatable, Codable, Sendable {
         targetWeightKg: nil,
         proteinGrams: nil,
         carbsGrams: nil,
+        fiberGrams: nil,
         fatGrams: nil
     )
 
@@ -23,7 +35,13 @@ struct UserGoals: Equatable, Codable, Sendable {
             || targetWeightKg != nil
             || proteinGrams != nil
             || carbsGrams != nil
+            || fiberGrams != nil
             || fatGrams != nil
+    }
+
+    /// Goals that drive home overview progress (excludes legacy fat).
+    var hasHomeNutrientGoal: Bool {
+        proteinGrams != nil || carbsGrams != nil || fiberGrams != nil
     }
 
     var hasCalorieGoal: Bool {
@@ -39,21 +57,24 @@ enum UserGoalsValidation {
         weightText: String,
         proteinText: String,
         carbsText: String,
-        fatText: String
+        fiberText: String
     ) -> (UserGoals?, String?) {
         do {
             let calories = try optionalPositive(caloriesText, name: "每日目标热量", allowZero: false)
             let weight = try optionalPositive(weightText, name: "目标体重", allowZero: false)
             let protein = try optionalNonNegative(proteinText, name: "蛋白质目标")
             let carbs = try optionalNonNegative(carbsText, name: "碳水目标")
-            let fat = try optionalNonNegative(fatText, name: "脂肪目标")
+            let fiber = try optionalNonNegative(fiberText, name: "膳食纤维目标")
             return (
                 UserGoals(
                     dailyCaloriesKcal: calories,
                     targetWeightKg: weight,
                     proteinGrams: protein,
                     carbsGrams: carbs,
-                    fatGrams: fat
+                    fiberGrams: fiber,
+                    // Settings UI no longer edits fat; callers must re-apply
+                    // any legacy `fatGrams` they want to preserve (see SettingsViewModel).
+                    fatGrams: nil
                 ),
                 nil
             )
@@ -101,7 +122,7 @@ struct GoalsProgress: Equatable, Sendable {
     var netKcal: Double
     var proteinG: Double
     var carbsG: Double
-    var fatG: Double
+    var fiberG: Double
     var goals: UserGoals
 
     var intakeLine: String {
@@ -132,11 +153,11 @@ struct GoalsProgress: Equatable, Sendable {
         return "\(format(carbsG)) g"
     }
 
-    var fatLine: String {
-        if let goal = goals.fatGrams {
-            return "\(format(fatG)) / \(format(goal)) g"
+    var fiberLine: String {
+        if let goal = goals.fiberGrams {
+            return "\(format(fiberG)) / \(format(goal)) g"
         }
-        return "\(format(fatG)) g"
+        return "\(format(fiberG)) g"
     }
 
     /// Ring/bar fraction for intake vs calorie goal. Clamped to `0...1`.
@@ -158,8 +179,8 @@ struct GoalsProgress: Equatable, Sendable {
         Self.clampedRatio(current: carbsG, goal: goals.carbsGrams)
     }
 
-    var fatProgress: Double {
-        Self.clampedRatio(current: fatG, goal: goals.fatGrams)
+    var fiberProgress: Double {
+        Self.clampedRatio(current: fiberG, goal: goals.fiberGrams)
     }
 
     /// True when current exceeds goal (for tinting; progress itself stays ≤ 1).

@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { requireIngestToken, createServiceRoleClient, resolveTrustedUserId, IngestAuthError, errorCodeFor, respondError } from "./_lib/ingestAuth.js";
 
 const bucket = process.env.SUPABASE_STORAGE_BUCKET || process.env.VITE_SUPABASE_STORAGE_BUCKET || "meal-photos";
 
@@ -6,27 +6,6 @@ function json(res, status, payload) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
   res.end(JSON.stringify(payload));
-}
-
-function normalizeError(error) {
-  if (error instanceof Error) {
-    return {
-      message: error.message,
-      name: error.name,
-    };
-  }
-
-  if (error && typeof error === "object") {
-    return {
-      message: error.message || error.error || JSON.stringify(error),
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      status: error.status,
-    };
-  }
-
-  return { message: String(error) };
 }
 
 async function readJson(req) {
@@ -37,17 +16,6 @@ async function readJson(req) {
   for await (const chunk of req) chunks.push(chunk);
   const body = Buffer.concat(chunks).toString("utf8");
   return body ? JSON.parse(body) : {};
-}
-
-function requireBearer(req) {
-  const token = process.env.DIARY_INGEST_TOKEN;
-  if (!token) return { ok: false, status: 500, message: "DIARY_INGEST_TOKEN is not configured." };
-
-  const header = req.headers.authorization || "";
-  const provided = header.startsWith("Bearer ") ? header.slice("Bearer ".length) : "";
-  if (provided !== token) return { ok: false, status: 401, message: "Unauthorized." };
-
-  return { ok: true };
 }
 
 function contentTypeFor(fileName = "") {
@@ -64,27 +32,8 @@ function safeStorageName(fileName) {
 
 function bufferFromDataUrl(dataUrl) {
   const parts = String(dataUrl || "").split(",");
-  if (parts.length !== 2) throw new Error("Invalid photo dataUrl.");
+  if (parts.length !== 2) throw new IngestAuthError(400, "Invalid photo dataUrl.");
   return Buffer.from(parts[1], "base64");
-}
-
-async function resolveUserId(supabase, payload) {
-  if (payload.userId || process.env.DIARY_USER_ID) return payload.userId || process.env.DIARY_USER_ID;
-
-  const email = payload.userEmail || process.env.DIARY_USER_EMAIL;
-  if (!email) throw new Error("DIARY_USER_ID or DIARY_USER_EMAIL is required.");
-
-  let page = 1;
-  while (page < 20) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error) throw error;
-    const user = data.users.find((item) => item.email?.toLowerCase() === email.toLowerCase());
-    if (user) return user.id;
-    if (!data.users.length) break;
-    page += 1;
-  }
-
-  throw new Error(`No Supabase user found for ${email}.`);
 }
 
 async function uploadPhotos(supabase, userId, photos = []) {
@@ -113,7 +62,10 @@ async function upsertItems(supabase, userId, uploadedPhotos, items = []) {
 
   for (const item of items) {
     const sourceId = item.sourceId || item.id;
-    if (!sourceId) throw new Error("Each item needs sourceId.");
+    if (!sourceId) throw new IngestAuthError(400, "Each item needs sourceId.");
+    if (!item.date) throw new IngestAuthError(400, `Item ${sourceId} needs date.`);
+    if (!item.meal) throw new IngestAuthError(400, `Item ${sourceId} needs meal.`);
+    if (!item.name) throw new IngestAuthError(400, `Item ${sourceId} needs name.`);
 
     const row = {
       user_id: userId,
@@ -155,26 +107,28 @@ async function upsertItems(supabase, userId, uploadedPhotos, items = []) {
 }
 
 export default async function handler(req, res) {
+  if (req.method === "OPTIONS") {
+    res.setHeader("access-control-allow-methods", "POST, OPTIONS");
+    res.setHeader("access-control-allow-headers", "authorization, content-type");
+    return json(res, 204, {});
+  }
+
   if (req.method !== "POST") {
-    res.setHeader("allow", "POST");
-    return json(res, 405, { error: "Method not allowed." });
+    res.setHeader("allow", "POST, OPTIONS");
+    return json(res, 405, { error: "Method not allowed.", code: errorCodeFor(405) });
   }
 
-  const auth = requireBearer(req);
-  if (!auth.ok) return json(res, auth.status, { error: auth.message });
-
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRoleKey) {
-    return json(res, 500, { error: "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required." });
-  }
+  const auth = requireIngestToken(req);
+  if (!auth.ok) return json(res, auth.status, { error: auth.message, code: auth.code || errorCodeFor(auth.status) });
 
   try {
     const payload = await readJson(req);
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false },
-    });
-    const userId = await resolveUserId(supabase, payload);
+    if (!payload || typeof payload !== "object") throw new IngestAuthError(400, "Request body must be a JSON object.");
+    if (payload.items !== undefined && !Array.isArray(payload.items)) throw new IngestAuthError(400, "items must be an array.");
+    if (payload.photos !== undefined && !Array.isArray(payload.photos)) throw new IngestAuthError(400, "photos must be an array.");
+
+    const supabase = createServiceRoleClient();
+    const userId = await resolveTrustedUserId(supabase, payload);
     const uploadedPhotos = await uploadPhotos(supabase, userId, payload.photos || []);
     const result = await upsertItems(supabase, userId, uploadedPhotos, payload.items || []);
 
@@ -185,10 +139,6 @@ export default async function handler(req, res) {
       photosUploaded: uploadedPhotos.size,
     });
   } catch (error) {
-    const normalized = normalizeError(error);
-    return json(res, 500, {
-      error: normalized.message,
-      details: normalized,
-    });
+    return respondError(res, error, "ingest");
   }
 }

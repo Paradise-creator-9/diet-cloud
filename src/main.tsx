@@ -41,7 +41,7 @@ import {
   Watch,
   Wheat,
 } from "lucide-react";
-import { createExerciseActivity, createFoodItem, createFoodItems, deleteBodyMetric, deleteDailyActivity, deleteExerciseActivity, deleteFoodItem, fetchBodyMetrics, fetchDailyActivities, fetchExerciseActivities, fetchFoodItems, importDiaryBundle, importExerciseData, isCloudConfigured, onAuthChange, signInWithEmail, signOut, updateExerciseActivity, updateFoodItem, upsertBodyMetric, upsertDailyActivity } from "./supabase";
+import { createExerciseActivity, createFoodItem, createFoodItems, deleteBodyMetric, deleteDailyActivity, deleteExerciseActivity, deleteFoodItem, fetchBodyMetrics, fetchDailyActivities, fetchExerciseActivities, fetchFoodItems, getAccessToken, importDiaryBundle, importExerciseData, isCloudConfigured, onAuthChange, signInWithEmail, signOut, updateExerciseActivity, updateFoodItem, upsertBodyMetric, upsertDailyActivity } from "./supabase";
 import { appleHealthMetricDefinitions, parseAppleHealthExport, type AppleHealthImportResult, type AppleHealthParseProgress, type HealthMetricDefinition } from "./appleHealth";
 import { mealMeta, nutrientTargets, seedItems } from "./data";
 import type { BodyMetric, DailyActivity, ExerciseActivity, FoodItem, MealType } from "./types";
@@ -433,7 +433,7 @@ function App() {
     navigator.clipboard?.writeText(endpoint).catch(() => undefined);
     setNotice({
       title: "iPhone 快捷指令同步",
-      body: `接口地址已尝试复制：${endpoint}\n\n推荐用最简单的 URL 参数法：\n方法：GET\nURL：${endpoint}?token=你的_DIARY_INGEST_TOKEN&write=1&date=今天日期&steps=步数&activeCalories=活动热量&exerciseMinutes=运动分钟&standHours=站立小时&distanceKm=步行跑步公里\n\n也可以继续用 POST JSON：\nHeader 可用 Authorization = Bearer 你的 DIARY_INGEST_TOKEN，或 x-diary-token = 你的_DIARY_INGEST_TOKEN。\n\n排查时加 debug=true，并在“获取 URL 内容”后面加“显示结果”。如果返回 dailyImported: 1，说明已经写入云端。`,
+      body: `接口地址已尝试复制：${endpoint}\n\n重要：Token 必须放在 Header 里，不能再拼进 URL（旧的 ?token= 参数法已停用，带这个参数的请求会被直接拒绝）。\n\n方法：GET 或 POST\nURL：${endpoint}?write=1&date=今天日期&steps=步数&activeCalories=活动热量&exerciseMinutes=运动分钟&standHours=站立小时&distanceKm=步行跑步公里（不含 token 参数）\n在「获取 URL 内容」的 Headers 里添加一行：\nAuthorization：Bearer 你的_DIARY_INGEST_TOKEN\n\n排查时加 debug=true，并在“获取 URL 内容”后面加“显示结果”。如果返回 dailyImported: 1，说明已经写入云端。`,
     });
   }
 
@@ -1254,6 +1254,8 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
     setError("");
     setAnalysisSummary("");
     try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("登录状态已失效，请刷新页面重新登录后再试。");
       const payloadPhotos = await Promise.all(photos.slice(0, 3).map(async (file) => ({
         fileName: file.name,
         contentType: file.type || "image/jpeg",
@@ -1261,7 +1263,7 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
       })));
       const response = await fetch("/api/analyze-meal", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ photos: payloadPhotos, hint: userHint }),
       });
       const payload = await response.json();
@@ -2505,10 +2507,12 @@ function BodyMetricDialog({ defaultDate, metric, onClose, onSaved }: { defaultDa
     setError("");
     setScreenshotSummary("");
     try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("登录状态已失效，请刷新页面重新登录后再试。");
       const dataUrl = await imageFileToDataUrl(file, 1800, 0.86);
       const response = await fetch("/api/analyze-body", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({
           screenshot: {
             fileName: file.name,

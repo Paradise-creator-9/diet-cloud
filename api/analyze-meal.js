@@ -4,13 +4,8 @@ function json(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-import { generateGeminiContent } from "./gemini.js";
-
-function normalizeError(error) {
-  if (error instanceof Error) return { message: error.message, name: error.name };
-  if (error && typeof error === "object") return { message: error.message || error.error || JSON.stringify(error), status: error.status };
-  return { message: String(error) };
-}
+import { generateGeminiContent as realGenerateGeminiContent } from "./gemini.js";
+import { requireSupabaseUser, checkRateLimit, respondError, SessionAuthError } from "./_lib/sessionAuth.js";
 
 async function readJson(req) {
   if (req.body && typeof req.body === "object") return req.body;
@@ -72,20 +67,35 @@ function normalizeAnalysis(payload) {
   };
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("allow", "POST");
-    return json(res, 405, { error: "Method not allowed." });
+// `deps` is only ever passed by tests (a stub Supabase client and/or a
+// stand-in for generateGeminiContent), so the auth/rate-limit/business
+// logic can be exercised without a network call or a real Gemini request.
+// Vercel always invokes handler(req, res) with no third argument, so
+// production always falls back to the real dependencies below.
+export default async function handler(req, res, deps = {}) {
+  const generateGeminiContent = deps.generateGeminiContent || realGenerateGeminiContent;
+  if (req.method === "OPTIONS") {
+    res.setHeader("access-control-allow-methods", "POST, OPTIONS");
+    res.setHeader("access-control-allow-headers", "authorization, content-type");
+    return json(res, 204, {});
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return json(res, 500, { error: "GEMINI_API_KEY is not configured." });
+  if (req.method !== "POST") {
+    res.setHeader("allow", "POST, OPTIONS");
+    return json(res, 405, { error: "Method not allowed.", code: "method_not_allowed" });
+  }
 
   try {
+    const user = await requireSupabaseUser(req, deps.supabase);
+    checkRateLimit(user.id);
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new SessionAuthError(500, "GEMINI_API_KEY is not configured.");
+
     const payload = await readJson(req);
     const photos = Array.isArray(payload.photos) ? payload.photos.slice(0, 3) : [];
     const hint = String(payload.hint || payload.description || payload.note || "").trim();
-    if (!photos.length && !hint) return json(res, 400, { error: "请上传照片，或者至少填写一句文字说明。" });
+    if (!photos.length && !hint) throw new SessionAuthError(400, "请上传照片，或者至少填写一句文字说明。");
 
     const instructions = [
       "要求：",
@@ -137,7 +147,6 @@ export default async function handler(req, res) {
     const text = result.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
     return json(res, 200, { ok: true, model, analysis: normalizeAnalysis(extractJson(text)) });
   } catch (error) {
-    const normalized = normalizeError(error);
-    return json(res, error.status || 500, { error: normalized.message, details: error.details || normalized });
+    return respondError(res, error, "analyze-meal");
   }
 }

@@ -1,23 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import { requireIngestToken, createServiceRoleClient, resolveTrustedUserId, IngestAuthError, errorCodeFor, respondError } from "./_lib/ingestAuth.js";
 
 function json(res, status, payload) {
   res.statusCode = status;
   res.setHeader("content-type", "application/json; charset=utf-8");
   res.end(JSON.stringify(payload));
-}
-
-function normalizeError(error) {
-  if (error instanceof Error) return { message: error.message, name: error.name };
-  if (error && typeof error === "object") {
-    return {
-      message: error.message || error.error || JSON.stringify(error),
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      status: error.status,
-    };
-  }
-  return { message: String(error) };
 }
 
 async function readJson(req) {
@@ -43,53 +29,8 @@ function parseRequestBody(body, contentTypeValue) {
   }
 }
 
-function requireBearer(req) {
-  const token = process.env.DIARY_INGEST_TOKEN;
-  if (!token) return { ok: false, status: 500, message: "DIARY_INGEST_TOKEN is not configured." };
-  const url = new URL(req.url || "/", "https://diet-cloud.vercel.app");
-  const header = String(req.headers.authorization || "");
-  const bearer = header.match(/^Bearer\s+(.+)$/i)?.[1] || "";
-  const provided = cleanToken(
-    bearer
-      || req.headers["x-diary-token"]
-      || url.searchParams.get("token")
-      || url.searchParams.get("diaryToken")
-      || url.searchParams.get("apiKey")
-      || url.searchParams.get("key")
-      || "",
-  );
-  if (provided !== token) return { ok: false, status: 401, message: "Unauthorized." };
-  return { ok: true };
-}
-
-function cleanToken(value) {
-  return String(Array.isArray(value) ? value[0] : value)
-    .trim()
-    .replace(/^DIARY_INGEST_TOKEN\s*=\s*/i, "")
-    .replace(/^Bearer\s+/i, "")
-    .replace(/^["']|["']$/g, "")
-    .trim();
-}
-
 function truthy(value) {
   return value === true || String(value).toLowerCase() === "true" || String(value) === "1";
-}
-
-async function resolveUserId(supabase, payload) {
-  if (payload.userId || process.env.DIARY_USER_ID) return payload.userId || process.env.DIARY_USER_ID;
-  const email = payload.userEmail || process.env.DIARY_USER_EMAIL;
-  if (!email) throw new Error("DIARY_USER_ID or DIARY_USER_EMAIL is required.");
-
-  let page = 1;
-  while (page < 20) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
-    if (error) throw error;
-    const user = data.users.find((item) => item.email?.toLowerCase() === email.toLowerCase());
-    if (user) return user.id;
-    if (!data.users.length) break;
-    page += 1;
-  }
-  throw new Error(`No Supabase user found for ${email}.`);
 }
 
 function toDateTime(value, date) {
@@ -484,7 +425,7 @@ async function deleteDiagnosticRows(supabase, userId, payload) {
 
   const date = payload.date || payload.activityOn || payload.activity_on;
   if (date) query = query.eq("activity_on", date);
-  if (source === "apple_shortcut" && !date) throw new Error("Deleting apple_shortcut requires a date.");
+  if (source === "apple_shortcut" && !date) throw new IngestAuthError(400, "Deleting apple_shortcut requires a date.");
 
   const { error } = await query;
   if (error) throw error;
@@ -499,25 +440,17 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== "GET" && req.method !== "POST") {
-    res.setHeader("allow", "GET, POST");
-    return json(res, 405, { error: "Method not allowed." });
+    res.setHeader("allow", "GET, POST, OPTIONS");
+    return json(res, 405, { error: "Method not allowed.", code: errorCodeFor(405) });
   }
 
-  const auth = requireBearer(req);
-  if (!auth.ok) return json(res, auth.status, { error: auth.message });
-
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRoleKey) {
-    return json(res, 500, { error: "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required." });
-  }
+  const auth = requireIngestToken(req);
+  if (!auth.ok) return json(res, auth.status, { error: auth.message, code: auth.code || errorCodeFor(auth.status) });
 
   try {
     const payload = req.method === "POST" ? await readJson(req) : payloadFromQuery(req);
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false },
-    });
-    const userId = await resolveUserId(supabase, payload);
+    const supabase = createServiceRoleClient();
+    const userId = await resolveTrustedUserId(supabase, payload);
     if (req.method === "GET" && !isIngestPayload(payload)) {
       const rows = await listRecentDailyActivities(supabase, userId, req);
       return json(res, 200, { ok: true, count: rows.length, dailyActivities: rows });
@@ -552,7 +485,6 @@ export default async function handler(req, res) {
     const workoutsImported = await upsertWorkouts(supabase, userId, payload.workouts || []);
     return json(res, 200, { ok: true, dailyImported: dailyResult.count, dailyActivities: dailyResult.imported, workoutsImported, warnings, received: receivedSummary(payload) });
   } catch (error) {
-    const normalized = normalizeError(error);
-    return json(res, 500, { error: normalized.message, details: normalized });
+    return respondError(res, error, "activity-ingest");
   }
 }

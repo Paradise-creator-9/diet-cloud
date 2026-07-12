@@ -141,11 +141,16 @@ create policy "body_metrics_delete_own"
 on public.body_metrics for delete
 using ((select auth.uid()) = user_id);
 
+-- meal-photos is a PRIVATE bucket: photos are read through per-user,
+-- per-folder policies below, never through the public object URL. Object
+-- paths are always written by the app as `${userId}/${date}/${fileName}`
+-- (see src/supabase.ts, api/ingest.js), so `(storage.foldername(name))[1]`
+-- is always the owning user's auth.uid() and is what every policy checks.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'meal-photos',
   'meal-photos',
-  true,
+  false,
   10485760,
   array['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
 )
@@ -155,13 +160,18 @@ on conflict (id) do update set
   allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "meal_photos_public_read" on storage.objects;
+drop policy if exists "meal_photos_read_own" on storage.objects;
 drop policy if exists "meal_photos_authenticated_insert_own" on storage.objects;
 drop policy if exists "meal_photos_authenticated_update_own" on storage.objects;
 drop policy if exists "meal_photos_authenticated_delete_own" on storage.objects;
 
-create policy "meal_photos_public_read"
+create policy "meal_photos_read_own"
 on storage.objects for select
-using (bucket_id = 'meal-photos');
+to authenticated
+using (
+  bucket_id = 'meal-photos'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
 
 create policy "meal_photos_authenticated_insert_own"
 on storage.objects for insert to authenticated

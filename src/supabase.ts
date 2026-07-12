@@ -332,6 +332,16 @@ export async function getCurrentUser() {
   return data.user;
 }
 
+// Used to authenticate calls to /api/analyze-meal and /api/analyze-body,
+// which require a valid Supabase session. Returns null when signed out or
+// when Supabase isn't configured, so callers can fail fast with a clear
+// message instead of sending an unauthenticated request.
+export async function getAccessToken(): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
 export function onAuthChange(callback: (user: { email?: string | null } | null) => void) {
   if (!supabase) return () => undefined;
   const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session?.user ?? null));

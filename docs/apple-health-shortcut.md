@@ -53,5 +53,6 @@
 ## 注意
 
 - `DIARY_INGEST_TOKEN` 只放在快捷指令和 Vercel 服务端环境变量里，不要写进前端代码。
+- Token **只能**放在 `Authorization` Header 里（如上）。旧版本曾允许把 Token 拼进 URL（`?token=...`）当作简化写法，这个方式已停用——带 `token`/`diaryToken`/`apiKey`/`key` 这几个 query 参数的请求会被直接拒绝（`400 query_token_not_supported`），不会再兼容执行。如果你的快捷指令还在用 URL 参数传 Token，请打开「获取 URL 内容」动作，把 URL 里的 `?token=...` 删掉，改成在 Headers 里新增一行 `Authorization` = `Bearer 你的_DIARY_INGEST_TOKEN`。
 - 如果快捷指令第一次读取健康数据，iPhone 会要求授权健康权限。
 - 同一天重复同步会更新同一天 `apple_shortcut` 来源的数据，不会无限新增。

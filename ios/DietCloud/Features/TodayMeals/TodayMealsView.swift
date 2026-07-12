@@ -4,6 +4,8 @@ import SwiftUI
 struct TodayMealsView: View {
     @Bindable var viewModel: TodayMealsViewModel
     let onSignOut: () -> Void
+    @State private var isPresentingSettings = false
+    @State private var isPresentingSignOutConfirm = false
 
     var body: some View {
         NavigationStack {
@@ -13,19 +15,33 @@ struct TodayMealsView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
                             Text(viewModel.user.redactedEmail)
-                            Button("退出登录", role: .destructive, action: onSignOut)
+                            Button("设置") {
+                                isPresentingSettings = true
+                            }
+                            Button("退出登录", role: .destructive) {
+                                isPresentingSignOutConfirm = true
+                            }
                         } label: {
                             Image(systemName: "person.circle")
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            viewModel.openAddSheet()
-                        } label: {
-                            Image(systemName: "plus.circle.fill")
+                        HStack(spacing: 12) {
+                            Button {
+                                isPresentingSettings = true
+                            } label: {
+                                Image(systemName: "gearshape")
+                            }
+                            .accessibilityLabel("设置")
+
+                            Button {
+                                viewModel.openAddSheet()
+                            } label: {
+                                Image(systemName: "plus.circle.fill")
+                            }
+                            .accessibilityLabel("新增食物")
+                            .disabled(viewModel.isPresentingAddSheet)
                         }
-                        .accessibilityLabel("新增食物")
-                        .disabled(viewModel.isPresentingAddSheet)
                     }
                 }
                 .sheet(isPresented: $viewModel.isPresentingAddSheet) {
@@ -41,10 +57,28 @@ struct TodayMealsView: View {
                 .sheet(isPresented: $viewModel.isPresentingExerciseSheet) {
                     ExerciseEditView(viewModel: viewModel)
                 }
+                .sheet(isPresented: $isPresentingSettings, onDismiss: {
+                    viewModel.reloadGoals()
+                }) {
+                    SettingsView(
+                        viewModel: viewModel.makeSettingsViewModel(onSignOut: {
+                            isPresentingSettings = false
+                            onSignOut()
+                        })
+                    )
+                }
+                .alert("退出登录？", isPresented: $isPresentingSignOutConfirm) {
+                    Button("取消", role: .cancel) {}
+                    Button("退出", role: .destructive, action: onSignOut)
+                } message: {
+                    Text("退出后需重新使用邮箱登录。本地目标设置会保留在本机。")
+                }
                 .task {
+                    viewModel.reloadGoals()
                     await viewModel.load()
                 }
                 .refreshable {
+                    viewModel.reloadGoals()
                     await viewModel.load()
                 }
         }
@@ -60,7 +94,10 @@ struct TodayMealsView: View {
 
             // Pinned below date bar so it is always visible (not buried in List).
             VStack(alignment: .leading, spacing: 8) {
-                DayEnergySummaryCard(energy: viewModel.dayEnergySummary)
+                DayEnergySummaryCard(
+                    energy: viewModel.dayEnergySummary,
+                    progress: viewModel.goalsProgress
+                )
                 HealthKitImportBar(viewModel: viewModel)
             }
             .padding(.horizontal)
@@ -209,6 +246,14 @@ struct HealthKitImportBar: View {
 /// Minimal day overview pinned under the date bar (no ring charts).
 struct DayEnergySummaryCard: View {
     let energy: DayEnergySummary
+    var progress: GoalsProgress = GoalsProgress(
+        intakeKcal: 0,
+        netKcal: 0,
+        proteinG: 0,
+        carbsG: 0,
+        fatG: 0,
+        goals: .empty
+    )
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -216,16 +261,27 @@ struct DayEnergySummaryCard: View {
                 .font(.headline)
 
             VStack(spacing: 6) {
-                metric("摄入", "\(formatKcal(energy.foodIntakeKcal)) kcal")
+                metric("摄入", progress.goals.hasCalorieGoal ? progress.intakeLine : "\(formatKcal(energy.foodIntakeKcal)) kcal")
                 metric("活动消耗", "\(formatKcal(energy.activityBurnKcal)) kcal")
                 metric("运动消耗", "\(formatKcal(energy.exerciseBurnKcal)) kcal")
-                metric("净热量", "\(formatKcal(energy.netKcal)) kcal")
-                    .fontWeight(.semibold)
-                metric("步数", energy.steps > 0 ? formatNumber(energy.steps) : "—")
                 metric(
-                    "体重",
-                    energy.weightKg.map { $0 > 0 ? "\(formatNumber($0)) kg" : "—" } ?? "—"
+                    "净热量",
+                    progress.goals.hasCalorieGoal ? progress.netLine : "\(formatKcal(energy.netKcal)) kcal"
                 )
+                .fontWeight(.semibold)
+
+                if progress.goals.proteinGrams != nil || progress.proteinG > 0 {
+                    metric("蛋白质", progress.proteinLine)
+                }
+                if progress.goals.carbsGrams != nil || progress.carbsG > 0 {
+                    metric("碳水", progress.carbsLine)
+                }
+                if progress.goals.fatGrams != nil || progress.fatG > 0 {
+                    metric("脂肪", progress.fatLine)
+                }
+
+                metric("步数", energy.steps > 0 ? formatNumber(energy.steps) : "—")
+                weightRow
             }
 
             if energy.dailyActivitySource == "healthkit" {
@@ -234,6 +290,11 @@ struct DayEnergySummaryCard: View {
                     .foregroundStyle(.secondary)
             } else {
                 Text("净热量 = 摄入 − 活动消耗 − 运动消耗")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            if progress.goals.hasAnyGoal {
+                Text("目标保存在本机设置中；未设置的项仅显示当前值。")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -246,6 +307,20 @@ struct DayEnergySummaryCard: View {
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("当日总览")
+    }
+
+    @ViewBuilder
+    private var weightRow: some View {
+        let current = energy.weightKg.flatMap { $0 > 0 ? formatNumber($0) : nil }
+        if let target = progress.goals.targetWeightKg, target > 0 {
+            if let current {
+                metric("体重", "\(current) / \(formatNumber(target)) kg")
+            } else {
+                metric("目标体重", "\(formatNumber(target)) kg")
+            }
+        } else {
+            metric("体重", current.map { "\($0) kg" } ?? "—")
+        }
     }
 
     private func metric(_ title: String, _ value: String) -> some View {

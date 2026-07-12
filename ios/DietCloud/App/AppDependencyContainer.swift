@@ -18,6 +18,7 @@ final class AppDependencyContainer: @unchecked Sendable {
     let dailyActivityRepository: DailyActivityRepositoryProtocol
     let exerciseActivityRepository: ExerciseActivityRepositoryProtocol
     let mealPhotoRepository: MealPhotoRepositoryProtocol
+    let goalsStore: GoalsStoring
 
     init(
         config: AppConfig,
@@ -31,6 +32,7 @@ final class AppDependencyContainer: @unchecked Sendable {
         dailyActivityRepository: DailyActivityRepositoryProtocol? = nil,
         exerciseActivityRepository: ExerciseActivityRepositoryProtocol? = nil,
         mealPhotoRepository: MealPhotoRepositoryProtocol? = nil,
+        goalsStore: GoalsStoring? = nil,
         diaryCalendar: DiaryCalendar = DiaryCalendar()
     ) {
         self.config = config
@@ -43,6 +45,7 @@ final class AppDependencyContainer: @unchecked Sendable {
         self.analyzeAPI = analyzeAPI
             ?? AnalyzeAPIClient(provider: provider, tokenProvider: auth)
         self.diaryCalendar = diaryCalendar
+        self.goalsStore = goalsStore ?? UserDefaultsGoalsStore()
 
         let identity = sessionIdentity ?? SupabaseSessionIdentity(provider: provider)
         self.sessionIdentity = identity
@@ -75,6 +78,7 @@ final class AppDependencyContainer: @unchecked Sendable {
             dailyActivityRepository: dailyActivityRepository,
             exerciseRepository: exerciseActivityRepository,
             healthKitClient: HealthKitClient(),
+            goalsStore: goalsStore,
             diaryCalendar: diaryCalendar
         )
     }

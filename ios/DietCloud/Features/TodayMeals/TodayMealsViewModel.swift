@@ -84,9 +84,24 @@ final class TodayMealsViewModel {
     private let exerciseRepository: ExerciseActivityRepositoryProtocol
     private let healthKitClient: HealthKitClienting
     private let healthKitImporter: HealthKitImportServicing
+    private let goalsStore: GoalsStoring
     private let diaryCalendar: DiaryCalendar
     /// Guards against out-of-order loads when the user flips dates quickly.
     private var loadGeneration = 0
+
+    /// Local goals for day overview (reloaded when settings close).
+    private(set) var goals: UserGoals = .empty
+
+    var goalsProgress: GoalsProgress {
+        GoalsProgress(
+            intakeKcal: dayEnergySummary.foodIntakeKcal,
+            netKcal: dayEnergySummary.netKcal,
+            proteinG: summary.protein,
+            carbsG: summary.carbs,
+            fatG: summary.fat,
+            goals: goals
+        )
+    }
 
     /// Current diary day key (`YYYY-MM-DD`) for the selected date.
     var selectedDateKey: String {
@@ -163,6 +178,7 @@ final class TodayMealsViewModel {
         exerciseRepository: ExerciseActivityRepositoryProtocol = MockExerciseActivityRepository(),
         healthKitClient: HealthKitClienting = MockHealthKitClient(),
         healthKitImporter: HealthKitImportServicing? = nil,
+        goalsStore: GoalsStoring = InMemoryGoalsStore(),
         diaryCalendar: DiaryCalendar = DiaryCalendar(),
         dateKey: String? = nil
     ) {
@@ -180,12 +196,23 @@ final class TodayMealsViewModel {
                 dailyRepository: dailyActivityRepository,
                 exerciseRepository: exerciseRepository
             )
+        self.goalsStore = goalsStore
         self.diaryCalendar = diaryCalendar
+        self.goals = goalsStore.goals
         if let dateKey, let parsed = diaryCalendar.date(fromDateKey: dateKey) {
             self.selectedDate = diaryCalendar.startOfDay(for: parsed)
         } else {
             self.selectedDate = diaryCalendar.startOfDay(for: Date())
         }
+    }
+
+    func reloadGoals() {
+        goalsStore.reload()
+        goals = goalsStore.goals
+    }
+
+    func makeSettingsViewModel(onSignOut: @escaping () -> Void) -> SettingsViewModel {
+        SettingsViewModel(user: user, goalsStore: goalsStore, onSignOut: onSignOut)
     }
 
     var isHealthKitAvailable: Bool {

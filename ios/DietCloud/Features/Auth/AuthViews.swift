@@ -3,6 +3,8 @@ import SwiftUI
 struct AuthRootView: View {
     @Bindable var viewModel: AuthViewModel
     var configDiagnostics: String = ""
+    /// Builds the post-login today meals screen. Injected from RootView / tests.
+    var makeTodayMealsViewModel: ((AuthUser) -> TodayMealsViewModel)?
 
     var body: some View {
         Group {
@@ -28,10 +30,46 @@ struct AuthRootView: View {
             case .awaitingOTP:
                 AuthOTPView(viewModel: viewModel)
             case .signedIn(let user):
-                SignedInPlaceholderView(user: user, viewModel: viewModel)
+                if let makeTodayMealsViewModel {
+                    SignedInTodayMealsHost(
+                        user: user,
+                        makeViewModel: makeTodayMealsViewModel,
+                        onSignOut: {
+                            Task { await viewModel.signOut() }
+                        }
+                    )
+                } else {
+                    // Fallback if DI is incomplete (should not happen in production shell).
+                    SignedInPlaceholderView(user: user, viewModel: viewModel)
+                }
             }
         }
         .animation(.default, value: viewModel.phase)
+    }
+}
+
+/// Keeps a single `TodayMealsViewModel` instance across AuthRootView redraws.
+struct SignedInTodayMealsHost: View {
+    let user: AuthUser
+    let makeViewModel: (AuthUser) -> TodayMealsViewModel
+    let onSignOut: () -> Void
+    @State private var todayViewModel: TodayMealsViewModel?
+
+    var body: some View {
+        Group {
+            if let todayViewModel {
+                TodayMealsView(viewModel: todayViewModel, onSignOut: onSignOut)
+            } else {
+                ProgressView("正在打开今日饮食…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
+            }
+        }
+        .task(id: user.id) {
+            if todayViewModel == nil {
+                todayViewModel = makeViewModel(user)
+            }
+        }
     }
 }
 
@@ -200,8 +238,8 @@ struct SignedInPlaceholderView: View {
                     LabeledContent("今日 dateKey", value: diaryDateKey)
                 }
 
-                Section("阶段 1") {
-                    Text("Authentication 已就绪。饮食、HealthKit、AI 将在后续阶段实现。")
+                Section("提示") {
+                    Text("未注入今日饮食依赖时的占位页。正常启动应进入今日饮食。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }

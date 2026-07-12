@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// App shell: routes on auth phase. Stage 1 only — no diary features.
-/// Always renders a visible state (loading / login / signed-in / config error).
+/// App shell: routes on auth phase.
+/// Always renders a visible state (loading / login / today meals / config error).
 struct RootView: View {
     let container: AppDependencyContainer
     @State private var authViewModel: AuthViewModel
@@ -17,13 +17,19 @@ struct RootView: View {
     }
 
     var body: some View {
-        AuthRootView(viewModel: authViewModel, configDiagnostics: container.config.safeDiagnostics)
-            .task {
-                await authViewModel.bootstrap()
+        AuthRootView(
+            viewModel: authViewModel,
+            configDiagnostics: container.config.safeDiagnostics,
+            makeTodayMealsViewModel: { user in
+                container.makeTodayMealsViewModel(user: user)
             }
-            .onOpenURL { url in
-                Task { await authViewModel.handleOpenURL(url) }
-            }
+        )
+        .task {
+            await authViewModel.bootstrap()
+        }
+        .onOpenURL { url in
+            Task { await authViewModel.handleOpenURL(url) }
+        }
     }
 }
 

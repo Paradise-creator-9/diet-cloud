@@ -61,6 +61,15 @@ final class AppDependencyContainer: @unchecked Sendable {
         AuthViewModel(repository: authRepository, isConfigured: supabase.isConfigured)
     }
 
+    @MainActor
+    func makeTodayMealsViewModel(user: AuthUser) -> TodayMealsViewModel {
+        TodayMealsViewModel(
+            user: user,
+            foodRepository: foodItemRepository,
+            diaryCalendar: diaryCalendar
+        )
+    }
+
     /// Bootstrap from the main bundle; always returns a container (never throws).
     static func makeDefault() -> AppDependencyContainer {
         do {

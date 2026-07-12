@@ -124,4 +124,131 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertEqual(vm.errorMessage, AppError.auth(.invalidEmail).userMessage)
         XCTAssertEqual(repo.sendOTPCallCount, 0)
     }
+
+    // MARK: - Resend cooldown
+
+    func testInitialStateCanSendEmail() {
+        let repo = MockAuthRepository()
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        XCTAssertTrue(vm.canSendEmail)
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, 0)
+        XCTAssertEqual(vm.sendEmailButtonTitle, "发送登录邮件")
+    }
+
+    func testSendOTPSuccessStartsSixtySecondCooldown() async {
+        let repo = MockAuthRepository()
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+        XCTAssertEqual(vm.phase, .awaitingOTP(email: "user@example.com"))
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, AuthViewModel.defaultResendCooldownSeconds)
+        XCTAssertFalse(vm.canSendEmail)
+        XCTAssertTrue(vm.sendEmailButtonTitle.contains("60s") || vm.sendEmailButtonTitle.contains("\(AuthViewModel.defaultResendCooldownSeconds)s"))
+    }
+
+    func testCooldownBlocksSecondSendWithoutWaitingRealTime() async {
+        let repo = MockAuthRepository()
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+        XCTAssertEqual(repo.sendOTPCallCount, 1)
+
+        await vm.sendOTP()
+        XCTAssertEqual(repo.sendOTPCallCount, 1, "second send must be blocked during cooldown")
+        XCTAssertEqual(vm.errorMessage, AppError.rateLimited(retryAfterSeconds: nil).userMessage)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
+    }
+
+    func testCooldownEndRestoresCanSend() async {
+        let repo = MockAuthRepository()
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+        XCTAssertFalse(vm.canSendEmail)
+
+        vm.advanceResendCooldownForTesting(by: AuthViewModel.defaultResendCooldownSeconds)
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, 0)
+        XCTAssertTrue(vm.canSendEmail)
+        XCTAssertEqual(vm.sendEmailButtonTitle, "重新发送邮件")
+
+        await vm.sendOTP()
+        XCTAssertEqual(repo.sendOTPCallCount, 2)
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, AuthViewModel.defaultResendCooldownSeconds)
+    }
+
+    func testRateLimitErrorEntersCooldownWithSafeMessage() async {
+        let repo = MockAuthRepository()
+        repo.setSendOTPError(AppError.rateLimited(retryAfterSeconds: 60))
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+
+        XCTAssertEqual(vm.phase, .signedOut)
+        XCTAssertEqual(vm.errorMessage, "请求过于频繁，请稍后再试。")
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, AuthViewModel.defaultResendCooldownSeconds)
+        XCTAssertFalse(vm.canSendEmail)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
+        XCTAssertEqual(repo.sendOTPCallCount, 1)
+
+        // Still blocked until cooldown advances
+        await vm.sendOTP()
+        XCTAssertEqual(repo.sendOTPCallCount, 1)
+    }
+
+    func testRateLimitProviderMessageMapsSafelyAndCooldowns() async {
+        let repo = MockAuthRepository()
+        let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"
+        repo.setSendOTPError(
+            NSError(
+                domain: "Auth",
+                code: 429,
+                userInfo: [NSLocalizedDescriptionKey: "For security purposes, you can only request this after 60 seconds. \(jwt)"]
+            )
+        )
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+
+        XCTAssertEqual(vm.errorMessage, AppError.rateLimited(retryAfterSeconds: nil).userMessage)
+        XCTAssertFalse(vm.errorMessage!.contains("eyJ"))
+        XCTAssertFalse(vm.errorMessage!.contains(jwt))
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, AuthViewModel.defaultResendCooldownSeconds)
+        XCTAssertFalse(vm.canSendEmail)
+    }
+
+    func testNetworkErrorDoesNotEnterCooldown() async {
+        let repo = MockAuthRepository()
+        repo.setSendOTPError(AppError.network(message: "network down"))
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, 0)
+        XCTAssertTrue(vm.canSendEmail)
+        XCTAssertNotNil(vm.errorMessage)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
+    }
+
+    func testNotConfiguredDoesNotEnterCooldown() async {
+        let repo = MockAuthRepository()
+        let vm = AuthViewModel(repository: repo, isConfigured: false, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+        XCTAssertEqual(vm.resendCooldownRemainingSeconds, 0)
+        XCTAssertFalse(vm.canSendEmail) // not configured
+        XCTAssertEqual(vm.errorMessage, AppError.auth(.notConfigured).userMessage)
+        XCTAssertEqual(repo.sendOTPCallCount, 0)
+    }
+
+    func testBackToEmailEntryKeepsCooldown() async {
+        let repo = MockAuthRepository()
+        let vm = AuthViewModel(repository: repo, isConfigured: true, autoTickResendCooldown: false)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+        XCTAssertEqual(vm.phase, .awaitingOTP(email: "user@example.com"))
+        vm.backToEmailEntry()
+        XCTAssertEqual(vm.phase, .signedOut)
+        XCTAssertGreaterThan(vm.resendCooldownRemainingSeconds, 0)
+        XCTAssertFalse(vm.canSendEmail)
+    }
 }

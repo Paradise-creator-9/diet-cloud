@@ -54,6 +54,10 @@ final class MockAuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
         withLock { _handleAuthURLError = error }
     }
 
+    func setSendOTPError(_ error: Error?) {
+        withLock { _sendOTPError = error }
+    }
+
     func restoreSession() async throws -> AuthSessionSnapshot? {
         if let restoreError = withLock({ _restoreError }) { throw restoreError }
         let session = withLock { _session }

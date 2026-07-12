@@ -105,15 +105,18 @@ struct AuthEmailView: View {
                     Button {
                         Task { await viewModel.sendOTP() }
                     } label: {
-                        if viewModel.isBusy {
+                        if viewModel.isSendingEmail {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("发送登录邮件")
+                            Text(viewModel.sendEmailButtonTitle)
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .disabled(viewModel.isBusy || viewModel.emailInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(
+                        !viewModel.canSendEmail
+                            || viewModel.emailInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    )
                 }
 
                 if let status = viewModel.statusMessage {
@@ -207,10 +210,18 @@ struct AuthOTPView: View {
                     Button("返回修改邮箱") {
                         viewModel.backToEmailEntry()
                     }
-                    Button("重新发送邮件") {
+                    Button {
                         Task { await viewModel.sendOTP() }
+                    } label: {
+                        if viewModel.isSendingEmail {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Text(viewModel.sendEmailButtonTitle)
+                                .frame(maxWidth: .infinity)
+                        }
                     }
-                    .disabled(viewModel.isBusy)
+                    .disabled(!viewModel.canSendEmail)
                 }
             }
             .navigationTitle("完成登录")

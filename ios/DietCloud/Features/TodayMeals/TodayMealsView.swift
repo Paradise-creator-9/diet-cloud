@@ -7,6 +7,7 @@ struct TodayMealsView: View {
     @State private var isPresentingSettings = false
     @State private var isPresentingSignOutConfirm = false
     @State private var isShowingTrends = false
+    @State private var isShowingPhotoLibrary = false
 
     var body: some View {
         NavigationStack {
@@ -28,6 +29,13 @@ struct TodayMealsView: View {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         HStack(spacing: 14) {
+                            Button {
+                                isShowingPhotoLibrary = true
+                            } label: {
+                                Image(systemName: "photo.on.rectangle")
+                            }
+                            .accessibilityLabel("照片库")
+
                             Button {
                                 isShowingTrends = true
                             } label: {
@@ -56,6 +64,9 @@ struct TodayMealsView: View {
                 }
                 .navigationDestination(isPresented: $isShowingTrends) {
                     TrendsView(viewModel: viewModel.makeTrendsViewModel())
+                }
+                .navigationDestination(isPresented: $isShowingPhotoLibrary) {
+                    PhotoLibraryView(viewModel: viewModel.makePhotoLibraryViewModel())
                 }
                 .sheet(isPresented: $viewModel.isPresentingAddSheet, onDismiss: {
                     viewModel.handleFoodFormDismissed()

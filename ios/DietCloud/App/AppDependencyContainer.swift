@@ -107,6 +107,15 @@ final class AppDependencyContainer: @unchecked Sendable {
         )
     }
 
+    @MainActor
+    func makePhotoLibraryViewModel() -> PhotoLibraryViewModel {
+        PhotoLibraryViewModel(
+            foodRepository: foodItemRepository,
+            photoRepository: mealPhotoRepository,
+            diaryCalendar: diaryCalendar
+        )
+    }
+
     /// Bootstrap from the main bundle; always returns a container (never throws).
     static func makeDefault() -> AppDependencyContainer {
         do {

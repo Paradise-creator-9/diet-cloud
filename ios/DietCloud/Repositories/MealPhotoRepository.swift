@@ -149,7 +149,10 @@ final class MockMealPhotoRepository: MealPhotoRepositoryProtocol, @unchecked Sen
     private(set) var lastUploadByteCount: Int?
     private(set) var uploadCallCount = 0
     private(set) var deletedPaths: [String] = []
+    private(set) var signedURLCallCount = 0
     var forcedError: Error?
+    /// Paths that return `signedURL: nil` without failing the whole batch (Stage 15).
+    var pathsFailingSign: Set<String> = []
     /// Simulated object store for ownership checks.
     private var storedPaths: Set<String> = []
 
@@ -196,7 +199,11 @@ final class MockMealPhotoRepository: MealPhotoRepositoryProtocol, @unchecked Sen
     func signedURLs(for request: SignedURLRequest) async throws -> [MealPhotoRef] {
         try throwIfForced()
         lastSignedRequest = request
+        signedURLCallCount += 1
         return request.paths.map { path in
+            if pathsFailingSign.contains(path) {
+                return MealPhotoRef(path: path, signedURL: nil)
+            }
             if path.hasPrefix("http") {
                 return MealPhotoRef(path: path, signedURL: path)
             }

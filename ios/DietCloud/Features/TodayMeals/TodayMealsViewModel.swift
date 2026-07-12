@@ -291,6 +291,14 @@ final class TodayMealsViewModel {
         )
     }
 
+    func makePhotoLibraryViewModel() -> PhotoLibraryViewModel {
+        PhotoLibraryViewModel(
+            foodRepository: foodRepository,
+            photoRepository: photoRepository,
+            diaryCalendar: diaryCalendar
+        )
+    }
+
     var isHealthKitAvailable: Bool {
         healthKitClient.isAvailable
     }

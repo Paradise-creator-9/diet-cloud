@@ -1,0 +1,553 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0074825B99DE31F851A4E9B8 /* AppErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */; };
+		10B72269E2ED85C9F29D51A7 /* DependencyContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */; };
+		2D2E30699110C0631BEC26CC /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408833F9E547197115F04318 /* SupabaseClientProvider.swift */; };
+		4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C4B2FB2471164D47F87342 /* AppConfigTests.swift */; };
+		524E5FEB2BE280CBA2DA1337 /* AnalyzeAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */; };
+		690FBF7CF4FF0EB84F804862 /* DiaryCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */; };
+		73F934AE61B1678461F07431 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */; };
+		77D14F03BCC117246AC20E40 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 996F299CD3F15723D3368BBF /* RootView.swift */; };
+		8AEBE92718314B67F9F38643 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C674AF0BFB1426E71DA2BB5 /* AppError.swift */; };
+		9C54ED7B032AE8F90AA0D7BC /* DiaryCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3762E293F50FF63036987FC7 /* DiaryCalendar.swift */; };
+		B10296039BACEFB61B7DC408 /* DietCloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */; };
+		C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1444E0AF9DB101E67A416A10 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AFFD910AC556B59787E931FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2BACD2E49A35A39515316DF3;
+			remoteInfo = DietCloud;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietCloudApp.swift; sourceTree = "<group>"; };
+		3762E293F50FF63036987FC7 /* DiaryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendar.swift; sourceTree = "<group>"; };
+		408833F9E547197115F04318 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClientProvider.swift; sourceTree = "<group>"; };
+		41E5A424C48E249F4CACC137 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		66C3B5758B800F25C9F13A1D /* DietCloudTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DietCloudTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		68EB4D091D8EA9C16B9F7982 /* DietCloud.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DietCloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7058D16434745DA311001977 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		7C674AF0BFB1426E71DA2BB5 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
+		7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendarTests.swift; sourceTree = "<group>"; };
+		7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		98C4B2FB2471164D47F87342 /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
+		996F299CD3F15723D3368BBF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		9DF8F0E9A872AA0A590AF709 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		B0F13CBCD5826DBC6312D10A /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		B45F44E696C2591A96BD3A88 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainerTests.swift; sourceTree = "<group>"; };
+		C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencyContainer.swift; sourceTree = "<group>"; };
+		F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppErrorTests.swift; sourceTree = "<group>"; };
+		F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIClient.swift; sourceTree = "<group>"; };
+		F6DB7F44637EEE8A8B766538 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1B0FFFBD1AE2E96095D3E05D /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */,
+				408833F9E547197115F04318 /* SupabaseClientProvider.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		321CC73AE242F964C6376E74 /* DateHandling */ = {
+			isa = PBXGroup;
+			children = (
+				3762E293F50FF63036987FC7 /* DiaryCalendar.swift */,
+			);
+			path = DateHandling;
+			sourceTree = "<group>";
+		};
+		3AC09EEBE9A17BC76FFFB02A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */,
+				2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */,
+				996F299CD3F15723D3368BBF /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		4F83D890619C5AE7A6B05E16 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				B45F44E696C2591A96BD3A88 /* .gitkeep */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		514B91DC5A0B4B360DC0717F = {
+			isa = PBXGroup;
+			children = (
+				E14E1A54067BB9B7535F5A98 /* Config */,
+				DE115F5F321D3CF518290E9A /* DietCloud */,
+				C731AF3D621D166303EEE58F /* DietCloudTests */,
+				8F32AF622612A42B28AE82D5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		73D17475E4E0E20639B23A2A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F6DB7F44637EEE8A8B766538 /* .gitkeep */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		7D2F5120F9E7C0E2B7FC8EB1 /* Repositories */ = {
+			isa = PBXGroup;
+			children = (
+				B0F13CBCD5826DBC6312D10A /* .gitkeep */,
+			);
+			path = Repositories;
+			sourceTree = "<group>";
+		};
+		8F32AF622612A42B28AE82D5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				68EB4D091D8EA9C16B9F7982 /* DietCloud.app */,
+				66C3B5758B800F25C9F13A1D /* DietCloudTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		990867AF7D8F33CCA6407DA7 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		B00E8991F08684979A782218 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9DF8F0E9A872AA0A590AF709 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		C731AF3D621D166303EEE58F /* DietCloudTests */ = {
+			isa = PBXGroup;
+			children = (
+				98C4B2FB2471164D47F87342 /* AppConfigTests.swift */,
+				F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */,
+				B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */,
+				7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */,
+			);
+			path = DietCloudTests;
+			sourceTree = "<group>";
+		};
+		DA96577913F47B578D7BEF3E /* Errors */ = {
+			isa = PBXGroup;
+			children = (
+				7C674AF0BFB1426E71DA2BB5 /* AppError.swift */,
+			);
+			path = Errors;
+			sourceTree = "<group>";
+		};
+		DE115F5F321D3CF518290E9A /* DietCloud */ = {
+			isa = PBXGroup;
+			children = (
+				3AC09EEBE9A17BC76FFFB02A /* App */,
+				FC676F05A88E91787183A479 /* Core */,
+				4F83D890619C5AE7A6B05E16 /* Features */,
+				7D2F5120F9E7C0E2B7FC8EB1 /* Repositories */,
+				B00E8991F08684979A782218 /* Resources */,
+			);
+			path = DietCloud;
+			sourceTree = "<group>";
+		};
+		E14E1A54067BB9B7535F5A98 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				7058D16434745DA311001977 /* Debug.xcconfig */,
+				41E5A424C48E249F4CACC137 /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		FC676F05A88E91787183A479 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				990867AF7D8F33CCA6407DA7 /* Config */,
+				321CC73AE242F964C6376E74 /* DateHandling */,
+				DA96577913F47B578D7BEF3E /* Errors */,
+				73D17475E4E0E20639B23A2A /* Models */,
+				1B0FFFBD1AE2E96095D3E05D /* Networking */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2BACD2E49A35A39515316DF3 /* DietCloud */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 66B668151FBE71DB62E4E32E /* Build configuration list for PBXNativeTarget "DietCloud" */;
+			buildPhases = (
+				6602C3980D9A40205BB98AEB /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DietCloud;
+			packageProductDependencies = (
+			);
+			productName = DietCloud;
+			productReference = 68EB4D091D8EA9C16B9F7982 /* DietCloud.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F9B90A0D696F655EEE9421C0 /* DietCloudTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 02A3819A5B7DD19BFE8AEC7C /* Build configuration list for PBXNativeTarget "DietCloudTests" */;
+			buildPhases = (
+				8A77AE2C3A6DA69077A076FA /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				71DC21A039078FB78ECA9D83 /* PBXTargetDependency */,
+			);
+			name = DietCloudTests;
+			packageProductDependencies = (
+			);
+			productName = DietCloudTests;
+			productReference = 66C3B5758B800F25C9F13A1D /* DietCloudTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AFFD910AC556B59787E931FC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 7AFF8CF81B7B258E81BE083F /* Build configuration list for PBXProject "DietCloud" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 514B91DC5A0B4B360DC0717F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8F32AF622612A42B28AE82D5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2BACD2E49A35A39515316DF3 /* DietCloud */,
+				F9B90A0D696F655EEE9421C0 /* DietCloudTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6602C3980D9A40205BB98AEB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				524E5FEB2BE280CBA2DA1337 /* AnalyzeAPIClient.swift in Sources */,
+				73F934AE61B1678461F07431 /* AppConfig.swift in Sources */,
+				C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */,
+				8AEBE92718314B67F9F38643 /* AppError.swift in Sources */,
+				9C54ED7B032AE8F90AA0D7BC /* DiaryCalendar.swift in Sources */,
+				B10296039BACEFB61B7DC408 /* DietCloudApp.swift in Sources */,
+				77D14F03BCC117246AC20E40 /* RootView.swift in Sources */,
+				2D2E30699110C0631BEC26CC /* SupabaseClientProvider.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8A77AE2C3A6DA69077A076FA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */,
+				0074825B99DE31F851A4E9B8 /* AppErrorTests.swift in Sources */,
+				10B72269E2ED85C9F29D51A7 /* DependencyContainerTests.swift in Sources */,
+				690FBF7CF4FF0EB84F804862 /* DiaryCalendarTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		71DC21A039078FB78ECA9D83 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2BACD2E49A35A39515316DF3 /* DietCloud */;
+			targetProxy = 1444E0AF9DB101E67A416A10 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		747A040A12E491CED9E4278F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7058D16434745DA311001977 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DietCloud/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "膳食志";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.dietcloud.DietCloud;
+				PRODUCT_NAME = DietCloud;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		85F3A869FF555D95234C645E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.dietcloud.DietCloudTests;
+				PRODUCT_NAME = DietCloudTests;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DietCloud.app/DietCloud";
+			};
+			name = Release;
+		};
+		A66AA3A8964C1F40E70F3D07 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B383364DD5BEEDED0316ED24 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 41E5A424C48E249F4CACC137 /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DietCloud/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "膳食志";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.dietcloud.DietCloud;
+				PRODUCT_NAME = DietCloud;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CE63E2A2E42A4B1317390EBA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.dietcloud.DietCloudTests;
+				PRODUCT_NAME = DietCloudTests;
+				SDKROOT = iphoneos;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DietCloud.app/DietCloud";
+			};
+			name = Debug;
+		};
+		F7272E5F26BC0DB77AE68231 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		02A3819A5B7DD19BFE8AEC7C /* Build configuration list for PBXNativeTarget "DietCloudTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CE63E2A2E42A4B1317390EBA /* Debug */,
+				85F3A869FF555D95234C645E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		66B668151FBE71DB62E4E32E /* Build configuration list for PBXNativeTarget "DietCloud" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				747A040A12E491CED9E4278F /* Debug */,
+				B383364DD5BEEDED0316ED24 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7AFF8CF81B7B258E81BE083F /* Build configuration list for PBXProject "DietCloud" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F7272E5F26BC0DB77AE68231 /* Debug */,
+				A66AA3A8964C1F40E70F3D07 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AFFD910AC556B59787E931FC /* Project object */;
+}

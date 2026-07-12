@@ -1,0 +1,20 @@
+// Shared build settings for DietCloud (public client config only).
+// Do NOT put SERVICE_ROLE, GEMINI_API_KEY, or DIARY_INGEST_TOKEN here.
+//
+// xcconfig treats // as comments, so URLs use https:/$()/host form.
+
+// Public Supabase project URL (safe to ship; protected by RLS).
+SUPABASE_URL = https:/$()/YOUR_PROJECT.supabase.co
+
+// Supabase anonymous / publishable key (safe to ship; protected by RLS).
+SUPABASE_ANON_KEY = YOUR_SUPABASE_ANON_KEY
+
+// Absolute Vercel (or local preview) origin for /api/analyze-* only.
+// Never point this at secrets; App never embeds Gemini or ingest tokens.
+API_BASE_URL = https:/$()/diet-cloud.vercel.app
+
+// Private meal-photos bucket name (default matches Web).
+STORAGE_BUCKET = meal-photos
+
+// Expose the values into Info.plist substitution.
+INFOPLIST_PREPROCESSOR_DEFINITIONS =

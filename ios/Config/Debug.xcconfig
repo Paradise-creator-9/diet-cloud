@@ -1,0 +1,5 @@
+#include "Base.xcconfig"
+
+// Optional: copy Secrets.xcconfig.example → Secrets.xcconfig (gitignored)
+// and uncomment the next line for local overrides.
+// #include? "Secrets.xcconfig"

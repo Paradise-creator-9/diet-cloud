@@ -19,6 +19,7 @@ final class AppDependencyContainer: @unchecked Sendable {
     let exerciseActivityRepository: ExerciseActivityRepositoryProtocol
     let mealPhotoRepository: MealPhotoRepositoryProtocol
     let goalsStore: GoalsStoring
+    let favoriteFoodsStore: FavoriteFoodsStoring
     let reminderSettingsStore: ReminderSettingsStoring
     let notificationScheduler: NotificationScheduling
 
@@ -35,6 +36,7 @@ final class AppDependencyContainer: @unchecked Sendable {
         exerciseActivityRepository: ExerciseActivityRepositoryProtocol? = nil,
         mealPhotoRepository: MealPhotoRepositoryProtocol? = nil,
         goalsStore: GoalsStoring? = nil,
+        favoriteFoodsStore: FavoriteFoodsStoring? = nil,
         reminderSettingsStore: ReminderSettingsStoring? = nil,
         notificationScheduler: NotificationScheduling? = nil,
         diaryCalendar: DiaryCalendar = DiaryCalendar()
@@ -50,6 +52,7 @@ final class AppDependencyContainer: @unchecked Sendable {
             ?? AnalyzeAPIClient(provider: provider, tokenProvider: auth)
         self.diaryCalendar = diaryCalendar
         self.goalsStore = goalsStore ?? UserDefaultsGoalsStore()
+        self.favoriteFoodsStore = favoriteFoodsStore ?? UserDefaultsFavoriteFoodsStore()
         self.reminderSettingsStore = reminderSettingsStore ?? UserDefaultsReminderSettingsStore()
         self.notificationScheduler = notificationScheduler ?? SystemNotificationScheduler()
 
@@ -85,6 +88,7 @@ final class AppDependencyContainer: @unchecked Sendable {
             exerciseRepository: exerciseActivityRepository,
             healthKitClient: HealthKitClient(),
             goalsStore: goalsStore,
+            favoriteFoodsStore: favoriteFoodsStore,
             reminderSettingsStore: reminderSettingsStore,
             notificationScheduler: notificationScheduler,
             diaryCalendar: diaryCalendar

@@ -82,6 +82,11 @@ struct TodayMealsView: View {
                         })
                     )
                 }
+                .sheet(isPresented: $viewModel.isPresentingFavoritesManageSheet, onDismiss: {
+                    viewModel.closeFavoritesManageSheet()
+                }) {
+                    FavoriteFoodsManageView(viewModel: viewModel)
+                }
                 .alert("退出登录？", isPresented: $isPresentingSignOutConfirm) {
                     Button("取消", role: .cancel) {}
                     Button("退出", role: .destructive, action: onSignOut)
@@ -90,10 +95,12 @@ struct TodayMealsView: View {
                 }
                 .task {
                     viewModel.reloadGoals()
+                    viewModel.reloadFavoriteFoods()
                     await viewModel.load()
                 }
                 .refreshable {
                     viewModel.reloadGoals()
+                    viewModel.reloadFavoriteFoods()
                     await viewModel.load()
                 }
         }
@@ -179,6 +186,8 @@ struct TodayMealsView: View {
                         DailyActivitySection(viewModel: viewModel)
                         ExerciseSection(viewModel: viewModel)
 
+                        FavoriteFoodsSection(viewModel: viewModel)
+
                         Section {
                             if case .empty = viewModel.loadState {
                                 ContentUnavailableView(
@@ -208,10 +217,21 @@ struct TodayMealsView: View {
                                 onEdit: { item in
                                     viewModel.openEdit(item)
                                 },
+                                onAddToFavorites: { item in
+                                    viewModel.addFoodItemToFavorites(item)
+                                },
                                 onDelete: { item in
                                     Task { await viewModel.deleteItem(item) }
                                 }
                             )
+                        }
+
+                        if let favoriteStatus = viewModel.favoriteStatusMessage {
+                            Section {
+                                Text(favoriteStatus)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
 
                         if let status = viewModel.statusMessage {
@@ -929,6 +949,7 @@ struct MealSectionView: View {
     let isMutating: Bool
     let onAdd: () -> Void
     var onEdit: (FoodItem) -> Void = { _ in }
+    var onAddToFavorites: (FoodItem) -> Void = { _ in }
     let onDelete: (FoodItem) -> Void
 
     var body: some View {
@@ -963,6 +984,30 @@ struct MealSectionView: View {
                         }
                         .tint(.accentColor)
                         .disabled(isMutating)
+                        Button {
+                            onAddToFavorites(item)
+                        } label: {
+                            Label("加入常吃", systemImage: "star")
+                        }
+                        .tint(.orange)
+                        .disabled(isMutating)
+                    }
+                    .contextMenu {
+                        Button {
+                            onEdit(item)
+                        } label: {
+                            Label("编辑", systemImage: "pencil")
+                        }
+                        Button {
+                            onAddToFavorites(item)
+                        } label: {
+                            Label("加入常吃", systemImage: "star")
+                        }
+                        Button(role: .destructive) {
+                            onDelete(item)
+                        } label: {
+                            Label("删除", systemImage: "trash")
+                        }
                     }
                 }
             }
@@ -988,6 +1033,216 @@ struct MealSectionView: View {
 
     private func format(_ value: Double) -> String {
         value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+// MARK: - Favorite foods
+
+struct FavoriteFoodsSection: View {
+    @Bindable var viewModel: TodayMealsViewModel
+
+    var body: some View {
+        Section {
+            if viewModel.favoriteFoods.isEmpty {
+                HStack {
+                    Text("暂无常吃模板")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("管理") {
+                        viewModel.openFavoritesManageSheet()
+                    }
+                    .font(.footnote.weight(.medium))
+                    .buttonStyle(.borderless)
+                }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(viewModel.favoriteFoods) { favorite in
+                            Button {
+                                Task { await viewModel.quickAddFavorite(favorite) }
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(favorite.name)
+                                        .font(.subheadline.weight(.medium))
+                                        .lineLimit(1)
+                                    Text("\(favorite.meal.titleZh) · \(formatKcal(favorite.calories)) kcal")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(Color(.secondarySystemGroupedBackground))
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(viewModel.isMutating)
+                            .accessibilityLabel("快捷添加 \(favorite.name)")
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            }
+        } header: {
+            HStack {
+                Text("常吃")
+                    .font(.subheadline.weight(.semibold))
+                    .textCase(nil)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button("管理") {
+                    viewModel.openFavoritesManageSheet()
+                }
+                .font(.caption.weight(.medium))
+                .textCase(nil)
+            }
+        } footer: {
+            Text("点模板即记入 \(viewModel.selectedDateKey)，使用模板默认餐次；不复制照片。")
+                .font(.caption2)
+        }
+    }
+
+    private func formatKcal(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+struct FavoriteFoodsManageView: View {
+    @Bindable var viewModel: TodayMealsViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var isPresentingEditor = false
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Button {
+                        viewModel.beginAddFavoriteTemplate()
+                        isPresentingEditor = true
+                    } label: {
+                        Label("新增常吃", systemImage: "plus.circle.fill")
+                    }
+                }
+
+                Section {
+                    if viewModel.favoriteFoods.isEmpty {
+                        Text("还没有常吃模板。可从饮食记录左滑「加入常吃」，或点上方新增。")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(viewModel.favoriteFoods) { favorite in
+                            Button {
+                                viewModel.beginEditFavoriteTemplate(favorite)
+                                isPresentingEditor = true
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(favorite.name)
+                                        .foregroundStyle(.primary)
+                                    Text("\(favorite.meal.titleZh) · \(format(favorite.calories)) kcal · \(format(favorite.grams)) g")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    viewModel.deleteFavoriteTemplate(id: favorite.id)
+                                } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("模板列表")
+                } footer: {
+                    Text("模板仅保存在本机。编辑模板不会修改已有饮食记录。")
+                }
+            }
+            .navigationTitle("管理常吃")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("完成") {
+                        dismiss()
+                    }
+                }
+            }
+            .sheet(isPresented: $isPresentingEditor) {
+                FavoriteFoodEditorView(viewModel: viewModel) {
+                    isPresentingEditor = false
+                }
+            }
+        }
+    }
+
+    private func format(_ value: Double) -> String {
+        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    }
+}
+
+struct FavoriteFoodEditorView: View {
+    @Bindable var viewModel: TodayMealsViewModel
+    let onDone: () -> Void
+
+    private var isEditing: Bool { viewModel.editingFavoriteId != nil }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("基本") {
+                    TextField("名称", text: $viewModel.favoriteDraftName)
+                    Picker("默认餐次", selection: $viewModel.favoriteDraftMeal) {
+                        ForEach(MealType.displayOrder, id: \.self) { meal in
+                            Text(meal.titleZh).tag(meal)
+                        }
+                    }
+                    TextField("份量 (g)", text: $viewModel.favoriteDraftGrams)
+                        .keyboardType(.decimalPad)
+                    TextField("备注", text: $viewModel.favoriteDraftNote)
+                }
+
+                Section("营养") {
+                    TextField("热量 (kcal)", text: $viewModel.favoriteDraftCalories)
+                        .keyboardType(.decimalPad)
+                    TextField("蛋白质 (g)", text: $viewModel.favoriteDraftProtein)
+                        .keyboardType(.decimalPad)
+                    TextField("碳水 (g)", text: $viewModel.favoriteDraftCarbs)
+                        .keyboardType(.decimalPad)
+                    TextField("脂肪 (g)", text: $viewModel.favoriteDraftFat)
+                        .keyboardType(.decimalPad)
+                    TextField("膳食纤维 (g)", text: $viewModel.favoriteDraftFiber)
+                        .keyboardType(.decimalPad)
+                }
+
+                if let error = viewModel.favoriteFormError {
+                    Section {
+                        Text(error)
+                            .foregroundStyle(.red)
+                            .font(.footnote)
+                    }
+                }
+            }
+            .navigationTitle(isEditing ? "编辑常吃" : "新增常吃")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        onDone()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") {
+                        if viewModel.saveFavoriteTemplate() {
+                            onDone()
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

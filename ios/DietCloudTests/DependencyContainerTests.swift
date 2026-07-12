@@ -11,7 +11,12 @@ final class DependencyContainerTests: XCTestCase {
             storageBucket: "meal-photos",
             authRedirectURL: AppConfig.defaultAuthRedirectURL
         )
-        let container = AppDependencyContainer(config: config, credentialStore: InMemoryCredentialStore())
+        let favorites = InMemoryFavoriteFoodsStore()
+        let container = AppDependencyContainer(
+            config: config,
+            credentialStore: InMemoryCredentialStore(),
+            favoriteFoodsStore: favorites
+        )
 
         XCTAssertEqual(
             container.analyzeAPI.analyzeMealURL().absoluteString,
@@ -31,6 +36,8 @@ final class DependencyContainerTests: XCTestCase {
         XCTAssertNotNil(container.dailyActivityRepository)
         XCTAssertNotNil(container.exerciseActivityRepository)
         XCTAssertNotNil(container.mealPhotoRepository)
+        XCTAssertTrue(container.favoriteFoodsStore === favorites)
+        XCTAssertTrue(container.favoriteFoodsStore.favorites.isEmpty)
     }
 
     func testPlaceholderConfigNotNetworkReady() {

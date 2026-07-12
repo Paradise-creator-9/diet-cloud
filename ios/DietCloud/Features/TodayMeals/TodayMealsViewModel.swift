@@ -109,6 +109,7 @@ final class TodayMealsViewModel {
     private let healthKitClient: HealthKitClienting
     private let healthKitImporter: HealthKitImportServicing
     private let goalsStore: GoalsStoring
+    private let favoriteFoodsStore: FavoriteFoodsStoring
     private let reminderSettingsStore: ReminderSettingsStoring
     private let notificationScheduler: NotificationScheduling
     private let diaryCalendar: DiaryCalendar
@@ -117,6 +118,25 @@ final class TodayMealsViewModel {
 
     /// Local goals for day overview (reloaded when settings close).
     private(set) var goals: UserGoals = .empty
+
+    /// Local favorite-food templates (UserDefaults; empty by default).
+    private(set) var favoriteFoods: [FavoriteFood] = []
+
+    var isPresentingFavoritesManageSheet = false
+    /// `nil` = add template; non-nil = edit existing template id.
+    private(set) var editingFavoriteId: String?
+    var favoriteDraftName = ""
+    var favoriteDraftMeal: MealType = .breakfast
+    var favoriteDraftGrams = ""
+    var favoriteDraftCalories = ""
+    var favoriteDraftProtein = ""
+    var favoriteDraftCarbs = ""
+    var favoriteDraftFat = ""
+    var favoriteDraftFiber = ""
+    var favoriteDraftNote = ""
+    private(set) var favoriteFormError: String?
+    /// Non-error banner for favorites (quick-add / join).
+    private(set) var favoriteStatusMessage: String?
 
     var goalsProgress: GoalsProgress {
         GoalsProgress(
@@ -206,6 +226,7 @@ final class TodayMealsViewModel {
         healthKitClient: HealthKitClienting = MockHealthKitClient(),
         healthKitImporter: HealthKitImportServicing? = nil,
         goalsStore: GoalsStoring = InMemoryGoalsStore(),
+        favoriteFoodsStore: FavoriteFoodsStoring = InMemoryFavoriteFoodsStore(),
         reminderSettingsStore: ReminderSettingsStoring = InMemoryReminderSettingsStore(),
         notificationScheduler: NotificationScheduling = SystemNotificationScheduler(),
         diaryCalendar: DiaryCalendar = DiaryCalendar(),
@@ -226,10 +247,12 @@ final class TodayMealsViewModel {
                 exerciseRepository: exerciseRepository
             )
         self.goalsStore = goalsStore
+        self.favoriteFoodsStore = favoriteFoodsStore
         self.reminderSettingsStore = reminderSettingsStore
         self.notificationScheduler = notificationScheduler
         self.diaryCalendar = diaryCalendar
         self.goals = goalsStore.goals
+        self.favoriteFoods = favoriteFoodsStore.favorites
         if let dateKey, let parsed = diaryCalendar.date(fromDateKey: dateKey) {
             self.selectedDate = diaryCalendar.startOfDay(for: parsed)
         } else {
@@ -240,6 +263,11 @@ final class TodayMealsViewModel {
     func reloadGoals() {
         goalsStore.reload()
         goals = goalsStore.goals
+    }
+
+    func reloadFavoriteFoods() {
+        favoriteFoodsStore.reload()
+        favoriteFoods = favoriteFoodsStore.favorites
     }
 
     func makeSettingsViewModel(onSignOut: @escaping () -> Void) -> SettingsViewModel {
@@ -303,8 +331,10 @@ final class TodayMealsViewModel {
         if isPresentingBodySheet { cancelBodySheet() }
         if isPresentingActivitySheet { cancelActivitySheet() }
         if isPresentingExerciseSheet { cancelExerciseSheet() }
+        if isPresentingFavoritesManageSheet { closeFavoritesManageSheet() }
         isAnalyzing = false
         analysisSummary = nil
+        favoriteStatusMessage = nil
     }
 
     // MARK: - Load
@@ -618,6 +648,148 @@ final class TodayMealsViewModel {
         } catch {
             errorMessage = DataErrorMapping.map(error).userMessage
         }
+    }
+
+    // MARK: - Favorite foods (local templates → create only)
+
+    /// Quick-add: create a diary row on **current** `selectedDateKey` using the template meal.
+    /// Does not copy photos or sourceId; never updates existing food rows or templates.
+    func quickAddFavorite(_ favorite: FavoriteFood) async {
+        guard !isMutating else { return }
+        let name = favorite.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            errorMessage = "请填写食物名称。"
+            favoriteStatusMessage = nil
+            return
+        }
+        // Defensive: reject non-finite / negative nutrition from hand-edited storage.
+        let nutrients = [
+            favorite.grams, favorite.calories, favorite.protein,
+            favorite.carbs, favorite.fat, favorite.fiber,
+        ]
+        guard nutrients.allSatisfy({ $0.isFinite && $0 >= 0 }) else {
+            errorMessage = "常吃模板数据无效，请在管理中重新编辑。"
+            favoriteStatusMessage = nil
+            return
+        }
+
+        isMutating = true
+        defer { isMutating = false }
+
+        var write = favorite.makeCreateWrite(dateKey: selectedDateKey)
+        write.name = name
+        // Explicit: never carry photos / identity from a prior diary row.
+        write.photoPaths = []
+        write.sourceId = nil
+        do {
+            _ = try await foodRepository.create(write)
+            errorMessage = nil
+            statusMessage = nil
+            favoriteStatusMessage = "已添加「\(name)」"
+            await load()
+        } catch {
+            errorMessage = DataErrorMapping.map(error).userMessage
+            favoriteStatusMessage = nil
+        }
+    }
+
+    /// Copy a diary food row into the local template list (no photos / sourceId).
+    func addFoodItemToFavorites(_ item: FoodItem) {
+        let template = FavoriteFood.fromFoodItem(item)
+        var next = favoriteFoods
+        next.append(template)
+        favoriteFoodsStore.save(next)
+        favoriteFoods = favoriteFoodsStore.favorites
+        favoriteStatusMessage = "已加入常吃「\(template.name)」"
+        errorMessage = nil
+    }
+
+    func openFavoritesManageSheet() {
+        favoriteFormError = nil
+        clearFavoriteDraft()
+        isPresentingFavoritesManageSheet = true
+    }
+
+    func closeFavoritesManageSheet() {
+        isPresentingFavoritesManageSheet = false
+        favoriteFormError = nil
+        clearFavoriteDraft()
+    }
+
+    func beginAddFavoriteTemplate() {
+        clearFavoriteDraft()
+        editingFavoriteId = nil
+        favoriteFormError = nil
+    }
+
+    func beginEditFavoriteTemplate(_ favorite: FavoriteFood) {
+        editingFavoriteId = favorite.id
+        favoriteDraftName = favorite.name
+        favoriteDraftMeal = favorite.meal
+        favoriteDraftGrams = formatDraftNumber(favorite.grams)
+        favoriteDraftCalories = formatDraftNumber(favorite.calories)
+        favoriteDraftProtein = formatDraftNumber(favorite.protein)
+        favoriteDraftCarbs = formatDraftNumber(favorite.carbs)
+        favoriteDraftFat = formatDraftNumber(favorite.fat)
+        favoriteDraftFiber = formatDraftNumber(favorite.fiber)
+        favoriteDraftNote = favorite.note
+        favoriteFormError = nil
+    }
+
+    /// Save add/edit of a **template only** — never touches diary food_items.
+    @discardableResult
+    func saveFavoriteTemplate() -> Bool {
+        let (validated, message) = FavoriteFoodValidation.validate(
+            id: editingFavoriteId,
+            nameText: favoriteDraftName,
+            meal: favoriteDraftMeal,
+            gramsText: favoriteDraftGrams,
+            caloriesText: favoriteDraftCalories,
+            proteinText: favoriteDraftProtein,
+            carbsText: favoriteDraftCarbs,
+            fatText: favoriteDraftFat,
+            fiberText: favoriteDraftFiber,
+            noteText: favoriteDraftNote
+        )
+        guard let favorite = validated else {
+            favoriteFormError = message ?? "输入无效，请检查后重试。"
+            return false
+        }
+
+        var next = favoriteFoods
+        if let id = editingFavoriteId, let index = next.firstIndex(where: { $0.id == id }) {
+            next[index] = favorite
+        } else {
+            next.append(favorite)
+        }
+        favoriteFoodsStore.save(next)
+        favoriteFoods = favoriteFoodsStore.favorites
+        favoriteFormError = nil
+        clearFavoriteDraft()
+        return true
+    }
+
+    func deleteFavoriteTemplate(id: String) {
+        var next = favoriteFoods
+        next.removeAll { $0.id == id }
+        favoriteFoodsStore.save(next)
+        favoriteFoods = favoriteFoodsStore.favorites
+        if editingFavoriteId == id {
+            clearFavoriteDraft()
+        }
+    }
+
+    private func clearFavoriteDraft() {
+        editingFavoriteId = nil
+        favoriteDraftName = ""
+        favoriteDraftMeal = .breakfast
+        favoriteDraftGrams = ""
+        favoriteDraftCalories = ""
+        favoriteDraftProtein = ""
+        favoriteDraftCarbs = ""
+        favoriteDraftFat = ""
+        favoriteDraftFiber = ""
+        favoriteDraftNote = ""
     }
 
     // MARK: - AI helpers

@@ -47,9 +47,13 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
         let normalized = try Self.normalizedEmail(email)
         let client = try requireClient()
         do {
-            // Align with Web `signInWithOtp({ email })`.
-            // No unlisted redirectTo — avoids Auth redirect allowlist changes.
-            // Email templates include a one-time code (`{{ .Token }}`) that iOS verifies.
+            // Same Auth API family as Web `signInWithOtp({ email })`.
+            // Intentionally omit `redirectTo`: Web uses `emailRedirectTo: window.location.origin`
+            // (Magic Link → browser). Passing `dietcloud://…` here would require that URL to
+            // already be on the Supabase Redirect allowlist; we do not change production Auth.
+            // Completion on iOS therefore depends on the live email template:
+            // - if the message contains a token/code → optional `verifyOTP`
+            // - if only a Magic Link → needs a reachable app redirect (not guaranteed today)
             try await client.auth.signInWithOTP(email: normalized)
         } catch {
             throw AuthErrorSanitizer.mapAuthFailure(error)
@@ -79,6 +83,9 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
         }
     }
 
+    /// Completes Magic Link **only if** the OS opens an auth callback URL into the app
+    /// (e.g. `dietcloud://…` with tokens). Code is wired via `RootView.onOpenURL`, but
+    /// production emails will not hit this path until Redirect URLs + `redirectTo` are set.
     func handleAuthURL(_ url: URL) async throws -> AuthSessionSnapshot? {
         let client = try requireClient()
         do {

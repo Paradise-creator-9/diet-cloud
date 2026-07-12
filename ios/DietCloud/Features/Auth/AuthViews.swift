@@ -71,7 +71,7 @@ struct AuthEmailView: View {
                 }
 
                 Section("说明") {
-                    Text("与 Web 相同：使用 Supabase Email OTP。iOS 用邮件中的验证码完成登录（无需改 Auth 配置）。")
+                    Text("与 Web 相同，使用 Supabase 邮箱登录邮件。完成方式取决于邮件模板：可能是登录链接、验证码，或两者都有。生产环境需人工验证。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -92,13 +92,19 @@ struct AuthOTPView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("验证码已发送至")
+                    Text("登录邮件已发送至")
                     Text(email)
+                        .foregroundStyle(.secondary)
+                    Text("请检查邮箱中的登录链接或验证码。")
+                        .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("邮件验证码") {
-                    TextField("6 位验证码", text: $viewModel.otpInput)
+                Section {
+                    Text("如果邮件中包含验证码，请在下方输入（可选路径，非保证一定有码）。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    TextField("验证码（若邮件中有）", text: $viewModel.otpInput)
                         .textContentType(.oneTimeCode)
                         .keyboardType(.numberPad)
                         .textInputAutocapitalization(.never)
@@ -111,11 +117,17 @@ struct AuthOTPView: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("验证并登录")
+                            Text("用验证码登录")
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     .disabled(viewModel.isBusy || viewModel.otpInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+
+                Section("登录链接") {
+                    Text("如果使用登录链接：请在手机上打开该链接。当前 App 已注册 dietcloud:// 回调处理，但生产 Supabase Redirect URLs 未在本仓库配置，默认邮件链接通常回到网站，不一定会打开本 App。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let status = viewModel.statusMessage {
@@ -137,13 +149,13 @@ struct AuthOTPView: View {
                     Button("返回修改邮箱") {
                         viewModel.backToEmailEntry()
                     }
-                    Button("重新发送") {
+                    Button("重新发送邮件") {
                         Task { await viewModel.sendOTP() }
                     }
                     .disabled(viewModel.isBusy)
                 }
             }
-            .navigationTitle("输入验证码")
+            .navigationTitle("完成登录")
         }
     }
 }

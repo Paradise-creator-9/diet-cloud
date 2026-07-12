@@ -37,7 +37,7 @@ final class AuthViewModel {
                 phase = .signedIn(session.user)
             } else {
                 phase = .signedOut
-                statusMessage = "输入邮箱后，会收到一封登录邮件（含验证码）。"
+                statusMessage = "输入邮箱后，会收到一封登录邮件（链接和/或验证码，取决于邮件模板）。"
             }
         } catch {
             phase = .signedOut
@@ -59,7 +59,7 @@ final class AuthViewModel {
             let email = try AuthRepository.normalizedEmail(emailInput)
             try await repository.sendOTP(email: email)
             phase = .awaitingOTP(email: email)
-            statusMessage = "登录邮件已发送。请查收邮件中的验证码（或打开 Magic Link）。"
+            statusMessage = "请检查邮箱中的登录链接或验证码。如果邮件中包含验证码，请在下方输入；如果使用登录链接，请在手机上打开该链接（deep link 需额外配置，默认不一定会打开本 App）。"
             otpInput = ""
         } catch {
             let mapped = AuthErrorSanitizer.mapAuthFailure(error)
@@ -126,6 +126,6 @@ final class AuthViewModel {
         phase = .signedOut
         otpInput = ""
         errorMessage = nil
-        statusMessage = "输入邮箱后，会收到一封登录邮件（含验证码）。"
+        statusMessage = "输入邮箱后，会收到一封登录邮件（链接和/或验证码，取决于邮件模板）。"
     }
 }

@@ -6,7 +6,7 @@
 
 - Xcode 16+（部署目标 iOS 18+）
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-- 网络解析 [supabase-swift](https://github.com/supabase/supabase-swift)（SPM，首次 `xcodegen` / 构建时下载）
+- SPM：[supabase-swift](https://github.com/supabase/supabase-swift)
 
 ## 生成工程
 
@@ -36,24 +36,47 @@ open DietCloud.xcodeproj
 
 ### 阶段 0 — 工程骨架 ✅
 
-- App 入口、AppConfig、DI、AppError、DiaryCalendar、测试 target
+App 入口、AppConfig、DI、AppError、DiaryCalendar、测试 target。
 
-### 阶段 1 — Authentication ✅
+### 阶段 1 — Authentication（基础能力已合入分支；**生产登录需人工验证**）
 
-- Email OTP：发送邮件 → 输入验证码 → 登录（与 Web `signInWithOtp` 同一 Auth 方式）
-- Session 恢复（Keychain 经 supabase-swift `AuthLocalStorage`）
-- 登出、登录态路由、错误消毒（不泄露 token）
-- 可选 URL scheme `dietcloud://` 处理 Magic Link 回跳（若在 Supabase Redirect URLs 中放行）
+- 发送邮箱登录邮件（`signInWithOTP`）
+- Session 恢复（Keychain via `AuthLocalStorage`）
+- 登出、登录态路由、错误消毒
+- **可选**验证码路径：`verifyOTP`（仅当邮件模板包含可用 token/code）
+- **代码支持** Magic Link deep link：`dietcloud://` + `auth.session(from:)`（见下文限制）
 
 **未包含**：饮食 CRUD、HealthKit、AI、数据库变更。
 
-### Web vs iOS 登录差异（设计说明）
+## Web vs iOS 登录（以仓库代码为准，勿假设邮件内容）
 
-| | Web | iOS（阶段 1） |
-| --- | --- | --- |
-| 发起 | `signInWithOtp({ email, emailRedirectTo: origin })` | `signInWithOTP(email:)`（不传未登记 redirect，避免改 Auth 配置） |
-| 完成 | 用户点邮件 Magic Link，浏览器 `detectSessionInUrl` | 用户输入邮件中的 **OTP 验证码** `verifyOTP`；可选 Magic Link 深链接 |
-| Session | JS SDK localStorage | Keychain（`KeychainCredentialStore` + `SupabaseAuthLocalStorage`） |
+### Web（主要依赖 Magic Link）
+
+| 步骤 | 代码位置 |
+| --- | --- |
+| 客户端配置 `detectSessionInUrl: true` | `src/supabase.ts` → `createClient` auth options |
+| 发起登录 | `src/supabase.ts` → `signInWithEmail` → `auth.signInWithOtp`，`emailRedirectTo: window.location.origin` |
+| UI 文案「请打开邮箱里的链接」 | `src/main.tsx` → `AuthGate.handleSubmit` |
+| Session 落地 | Magic Link 回到站点后，SDK 从 URL 解析 session（`detectSessionInUrl`）；`main.tsx` 通过 `onAuthChange` 收到 `session.user` |
+
+Web **没有**验证码输入 UI。
+
+### iOS（邮件登录；完成方式取决于模板与 Redirect 配置）
+
+| 步骤 | 代码位置 |
+| --- | --- |
+| 发起 | `AuthRepository.sendOTP` → `client.auth.signInWithOTP(email:)`（**不传** `redirectTo`） |
+| 可选：验证码 | `AuthRepository.verifyOTP` → `client.auth.verifyOTP(email:token:type: .email)` |
+| 可选：deep link | `RootView.onOpenURL` → `AuthViewModel.handleOpenURL` → `AuthRepository.handleAuthURL` → `client.auth.session(from:)` |
+| URL scheme 声明 | `Info.plist` → `CFBundleURLSchemes` = `dietcloud` |
+
+### 兼容性说明（重要）
+
+1. **仓库无法确认**生产 Supabase 邮件模板是否展示 6 位验证码（无模板 SQL/JSON 在仓内）。
+2. 若用户**只收到 Magic Link、没有验证码**：当前 iOS 主界面**不能保证**完成登录——验证码字段无码可用；Magic Link 默认指向 Web 的 `emailRedirectTo` 语义，iOS **发送时未设置** `redirectTo: dietcloud://…`。
+3. `dietcloud://` deep link **要真正可用**，必须在 Supabase Dashboard → Auth → Redirect URLs **手动**加入对应 URL，并且发送 OTP 时传入匹配的 `redirectTo`。本仓库**未**修改生产 Auth 配置；因此 deep link 仅为**代码支持**，**不代表生产已可用**。
+4. 在生产配置与真机邮件确认前，**真实 iOS 登录仍需人工验证**。
+5. 准确描述：iOS 是 **「邮箱登录邮件，支持 Magic Link / Code 取决于 Supabase 邮件模板与 Redirect 配置」**，而不是「保证验证码主流程」。
 
 ## 测试
 
@@ -67,10 +90,10 @@ xcodebuild test \
   -only-testing:DietCloudTests
 ```
 
-测试使用 mock repository / in-memory store，**不连接生产 Supabase**。
+测试使用 mock / in-memory store，**不连接生产 Supabase**。
 
 ## 与 Web / Shortcuts 边界
 
 - App 数据：用户 Session + RLS。
-- AI：`API_BASE_URL` + Bearer access token → 已有 Vercel 接口（阶段 4）。
-- iPhone 快捷指令 / `activity-ingest`：**不属于** App 数据层。
+- AI：`API_BASE_URL` + Bearer access token → Vercel（后续阶段）。
+- Shortcuts / `activity-ingest`：**不属于** App 数据层。

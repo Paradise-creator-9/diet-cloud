@@ -188,6 +188,9 @@ final class GoalsOverviewTests: XCTestCase {
         XCTAssertEqual(withGoals.intakeLine, "500 / 2000 kcal")
         XCTAssertEqual(withGoals.netLine, "300 / 2000 kcal")
         XCTAssertEqual(withGoals.proteinLine, "40 / 120 g")
+        XCTAssertEqual(withGoals.intakeProgress, 0.25, accuracy: 0.0001)
+        XCTAssertEqual(withGoals.netProgress, 0.15, accuracy: 0.0001)
+        XCTAssertEqual(withGoals.proteinProgress, 40.0 / 120.0, accuracy: 0.0001)
 
         let without = GoalsProgress(
             intakeKcal: 500,
@@ -201,6 +204,55 @@ final class GoalsOverviewTests: XCTestCase {
         XCTAssertEqual(without.netLine, "300 kcal")
         XCTAssertEqual(without.proteinLine, "40 g")
         XCTAssertFalse(without.goals.hasAnyGoal)
+        XCTAssertEqual(without.intakeProgress, 0)
+        XCTAssertEqual(without.netProgress, 0)
+    }
+
+    func testProgressClampedToUnitInterval() {
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: -10, goal: 100), 0)
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: 0, goal: 100), 0)
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: 50, goal: 100), 0.5, accuracy: 0.0001)
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: 100, goal: 100), 1)
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: 250, goal: 100), 1) // over goal
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: 50, goal: nil), 0)
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: 50, goal: 0), 0)
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: .nan, goal: 100), 0)
+        XCTAssertEqual(GoalsProgress.clampedRatio(current: .infinity, goal: 100), 0)
+
+        let over = GoalsProgress(
+            intakeKcal: 2500,
+            netKcal: -100,
+            proteinG: 200,
+            carbsG: 10,
+            fatG: 10,
+            goals: UserGoals(
+                dailyCaloriesKcal: 2000,
+                targetWeightKg: nil,
+                proteinGrams: 100,
+                carbsGrams: nil,
+                fatGrams: nil
+            )
+        )
+        XCTAssertEqual(over.intakeProgress, 1)
+        XCTAssertEqual(over.netProgress, 0) // negative net → 0
+        XCTAssertEqual(over.proteinProgress, 1)
+        XCTAssertTrue(over.isOverGoal(current: 2500, goal: 2000))
+        XCTAssertFalse(over.isOverGoal(current: 100, goal: 2000))
+    }
+
+    func testEmptyGoalsProgressDoesNotCrash() {
+        let empty = GoalsProgress(
+            intakeKcal: 0,
+            netKcal: 0,
+            proteinG: 0,
+            carbsG: 0,
+            fatG: 0,
+            goals: .empty
+        )
+        XCTAssertEqual(empty.intakeProgress, 0)
+        XCTAssertEqual(empty.netProgress, 0)
+        XCTAssertEqual(empty.proteinProgress, 0)
+        XCTAssertEqual(empty.intakeLine, "0 kcal")
     }
 
     func testTodayMealsViewModelReloadsGoalsForOverview() async {

@@ -139,6 +139,45 @@ struct GoalsProgress: Equatable, Sendable {
         return "\(format(fatG)) g"
     }
 
+    /// Ring/bar fraction for intake vs calorie goal. Clamped to `0...1`.
+    var intakeProgress: Double {
+        Self.clampedRatio(current: intakeKcal, goal: goals.dailyCaloriesKcal)
+    }
+
+    /// Ring/bar fraction for net vs calorie goal. Clamped to `0...1`.
+    /// Negative net uses 0 (under-eating after burn still shows empty ring fill).
+    var netProgress: Double {
+        Self.clampedRatio(current: max(0, netKcal), goal: goals.dailyCaloriesKcal)
+    }
+
+    var proteinProgress: Double {
+        Self.clampedRatio(current: proteinG, goal: goals.proteinGrams)
+    }
+
+    var carbsProgress: Double {
+        Self.clampedRatio(current: carbsG, goal: goals.carbsGrams)
+    }
+
+    var fatProgress: Double {
+        Self.clampedRatio(current: fatG, goal: goals.fatGrams)
+    }
+
+    /// True when current exceeds goal (for tinting; progress itself stays ≤ 1).
+    func isOverGoal(current: Double, goal: Double?) -> Bool {
+        guard let goal, goal > 0, current.isFinite else { return false }
+        return current > goal
+    }
+
+    /// Safe progress ratio for UI rings/bars. Always in `0...1`.
+    /// - No goal / non-positive goal / non-finite current → `0`
+    /// - Over goal → `1` (clamped)
+    static func clampedRatio(current: Double, goal: Double?) -> Double {
+        guard let goal, goal > 0, current.isFinite else { return 0 }
+        let raw = current / goal
+        if !raw.isFinite { return 0 }
+        return min(1, max(0, raw))
+    }
+
     private func format(_ value: Double) -> String {
         if !value.isFinite { return "0" }
         if value.rounded() == value { return String(Int(value)) }

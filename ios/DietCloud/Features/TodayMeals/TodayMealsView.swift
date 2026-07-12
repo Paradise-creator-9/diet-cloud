@@ -26,7 +26,7 @@ struct TodayMealsView: View {
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        HStack(spacing: 12) {
+                        HStack(spacing: 14) {
                             Button {
                                 isPresentingSettings = true
                             } label: {
@@ -37,7 +37,9 @@ struct TodayMealsView: View {
                             Button {
                                 viewModel.openAddSheet()
                             } label: {
-                                Image(systemName: "plus.circle.fill")
+                                Label("添加", systemImage: "plus.circle.fill")
+                                    .labelStyle(.titleAndIcon)
+                                    .font(.body.weight(.semibold))
                             }
                             .accessibilityLabel("新增食物")
                             .disabled(viewModel.isPresentingAddSheet)
@@ -117,69 +119,78 @@ struct TodayMealsView: View {
             Group {
                 switch viewModel.loadState {
                 case .loading:
-                    VStack(spacing: 12) {
+                    VStack(spacing: 14) {
                         ProgressView()
-                        Text("正在加载 \(viewModel.displayTitle) 的饮食…")
+                        Text("正在加载 \(viewModel.displayTitle)…")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
+                        Text("饮食、身体与活动数据")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(.systemBackground))
+                    .background(Color(.systemGroupedBackground))
                 case .error(let message):
                     ContentUnavailableView {
-                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                        Label("无法加载", systemImage: "wifi.exclamationmark")
                     } description: {
                         Text(message)
                     } actions: {
                         Button("重试") {
                             Task { await viewModel.load() }
                         }
+                        .buttonStyle(.borderedProminent)
                     }
+                    .background(Color(.systemGroupedBackground))
                 case .empty, .loaded:
                     List {
                         Section {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(viewModel.displayTitle)
-                                    .font(.headline)
-                                Text(viewModel.selectedDateKey)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .monospaced()
-                                if !viewModel.isToday {
-                                    Text("补记将保存到该日期")
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(viewModel.displayTitle)
+                                        .font(.title3.weight(.semibold))
+                                    Text(viewModel.selectedDateKey)
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
+                                        .monospaced()
+                                }
+                                Spacer()
+                                if !viewModel.isToday {
+                                    Text("补记")
+                                        .font(.caption.weight(.medium))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                                        .foregroundStyle(Color.accentColor)
                                 }
                             }
-                            .padding(.vertical, 4)
-                        }
-
-                        if viewModel.summary.calories > 0
-                            || viewModel.summary.protein > 0
-                            || viewModel.summary.carbs > 0
-                            || viewModel.summary.fat > 0 {
-                            Section("饮食营养") {
-                                DailySummaryCard(summary: viewModel.summary)
-                            }
+                            .padding(.vertical, 2)
+                            .listRowBackground(Color.clear)
                         }
 
                         BodyMetricSection(viewModel: viewModel)
                         DailyActivitySection(viewModel: viewModel)
                         ExerciseSection(viewModel: viewModel)
 
-                        if case .empty = viewModel.loadState {
-                            Section {
+                        Section {
+                            if case .empty = viewModel.loadState {
                                 ContentUnavailableView(
                                     "还没有饮食记录",
                                     systemImage: "fork.knife",
                                     description: Text(
                                         viewModel.isToday
-                                            ? "点击右上角 + 手动添加今日食物，可附带照片。"
-                                            : "点击右上角 + 为 \(viewModel.displayTitle) 补记食物。"
+                                            ? "点右上角「添加」记录餐食，可附照片与 AI 分析。"
+                                            : "点右上角「添加」为 \(viewModel.displayTitle) 补记。"
                                     )
                                 )
                                 .frame(maxWidth: .infinity)
                                 .listRowBackground(Color.clear)
                             }
+                        } header: {
+                            Text("饮食记录")
+                                .font(.subheadline.weight(.semibold))
+                                .textCase(nil)
+                                .foregroundStyle(.primary)
                         }
 
                         ForEach(viewModel.mealSections, id: \.meal) { section in
@@ -202,9 +213,12 @@ struct TodayMealsView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                    .background(Color(.systemGroupedBackground))
                 }
             }
         }
+        .background(Color(.systemGroupedBackground))
     }
 }
 
@@ -214,7 +228,7 @@ struct HealthKitImportBar: View {
     @Bindable var viewModel: TodayMealsViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             Button {
                 Task { await viewModel.importFromHealthKit(overwriteManual: false) }
             } label: {
@@ -222,28 +236,26 @@ struct HealthKitImportBar: View {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                 } else {
-                    Label("从健康导入", systemImage: "heart.text.square")
+                    Label("从健康导入", systemImage: "heart")
+                        .font(.subheadline)
                         .frame(maxWidth: .infinity)
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
             .disabled(viewModel.isImportingHealthKit || viewModel.isMutating)
             .accessibilityLabel("从 Apple 健康导入所选日期数据")
 
-            Text("只读导入所选日期的步数、活动、距离、体重与运动；不会写入健康。")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-
             if let status = viewModel.healthKitStatusMessage {
                 Text(status)
-                    .font(.footnote)
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
             }
         }
     }
 }
 
-/// Minimal day overview pinned under the date bar (no ring charts).
+/// Day overview with calorie rings + macro bars (native SwiftUI only).
 struct DayEnergySummaryCard: View {
     let energy: DayEnergySummary
     var progress: GoalsProgress = GoalsProgress(
@@ -256,57 +268,106 @@ struct DayEnergySummaryCard: View {
     )
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("当日总览")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("当日总览")
+                    .font(.headline)
+                Spacer()
+                if progress.goals.hasAnyGoal {
+                    Text("含目标")
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
 
-            VStack(spacing: 6) {
-                metric("摄入", progress.goals.hasCalorieGoal ? progress.intakeLine : "\(formatKcal(energy.foodIntakeKcal)) kcal")
-                metric("活动消耗", "\(formatKcal(energy.activityBurnKcal)) kcal")
-                metric("运动消耗", "\(formatKcal(energy.exerciseBurnKcal)) kcal")
-                metric(
-                    "净热量",
-                    progress.goals.hasCalorieGoal ? progress.netLine : "\(formatKcal(energy.netKcal)) kcal"
+            HStack(spacing: 20) {
+                DashboardRingView(
+                    title: "摄入",
+                    valueText: formatKcal(energy.foodIntakeKcal),
+                    subtitle: progress.goals.hasCalorieGoal
+                        ? "/ \(formatKcal(progress.goals.dailyCaloriesKcal ?? 0))"
+                        : "kcal",
+                    progress: progress.goals.hasCalorieGoal ? progress.intakeProgress : 0,
+                    tint: progress.isOverGoal(current: progress.intakeKcal, goal: progress.goals.dailyCaloriesKcal)
+                        ? .orange
+                        : .accentColor,
+                    showTrackOnly: !progress.goals.hasCalorieGoal
                 )
-                .fontWeight(.semibold)
+                DashboardRingView(
+                    title: "净热量",
+                    valueText: formatKcal(energy.netKcal),
+                    subtitle: progress.goals.hasCalorieGoal
+                        ? "/ \(formatKcal(progress.goals.dailyCaloriesKcal ?? 0))"
+                        : "kcal",
+                    progress: progress.goals.hasCalorieGoal ? progress.netProgress : 0,
+                    tint: .green,
+                    showTrackOnly: !progress.goals.hasCalorieGoal
+                )
+            }
+            .frame(maxWidth: .infinity)
 
-                if progress.goals.proteinGrams != nil || progress.proteinG > 0 {
-                    metric("蛋白质", progress.proteinLine)
-                }
-                if progress.goals.carbsGrams != nil || progress.carbsG > 0 {
-                    metric("碳水", progress.carbsLine)
-                }
-                if progress.goals.fatGrams != nil || progress.fatG > 0 {
-                    metric("脂肪", progress.fatLine)
-                }
-
-                metric("步数", energy.steps > 0 ? formatNumber(energy.steps) : "—")
+            VStack(spacing: 8) {
+                metricRow("活动消耗", "\(formatKcal(energy.activityBurnKcal)) kcal")
+                metricRow("运动消耗", "\(formatKcal(energy.exerciseBurnKcal)) kcal")
+                metricRow("步数", energy.steps > 0 ? formatNumber(energy.steps) : "—")
                 weightRow
             }
 
-            if energy.dailyActivitySource == "healthkit" {
-                Text("净热量 = 摄入 − 活动消耗（健康 active energy 已含 workout，不重复扣运动）")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("净热量 = 摄入 − 活动消耗 − 运动消耗")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            if progress.goals.proteinGrams != nil
+                || progress.goals.carbsGrams != nil
+                || progress.goals.fatGrams != nil
+                || progress.proteinG > 0
+                || progress.carbsG > 0
+                || progress.fatG > 0 {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("营养")
+                        .font(.subheadline.weight(.semibold))
+                    macroBar(
+                        title: "蛋白质",
+                        line: progress.proteinLine,
+                        progress: progress.goals.proteinGrams != nil ? progress.proteinProgress : 0,
+                        tint: .blue,
+                        showTrackOnly: progress.goals.proteinGrams == nil
+                    )
+                    macroBar(
+                        title: "碳水",
+                        line: progress.carbsLine,
+                        progress: progress.goals.carbsGrams != nil ? progress.carbsProgress : 0,
+                        tint: .orange,
+                        showTrackOnly: progress.goals.carbsGrams == nil
+                    )
+                    macroBar(
+                        title: "脂肪",
+                        line: progress.fatLine,
+                        progress: progress.goals.fatGrams != nil ? progress.fatProgress : 0,
+                        tint: .purple,
+                        showTrackOnly: progress.goals.fatGrams == nil
+                    )
+                }
             }
-            if progress.goals.hasAnyGoal {
-                Text("目标保存在本机设置中；未设置的项仅显示当前值。")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+
+            Text(netFormulaCaption)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
-        .padding(12)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("当日总览")
+    }
+
+    private var netFormulaCaption: String {
+        if energy.dailyActivitySource == "healthkit" {
+            return "净热量 = 摄入 − 活动消耗（健康 active energy 已含 workout）"
+        }
+        return "净热量 = 摄入 − 活动消耗 − 运动消耗"
     }
 
     @ViewBuilder
@@ -314,24 +375,55 @@ struct DayEnergySummaryCard: View {
         let current = energy.weightKg.flatMap { $0 > 0 ? formatNumber($0) : nil }
         if let target = progress.goals.targetWeightKg, target > 0 {
             if let current {
-                metric("体重", "\(current) / \(formatNumber(target)) kg")
+                metricRow("体重", "\(current) / \(formatNumber(target)) kg")
             } else {
-                metric("目标体重", "\(formatNumber(target)) kg")
+                metricRow("目标体重", "\(formatNumber(target)) kg")
             }
         } else {
-            metric("体重", current.map { "\($0) kg" } ?? "—")
+            metricRow("体重", current.map { "\($0) kg" } ?? "—")
         }
     }
 
-    private func metric(_ title: String, _ value: String) -> some View {
+    private func metricRow(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
             Text(value)
+                .font(.subheadline.weight(.medium))
                 .monospacedDigit()
         }
-        .font(.subheadline)
+    }
+
+    private func macroBar(
+        title: String,
+        line: String,
+        progress: Double,
+        tint: Color,
+        showTrackOnly: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(line)
+                    .font(.caption.weight(.medium))
+                    .monospacedDigit()
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color(.tertiarySystemFill))
+                    Capsule()
+                        .fill(tint.opacity(showTrackOnly ? 0.25 : 1))
+                        .frame(width: showTrackOnly ? 0 : geo.size.width * progress)
+                }
+            }
+            .frame(height: 6)
+        }
     }
 
     private func formatKcal(_ value: Double) -> String {
@@ -342,6 +434,58 @@ struct DayEnergySummaryCard: View {
         if !value.isFinite { return "0" }
         if value.rounded() == value { return String(Int(value)) }
         return String(format: "%.1f", value)
+    }
+}
+
+/// Simple circular progress ring (0...1).
+struct DashboardRingView: View {
+    let title: String
+    let valueText: String
+    let subtitle: String
+    let progress: Double
+    var tint: Color = .accentColor
+    /// When true, only show empty track (no goal set).
+    var showTrackOnly: Bool = false
+
+    /// Always `0...1` for ring stroke.
+    private var clamped: Double {
+        let value = progress.isFinite ? progress : 0
+        return min(1, max(0, value))
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .stroke(Color(.tertiarySystemFill), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: showTrackOnly ? 0 : clamped)
+                    .stroke(
+                        tint,
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                VStack(spacing: 2) {
+                    Text(valueText)
+                        .font(.title3.weight(.semibold))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .padding(8)
+            }
+            .frame(width: 110, height: 110)
+            .accessibilityLabel("\(title) \(valueText) \(subtitle)")
+
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -366,11 +510,13 @@ struct BodyMetricSection: View {
                 }
                 .disabled(viewModel.isMutating)
             } else {
-                Text("暂无身体数据").foregroundStyle(.secondary)
+                Text("还没有体重记录，可手动添加或从健康导入。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 Button("添加体重") { viewModel.openBodySheet() }
             }
         } header: {
-            Text("身体数据")
+            sectionHeader("身体数据", systemImage: "scalemass")
         }
     }
 
@@ -401,11 +547,13 @@ struct DailyActivitySection: View {
                 }
                 .disabled(viewModel.isMutating)
             } else {
-                Text("暂无每日活动").foregroundStyle(.secondary)
+                Text("还没有每日活动记录，可手动添加或从健康导入。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 Button("添加活动") { viewModel.openActivitySheet() }
             }
         } header: {
-            Text("每日活动")
+            sectionHeader("每日活动", systemImage: "figure.walk")
         }
     }
 
@@ -420,7 +568,9 @@ struct ExerciseSection: View {
     var body: some View {
         Section {
             if viewModel.exercises.isEmpty {
-                Text("暂无运动记录").foregroundStyle(.secondary)
+                Text("还没有运动记录。")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             } else {
                 ForEach(viewModel.exercises) { exercise in
                     VStack(alignment: .leading, spacing: 4) {
@@ -451,7 +601,7 @@ struct ExerciseSection: View {
                 Label("添加运动", systemImage: "plus")
             }
         } header: {
-            Text("运动记录")
+            sectionHeader("运动记录", systemImage: "figure.run")
         }
     }
 
@@ -593,17 +743,26 @@ struct ExerciseEditView: View {
 struct DiaryDateBar: View {
     @Bindable var viewModel: TodayMealsViewModel
 
+    private var dateControlsDisabled: Bool {
+        viewModel.isPresentingAddSheet
+            || viewModel.isPresentingBodySheet
+            || viewModel.isPresentingActivitySheet
+            || viewModel.isPresentingExerciseSheet
+            || viewModel.isAnalyzing
+    }
+
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             HStack(spacing: 12) {
                 Button {
                     Task { await viewModel.goToPreviousDay() }
                 } label: {
                     Image(systemName: "chevron.left.circle.fill")
                         .font(.title2)
+                        .symbolRenderingMode(.hierarchical)
                 }
                 .accessibilityLabel("前一天")
-                .disabled(viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
+                .disabled(dateControlsDisabled)
 
                 Spacer(minLength: 4)
 
@@ -623,9 +782,10 @@ struct DiaryDateBar: View {
                 } label: {
                     Image(systemName: "chevron.right.circle.fill")
                         .font(.title2)
+                        .symbolRenderingMode(.hierarchical)
                 }
                 .accessibilityLabel("后一天")
-                .disabled(viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
+                .disabled(dateControlsDisabled)
             }
 
             HStack(spacing: 12) {
@@ -633,7 +793,8 @@ struct DiaryDateBar: View {
                     Task { await viewModel.goToToday() }
                 }
                 .buttonStyle(.bordered)
-                .disabled(viewModel.isToday || viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
+                .controlSize(.small)
+                .disabled(viewModel.isToday || dateControlsDisabled)
 
                 DatePicker(
                     "选择日期",
@@ -646,10 +807,19 @@ struct DiaryDateBar: View {
                     displayedComponents: [.date]
                 )
                 .labelsHidden()
-                .disabled(viewModel.isPresentingAddSheet || viewModel.isPresentingBodySheet || viewModel.isPresentingActivitySheet || viewModel.isPresentingExerciseSheet || viewModel.isAnalyzing)
+                .disabled(dateControlsDisabled)
             }
         }
+        .padding(.horizontal, 4)
     }
+}
+
+@ViewBuilder
+private func sectionHeader(_ title: String, systemImage: String) -> some View {
+    Label(title, systemImage: systemImage)
+        .font(.subheadline.weight(.semibold))
+        .textCase(nil)
+        .foregroundStyle(.primary)
 }
 
 struct DailySummaryCard: View {
@@ -853,8 +1023,8 @@ struct AddFoodItemView: View {
                         .keyboardType(.decimalPad)
                 }
 
-                Section("AI 分析（可选）") {
-                    Text("在备注中写描述（如「一碗牛肉饭」），或先选照片，再点分析。结果只填入表单，需你确认后保存。")
+                Section {
+                    Text("写备注或选照片后分析。结果只填入表单，需你确认后保存。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Button {
@@ -865,15 +1035,19 @@ struct AddFoodItemView: View {
                                 .frame(maxWidth: .infinity)
                         } else {
                             Label("AI 分析餐食", systemImage: "sparkles")
+                                .font(.body.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                         }
                     }
+                    .buttonStyle(.borderedProminent)
                     .disabled(!viewModel.canRunAIAnalysis)
                     if let summary = viewModel.analysisSummary {
                         Text(summary)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
+                } header: {
+                    Label("AI 分析", systemImage: "sparkles")
                 }
 
                 Section("照片（可选）") {

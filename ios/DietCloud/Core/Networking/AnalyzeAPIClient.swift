@@ -101,27 +101,15 @@ struct AnalyzeAPIClient: AnalyzeAPIClienting {
 
     private func mapHTTPFailure(statusCode: Int, data: Data) -> AppError {
         let bodyMessage = Self.extractErrorMessage(from: data)
-        switch statusCode {
-        case 401, 403:
-            return .unauthorized
-        case 413:
-            return .server(statusCode: 413, message: "图片过大，请换小图。")
-        case 429:
-            return .rateLimited(retryAfterSeconds: nil)
-        case 500, 502, 503, 504:
-            let msg = bodyMessage.isEmpty ? "AI 服务暂时不可用。" : bodyMessage
-            return .server(statusCode: statusCode, message: AuthErrorSanitizer.sanitize(msg))
-        case 400 ..< 500:
-            let msg = bodyMessage.isEmpty ? "请求无效。" : bodyMessage
-            return .server(statusCode: statusCode, message: AuthErrorSanitizer.sanitize(msg))
-        default:
-            return AppError.fromHTTP(statusCode: statusCode, bodyMessage: bodyMessage)
-        }
+        return AnalyzeAPIErrorMapping.mapHTTPFailure(statusCode: statusCode, bodyMessage: bodyMessage)
     }
 
     private func mapTransportError(_ error: Error) -> AppError {
-        if let app = error as? AppError { return app }
+        if let app = error as? AppError { return AnalyzeAPIErrorMapping.map(app) }
         let raw = AuthErrorSanitizer.sanitize(error.localizedDescription)
+        if AnalyzeAPIErrorMapping.isTechnicalJSONParseMessage(raw) {
+            return .unknown(message: AnalyzeAPIErrorMapping.malformedAIResponseMessage)
+        }
         let lower = raw.lowercased()
         if lower.contains("timed out") || lower.contains("timeout") {
             return .network(message: "AI 分析超时，请稍后再试。")

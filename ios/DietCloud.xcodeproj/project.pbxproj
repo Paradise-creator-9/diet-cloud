@@ -15,6 +15,7 @@
 		17F4FB6502561A58CDD3D5A5 /* MealPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */; };
 		20F041A712CE71CAE4CEB7F4 /* DataErrorMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFEAEB7F866518E6957AE52A /* DataErrorMapping.swift */; };
 		2A8E37B7E03110E6AF97CE75 /* KeychainCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 533611A60E602AA7CE7D4878 /* KeychainCredentialStore.swift */; };
+		2CABBC6220D682745186EB9B /* AnalyzeAPIErrorMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = F234446D8F1EBBE70E05E142 /* AnalyzeAPIErrorMapping.swift */; };
 		2D2E30699110C0631BEC26CC /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408833F9E547197115F04318 /* SupabaseClientProvider.swift */; };
 		31B9E184DD0210A9FD313309 /* AuthErrorSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7FED1D03128CC0B6FBDDAE9 /* AuthErrorSanitizer.swift */; };
 		37DB9CE240FFB9FDE1E72277 /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */; };
@@ -139,6 +140,7 @@
 		ED97D6293611E5D896A4BE52 /* BodyMetricDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricDTO.swift; sourceTree = "<group>"; };
 		EEAB18E99AE995450EF58215 /* FoodItemMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemMapperTests.swift; sourceTree = "<group>"; };
 		F216D2AF3548F82EF5277DC5 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
+		F234446D8F1EBBE70E05E142 /* AnalyzeAPIErrorMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIErrorMapping.swift; sourceTree = "<group>"; };
 		F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppErrorTests.swift; sourceTree = "<group>"; };
 		F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIClient.swift; sourceTree = "<group>"; };
 		F7FED1D03128CC0B6FBDDAE9 /* AuthErrorSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorSanitizer.swift; sourceTree = "<group>"; };
@@ -163,6 +165,7 @@
 			children = (
 				A97D0C67760110133D6EB084 /* AccessTokenProviding.swift */,
 				F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */,
+				F234446D8F1EBBE70E05E142 /* AnalyzeAPIErrorMapping.swift */,
 				B40244B35869BA678D5D190C /* HTTPSessioning.swift */,
 				0A61FA08D7A7B858F4FE959D /* SessionIdentity.swift */,
 				408833F9E547197115F04318 /* SupabaseClientProvider.swift */,
@@ -473,6 +476,7 @@
 				06CA232870FA15CBA1BC50FB /* ActivityModels.swift in Sources */,
 				D6D91DDC5C093DB533B3EFC0 /* ActivityRepository.swift in Sources */,
 				524E5FEB2BE280CBA2DA1337 /* AnalyzeAPIClient.swift in Sources */,
+				2CABBC6220D682745186EB9B /* AnalyzeAPIErrorMapping.swift in Sources */,
 				73F934AE61B1678461F07431 /* AppConfig.swift in Sources */,
 				C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */,
 				8AEBE92718314B67F9F38643 /* AppError.swift in Sources */,

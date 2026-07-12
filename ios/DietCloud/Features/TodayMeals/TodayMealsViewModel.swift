@@ -256,14 +256,7 @@ final class TodayMealsViewModel {
     }
 
     private func mapAnalyzeError(_ error: Error) -> AppError {
-        if let app = error as? AppError {
-            // Soften rate-limit copy for AI context without leaking details.
-            if case .rateLimited = app {
-                return .rateLimited(retryAfterSeconds: nil)
-            }
-            return app
-        }
-        return DataErrorMapping.map(error)
+        AnalyzeAPIErrorMapping.map(error)
     }
 
     private func parseNumber(_ text: String) -> Double {

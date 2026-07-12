@@ -177,6 +177,22 @@ final class AnalyzeAPIClientTests: XCTestCase {
         }
     }
 
+    func testHTTP500JSONParseDumpIsSanitized() async {
+        let dump = "Expected ',' or ']' after array element in JSON at position 1424 (line 72 column 6)"
+        await assertStatus(500, json: ["error": dump]) { error in
+            XCTAssertEqual(error.userMessage, AnalyzeAPIErrorMapping.malformedAIResponseMessage)
+            XCTAssertFalse(error.userMessage.contains("position"))
+            XCTAssertFalse(error.userMessage.contains("array element"))
+            XCTAssertFalse(error.userMessage.contains("1424"))
+        }
+    }
+
+    func testInternalServerErrorIsFriendly() async {
+        await assertStatus(500, json: ["error": "Internal server error.", "code": "internal_error"]) { error in
+            XCTAssertEqual(error.userMessage, AnalyzeAPIErrorMapping.aiUnavailableMessage)
+        }
+    }
+
     func testHTTP502And503MapToAIUnavailable() async {
         await assertStatus(502, json: [:]) { error in
             if case .server(let code, let message) = error {
@@ -304,6 +320,31 @@ final class AnalyzeAPIClientTests: XCTestCase {
                 "notes": "估算结果",
             ] as [String: Any],
         ]
+    }
+}
+
+final class AnalyzeAPIErrorMappingTests: XCTestCase {
+    func testDetectsNodeStyleJSONParseMessage() {
+        let msg = "Expected ',' or ']' after array element in JSON at position 1424 (line 72 column 6)"
+        XCTAssertTrue(AnalyzeAPIErrorMapping.isTechnicalJSONParseMessage(msg))
+        let mapped = AnalyzeAPIErrorMapping.mapHTTPFailure(statusCode: 500, bodyMessage: msg)
+        XCTAssertEqual(mapped.userMessage, AnalyzeAPIErrorMapping.malformedAIResponseMessage)
+        XCTAssertFalse(mapped.userMessage.contains("base64"))
+        XCTAssertFalse(mapped.userMessage.contains("Bearer"))
+    }
+
+    func testDoesNotMisclassifyNormalChineseErrors() {
+        XCTAssertFalse(AnalyzeAPIErrorMapping.isTechnicalJSONParseMessage("请上传照片，或者至少填写一句文字说明。"))
+        let mapped = AnalyzeAPIErrorMapping.mapHTTPFailure(
+            statusCode: 400,
+            bodyMessage: "请上传照片，或者至少填写一句文字说明。"
+        )
+        if case .server(let code, let message) = mapped {
+            XCTAssertEqual(code, 400)
+            XCTAssertTrue(message.contains("照片") || message.contains("文字"))
+        } else {
+            XCTFail("expected 400 server")
+        }
     }
 }
 

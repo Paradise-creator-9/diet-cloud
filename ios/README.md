@@ -71,7 +71,10 @@ dietcloud://auth-callback
 
 ### 阶段 0 — 工程骨架 ✅
 
-### 阶段 1 — Authentication（Magic Link 主路径 + 验证码备用）
+### 阶段 1 — Authentication（Magic Link 主路径 + 验证码备用）✅
+
+**真机验收（已通过）**：Magic Link 邮件点击可回到 App 并进入 `signedIn`；Session 恢复与登出按设计可用。不记录真实邮箱、用户 ID 或 token。  
+前置：Supabase Redirect URLs 已包含 `dietcloud://auth-callback`（Dashboard 手动配置，非本仓库变更）。
 
 **iOS Magic Link 主流程**
 

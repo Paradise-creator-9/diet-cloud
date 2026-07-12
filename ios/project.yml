@@ -39,6 +39,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: true
         INFOPLIST_FILE: DietCloud/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: DietCloud/Resources/DietCloud.entitlements
         INFOPLIST_KEY_CFBundleDisplayName: 膳食志
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
         INFOPLIST_KEY_UILaunchScreen_Generation: true

@@ -74,6 +74,7 @@ final class AppDependencyContainer: @unchecked Sendable {
             bodyRepository: bodyMetricsRepository,
             dailyActivityRepository: dailyActivityRepository,
             exerciseRepository: exerciseActivityRepository,
+            healthKitClient: HealthKitClient(),
             diaryCalendar: diaryCalendar
         )
     }

@@ -15,10 +15,13 @@
 		17F4FB6502561A58CDD3D5A5 /* MealPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */; };
 		20F041A712CE71CAE4CEB7F4 /* DataErrorMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFEAEB7F866518E6957AE52A /* DataErrorMapping.swift */; };
 		2A8E37B7E03110E6AF97CE75 /* KeychainCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 533611A60E602AA7CE7D4878 /* KeychainCredentialStore.swift */; };
+		2BCD52CCF930057449D86F50 /* HealthKitImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA87FB3E230193ED54DB0369 /* HealthKitImportService.swift */; };
 		2CABBC6220D682745186EB9B /* AnalyzeAPIErrorMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = F234446D8F1EBBE70E05E142 /* AnalyzeAPIErrorMapping.swift */; };
 		2D2E30699110C0631BEC26CC /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408833F9E547197115F04318 /* SupabaseClientProvider.swift */; };
+		2F434138F114F2117753D793 /* HealthKitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37FB025D57FBD426814C83EC /* HealthKitModels.swift */; };
 		31B9E184DD0210A9FD313309 /* AuthErrorSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7FED1D03128CC0B6FBDDAE9 /* AuthErrorSanitizer.swift */; };
 		37DB9CE240FFB9FDE1E72277 /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */; };
+		4470A086C540CB4255CD14AA /* HealthKitClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54A13C8D07925BDF4638D15F /* HealthKitClient.swift */; };
 		461A6E8D9A60A705BEA1E4B4 /* MealPhotoRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */; };
 		47B2DCD492D27E087E7AFFE8 /* AccessTokenProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97D0C67760110133D6EB084 /* AccessTokenProviding.swift */; };
 		48270AE9F881437CCB5F0CBC /* MealAnalysisDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B38DE8CF29E57260531F4B4 /* MealAnalysisDTO.swift */; };
@@ -35,6 +38,7 @@
 		73F934AE61B1678461F07431 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */; };
 		745B3B2CB893EEC11FA099A8 /* MealType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565E62F2F164A98BB038B28A /* MealType.swift */; };
 		77D14F03BCC117246AC20E40 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 996F299CD3F15723D3368BBF /* RootView.swift */; };
+		7D9AD8D6F09212201E5AFF02 /* HealthKitImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B358849434F00743448024F /* HealthKitImportTests.swift */; };
 		7F6FF1E67B003D9B9508314E /* SupabaseAuthLocalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A46E5BFA7DE7E05E1FF0AC /* SupabaseAuthLocalStorage.swift */; };
 		7F895EF0E16AB95413A53B50 /* TodayMealsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C86AFB4E4A3BE2BB8A444A3B /* TodayMealsView.swift */; };
 		813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21702E88765536EB03176846 /* MockAuthRepository.swift */; };
@@ -83,6 +87,7 @@
 /* Begin PBXFileReference section */
 		0846C5DA24DC42A159FF8819 /* ActivityRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRepository.swift; sourceTree = "<group>"; };
 		0A61FA08D7A7B858F4FE959D /* SessionIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionIdentity.swift; sourceTree = "<group>"; };
+		0B358849434F00743448024F /* HealthKitImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitImportTests.swift; sourceTree = "<group>"; };
 		0B61C146B72BDB5D2CFA1F3F /* MealAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealAnalysis.swift; sourceTree = "<group>"; };
 		1389E782AE726656538F091B /* AnalyzeAPIClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIClientTests.swift; sourceTree = "<group>"; };
 		1B38DE8CF29E57260531F4B4 /* MealAnalysisDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealAnalysisDTO.swift; sourceTree = "<group>"; };
@@ -92,12 +97,15 @@
 		2938AEB5BC8A6EFB25BD4370 /* BodyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetric.swift; sourceTree = "<group>"; };
 		2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietCloudApp.swift; sourceTree = "<group>"; };
 		3762E293F50FF63036987FC7 /* DiaryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendar.swift; sourceTree = "<group>"; };
+		37FB025D57FBD426814C83EC /* HealthKitModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitModels.swift; sourceTree = "<group>"; };
 		38007A1DABD0C603A8489C27 /* BodyMetricsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricsRepository.swift; sourceTree = "<group>"; };
 		3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
 		408833F9E547197115F04318 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClientProvider.swift; sourceTree = "<group>"; };
 		41E5A424C48E249F4CACC137 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		51578621B12841023EA296BA /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
 		533611A60E602AA7CE7D4878 /* KeychainCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainCredentialStore.swift; sourceTree = "<group>"; };
+		53AB94BF6F13B0B022C83B2D /* DietCloud.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DietCloud.entitlements; sourceTree = "<group>"; };
+		54A13C8D07925BDF4638D15F /* HealthKitClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitClient.swift; sourceTree = "<group>"; };
 		565E62F2F164A98BB038B28A /* MealType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealType.swift; sourceTree = "<group>"; };
 		5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDTO.swift; sourceTree = "<group>"; };
 		5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhotoRepository.swift; sourceTree = "<group>"; };
@@ -138,6 +146,7 @@
 		DA8E9785419E54129E0EE487 /* ActivityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityModels.swift; sourceTree = "<group>"; };
 		DCAD2C1465311164B8F22D7D /* BodyMetricMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricMapperTests.swift; sourceTree = "<group>"; };
 		DEA5E92D46CE16038385089F /* AuthErrorSanitizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorSanitizerTests.swift; sourceTree = "<group>"; };
+		EA87FB3E230193ED54DB0369 /* HealthKitImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitImportService.swift; sourceTree = "<group>"; };
 		ED97D6293611E5D896A4BE52 /* BodyMetricDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricDTO.swift; sourceTree = "<group>"; };
 		EEAB18E99AE995450EF58215 /* FoodItemMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemMapperTests.swift; sourceTree = "<group>"; };
 		F216D2AF3548F82EF5277DC5 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
@@ -211,6 +220,16 @@
 				C731AF3D621D166303EEE58F /* DietCloudTests */,
 				8F32AF622612A42B28AE82D5 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		73BAE4CE5F43789F19C6DD15 /* HealthKit */ = {
+			isa = PBXGroup;
+			children = (
+				54A13C8D07925BDF4638D15F /* HealthKitClient.swift */,
+				EA87FB3E230193ED54DB0369 /* HealthKitImportService.swift */,
+				37FB025D57FBD426814C83EC /* HealthKitModels.swift */,
+			);
+			path = HealthKit;
 			sourceTree = "<group>";
 		};
 		73D17475E4E0E20639B23A2A /* Models */ = {
@@ -297,6 +316,7 @@
 		B00E8991F08684979A782218 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				53AB94BF6F13B0B022C83B2D /* DietCloud.entitlements */,
 				9DF8F0E9A872AA0A590AF709 /* Info.plist */,
 			);
 			path = Resources;
@@ -331,6 +351,7 @@
 				7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */,
 				EEAB18E99AE995450EF58215 /* FoodItemMapperTests.swift */,
 				D8E3960AA4F8B4D4F03E1727 /* FoodItemRepositoryTests.swift */,
+				0B358849434F00743448024F /* HealthKitImportTests.swift */,
 				FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */,
 				7878FEC01579FF3062A1BAB8 /* MealPhotoRepositoryTests.swift */,
 				21702E88765536EB03176846 /* MockAuthRepository.swift */,
@@ -387,6 +408,7 @@
 				990867AF7D8F33CCA6407DA7 /* Config */,
 				321CC73AE242F964C6376E74 /* DateHandling */,
 				DA96577913F47B578D7BEF3E /* Errors */,
+				73BAE4CE5F43789F19C6DD15 /* HealthKit */,
 				73D17475E4E0E20639B23A2A /* Models */,
 				1B0FFFBD1AE2E96095D3E05D /* Networking */,
 				8A596FAA8574B93EEC6DBF4D /* Photos */,
@@ -499,6 +521,9 @@
 				8187112D3D5ACB424C443A63 /* FoodItemDTO.swift in Sources */,
 				C4D49991FDD8AF71CED06F5E /* FoodItemRepository.swift in Sources */,
 				A0DF14F9A1297E5022236A3A /* HTTPSessioning.swift in Sources */,
+				4470A086C540CB4255CD14AA /* HealthKitClient.swift in Sources */,
+				2BCD52CCF930057449D86F50 /* HealthKitImportService.swift in Sources */,
+				2F434138F114F2117753D793 /* HealthKitModels.swift in Sources */,
 				63935253FFE1404B9DF446C6 /* ImageCompressor.swift in Sources */,
 				C1CA40D9C597D2BA2CF70DEA /* InMemoryCredentialStore.swift in Sources */,
 				2A8E37B7E03110E6AF97CE75 /* KeychainCredentialStore.swift in Sources */,
@@ -537,6 +562,7 @@
 				690FBF7CF4FF0EB84F804862 /* DiaryCalendarTests.swift in Sources */,
 				A2D390090F8096D4059534D7 /* FoodItemMapperTests.swift in Sources */,
 				B7C6783097E209890ADBAE6C /* FoodItemRepositoryTests.swift in Sources */,
+				7D9AD8D6F09212201E5AFF02 /* HealthKitImportTests.swift in Sources */,
 				D5BAD5D575A28918A63E2BE9 /* LaunchUISmokeTests.swift in Sources */,
 				DC6DAD7E1637BB0FB394095E /* MealPhotoRepositoryTests.swift in Sources */,
 				813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */,
@@ -560,6 +586,7 @@
 			baseConfigurationReference = 7058D16434745DA311001977 /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = DietCloud/Resources/DietCloud.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -665,6 +692,7 @@
 			baseConfigurationReference = 41E5A424C48E249F4CACC137 /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = DietCloud/Resources/DietCloud.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;

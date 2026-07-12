@@ -142,10 +142,16 @@ struct DayEnergySummary: Equatable, Sendable {
     var activityBurnKcal: Double
     var steps: Double
     var weightKg: Double?
+    /// When daily activity is from HealthKit, active energy already includes workouts.
+    /// Do **not** also subtract exercise calories (方案 B).
+    var dailyActivitySource: String?
 
-    /// Intake minus exercise + activity active calories (both tracked independently).
+    /// Net kcal avoiding double-count of HealthKit active energy + workout calories.
     var netKcal: Double {
-        foodIntakeKcal - exerciseBurnKcal - activityBurnKcal
+        if dailyActivitySource == "healthkit" {
+            return foodIntakeKcal - activityBurnKcal
+        }
+        return foodIntakeKcal - exerciseBurnKcal - activityBurnKcal
     }
 
     static let zero = DayEnergySummary(
@@ -153,6 +159,7 @@ struct DayEnergySummary: Equatable, Sendable {
         exerciseBurnKcal: 0,
         activityBurnKcal: 0,
         steps: 0,
-        weightKg: nil
+        weightKg: nil,
+        dailyActivitySource: nil
     )
 }

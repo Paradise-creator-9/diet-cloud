@@ -67,6 +67,13 @@ final class TodayMealsViewModel {
     var draftExerciseDistance = ""
     var draftExerciseNote = ""
 
+    // MARK: HealthKit import
+
+    private(set) var isImportingHealthKit = false
+    private(set) var healthKitStatusMessage: String?
+    var isPresentingHealthKitOverwriteConfirm = false
+    private var pendingHealthKitSnapshot: HealthKitDaySnapshot?
+
     let user: AuthUser
 
     private let foodRepository: FoodItemRepositoryProtocol
@@ -75,6 +82,8 @@ final class TodayMealsViewModel {
     private let bodyRepository: BodyMetricsRepositoryProtocol
     private let dailyActivityRepository: DailyActivityRepositoryProtocol
     private let exerciseRepository: ExerciseActivityRepositoryProtocol
+    private let healthKitClient: HealthKitClienting
+    private let healthKitImporter: HealthKitImportServicing
     private let diaryCalendar: DiaryCalendar
     /// Guards against out-of-order loads when the user flips dates quickly.
     private var loadGeneration = 0
@@ -107,6 +116,9 @@ final class TodayMealsViewModel {
 
     /// Food + exercise + daily activity rollup for the **selected day only**.
     /// Refreshes whenever `items` / `dailyActivity` / `exercises` / `bodyMetric` update after load or mutation.
+    ///
+    /// **热量策略（方案 B）**：若当日 `daily_activities.source == healthkit`，
+    /// 其 activeCalories 通常已含 workout 消耗，净热量只扣活动消耗，不重复扣运动列表。
     var dayEnergySummary: DayEnergySummary {
         let exerciseBurn = exercises.reduce(0.0) { $0 + $1.activeCalories }
         let activity = dailyActivity
@@ -119,7 +131,8 @@ final class TodayMealsViewModel {
             exerciseBurnKcal: exerciseBurn,
             activityBurnKcal: activity?.activeCalories ?? 0,
             steps: activity?.steps ?? 0,
-            weightKg: weight
+            weightKg: weight,
+            dailyActivitySource: activity?.source
         )
     }
 
@@ -148,6 +161,8 @@ final class TodayMealsViewModel {
         bodyRepository: BodyMetricsRepositoryProtocol = MockBodyMetricsRepository(),
         dailyActivityRepository: DailyActivityRepositoryProtocol = MockDailyActivityRepository(),
         exerciseRepository: ExerciseActivityRepositoryProtocol = MockExerciseActivityRepository(),
+        healthKitClient: HealthKitClienting = MockHealthKitClient(),
+        healthKitImporter: HealthKitImportServicing? = nil,
         diaryCalendar: DiaryCalendar = DiaryCalendar(),
         dateKey: String? = nil
     ) {
@@ -158,12 +173,23 @@ final class TodayMealsViewModel {
         self.bodyRepository = bodyRepository
         self.dailyActivityRepository = dailyActivityRepository
         self.exerciseRepository = exerciseRepository
+        self.healthKitClient = healthKitClient
+        self.healthKitImporter = healthKitImporter
+            ?? HealthKitImportService(
+                bodyRepository: bodyRepository,
+                dailyRepository: dailyActivityRepository,
+                exerciseRepository: exerciseRepository
+            )
         self.diaryCalendar = diaryCalendar
         if let dateKey, let parsed = diaryCalendar.date(fromDateKey: dateKey) {
             self.selectedDate = diaryCalendar.startOfDay(for: parsed)
         } else {
             self.selectedDate = diaryCalendar.startOfDay(for: Date())
         }
+    }
+
+    var isHealthKitAvailable: Bool {
+        healthKitClient.isAvailable
     }
 
     // MARK: - Date navigation
@@ -622,6 +648,102 @@ final class TodayMealsViewModel {
         } catch {
             errorMessage = DataErrorMapping.map(error).userMessage
         }
+    }
+
+    // MARK: - HealthKit import
+
+    /// Reads HealthKit for `selectedDateKey` and writes into app repositories.
+    /// Does not write to HealthKit. Never silent-overwrite of manual body/daily.
+    func importFromHealthKit(overwriteManual: Bool = false) async {
+        healthKitStatusMessage = nil
+        errorMessage = nil
+        guard !isImportingHealthKit else { return }
+
+        if !healthKitClient.isAvailable {
+            healthKitStatusMessage = HealthKitError.unavailable.userMessage
+            return
+        }
+
+        isImportingHealthKit = true
+        defer { isImportingHealthKit = false }
+
+        do {
+            let status = healthKitClient.authorizationStatusSummary()
+            if status == .denied {
+                throw HealthKitError.authorizationDenied
+            }
+            if status == .notDetermined || status == .unavailable {
+                // unavailable already handled; notDetermined → request
+            }
+            if status == .notDetermined {
+                try await healthKitClient.requestReadAuthorization()
+            }
+
+            let key = selectedDateKey
+            let snapshot = try await healthKitClient.fetchDay(dateKey: key, diaryCalendar: diaryCalendar)
+
+            if !overwriteManual,
+               HealthKitImportService.needsOverwriteConfirmation(
+                   snapshot: snapshot,
+                   existingBody: bodyMetric,
+                   existingDaily: dailyActivity
+               ) {
+                pendingHealthKitSnapshot = snapshot
+                isPresentingHealthKitOverwriteConfirm = true
+                healthKitStatusMessage = "已有手动身体或每日活动记录。确认后将用健康数据更新这些项；运动记录会去重后追加。"
+                return
+            }
+
+            let result = try await healthKitImporter.importDay(
+                dateKey: key,
+                snapshot: snapshot,
+                existingBody: bodyMetric,
+                existingDaily: dailyActivity,
+                existingExercises: exercises,
+                overwriteManual: overwriteManual
+            )
+            pendingHealthKitSnapshot = nil
+            isPresentingHealthKitOverwriteConfirm = false
+            healthKitStatusMessage = result.userMessage
+            await load()
+        } catch let hk as HealthKitError {
+            healthKitStatusMessage = hk.userMessage
+        } catch {
+            healthKitStatusMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    func confirmHealthKitOverwriteImport() async {
+        isPresentingHealthKitOverwriteConfirm = false
+        guard let snapshot = pendingHealthKitSnapshot else {
+            await importFromHealthKit(overwriteManual: true)
+            return
+        }
+        isImportingHealthKit = true
+        defer { isImportingHealthKit = false }
+        do {
+            let result = try await healthKitImporter.importDay(
+                dateKey: selectedDateKey,
+                snapshot: snapshot,
+                existingBody: bodyMetric,
+                existingDaily: dailyActivity,
+                existingExercises: exercises,
+                overwriteManual: true
+            )
+            pendingHealthKitSnapshot = nil
+            healthKitStatusMessage = result.userMessage
+            await load()
+        } catch let hk as HealthKitError {
+            healthKitStatusMessage = hk.userMessage
+        } catch {
+            healthKitStatusMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    func cancelHealthKitOverwriteImport() {
+        isPresentingHealthKitOverwriteConfirm = false
+        pendingHealthKitSnapshot = nil
+        healthKitStatusMessage = "已取消覆盖。手动记录保持不变。"
     }
 
     // MARK: - Parsing

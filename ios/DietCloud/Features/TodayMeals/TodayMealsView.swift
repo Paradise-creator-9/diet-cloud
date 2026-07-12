@@ -59,10 +59,23 @@ struct TodayMealsView: View {
                 .background(Color(.systemBackground))
 
             // Pinned below date bar so it is always visible (not buried in List).
-            DayEnergySummaryCard(energy: viewModel.dayEnergySummary)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-                .background(Color(.systemBackground))
+            VStack(alignment: .leading, spacing: 8) {
+                DayEnergySummaryCard(energy: viewModel.dayEnergySummary)
+                HealthKitImportBar(viewModel: viewModel)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+            .background(Color(.systemBackground))
+            .alert("用健康数据更新？", isPresented: $viewModel.isPresentingHealthKitOverwriteConfirm) {
+                Button("取消", role: .cancel) {
+                    viewModel.cancelHealthKitOverwriteImport()
+                }
+                Button("用健康数据更新", role: .destructive) {
+                    Task { await viewModel.confirmHealthKitOverwriteImport() }
+                }
+            } message: {
+                Text("今天（所选日期）已有手动身体或每日活动记录。确认后将用 Apple 健康数据更新这些项；运动记录会去重后追加。不会向健康写入数据。")
+            }
 
             Group {
                 switch viewModel.loadState {
@@ -160,6 +173,39 @@ struct TodayMealsView: View {
 
 // MARK: - Energy / body / activity sections
 
+struct HealthKitImportBar: View {
+    @Bindable var viewModel: TodayMealsViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                Task { await viewModel.importFromHealthKit(overwriteManual: false) }
+            } label: {
+                if viewModel.isImportingHealthKit {
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                } else {
+                    Label("从健康导入", systemImage: "heart.text.square")
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(viewModel.isImportingHealthKit || viewModel.isMutating)
+            .accessibilityLabel("从 Apple 健康导入所选日期数据")
+
+            Text("只读导入所选日期的步数、活动、距离、体重与运动；不会写入健康。")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            if let status = viewModel.healthKitStatusMessage {
+                Text(status)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
 /// Minimal day overview pinned under the date bar (no ring charts).
 struct DayEnergySummaryCard: View {
     let energy: DayEnergySummary
@@ -182,9 +228,15 @@ struct DayEnergySummaryCard: View {
                 )
             }
 
-            Text("净热量 = 摄入 − 活动消耗 − 运动消耗")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            if energy.dailyActivitySource == "healthkit" {
+                Text("净热量 = 摄入 − 活动消耗（健康 active energy 已含 workout，不重复扣运动）")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("净热量 = 摄入 − 活动消耗 − 运动消耗")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

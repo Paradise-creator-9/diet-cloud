@@ -8,7 +8,7 @@ struct TodayMealsView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("今日饮食")
+                .navigationTitle(viewModel.navigationTitle)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
@@ -25,10 +25,12 @@ struct TodayMealsView: View {
                             Image(systemName: "plus.circle.fill")
                         }
                         .accessibilityLabel("新增食物")
+                        .disabled(viewModel.isPresentingAddSheet)
                     }
                 }
                 .sheet(isPresented: $viewModel.isPresentingAddSheet) {
                     AddFoodItemView(viewModel: viewModel)
+                        .interactiveDismissDisabled(viewModel.isAnalyzing || viewModel.isMutating)
                 }
                 .task {
                     await viewModel.load()
@@ -41,75 +43,156 @@ struct TodayMealsView: View {
 
     @ViewBuilder
     private var content: some View {
-        switch viewModel.loadState {
-        case .loading:
-            VStack(spacing: 12) {
-                ProgressView()
-                Text("正在加载今日饮食…")
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.systemBackground))
-        case .error(let message):
-            ContentUnavailableView {
-                Label("加载失败", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(message)
-            } actions: {
-                Button("重试") {
-                    Task { await viewModel.load() }
-                }
-            }
-        case .empty, .loaded:
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("今天")
-                            .font(.headline)
-                        Text(viewModel.dateKey)
-                            .font(.subheadline)
+        VStack(spacing: 0) {
+            DiaryDateBar(viewModel: viewModel)
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(Color(.systemBackground))
+
+            Group {
+                switch viewModel.loadState {
+                case .loading:
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("正在加载 \(viewModel.displayTitle) 的饮食…")
                             .foregroundStyle(.secondary)
-                            .monospaced()
                     }
-                    .padding(.vertical, 4)
-                }
-
-                Section("今日汇总") {
-                    DailySummaryCard(summary: viewModel.summary)
-                }
-
-                if case .empty = viewModel.loadState {
-                    Section {
-                        ContentUnavailableView(
-                            "还没有记录",
-                            systemImage: "fork.knife",
-                            description: Text("点击右上角 + 手动添加今日食物，可附带照片。")
-                        )
-                        .frame(maxWidth: .infinity)
-                        .listRowBackground(Color.clear)
-                    }
-                }
-
-                ForEach(viewModel.mealSections, id: \.meal) { section in
-                    MealSectionView(
-                        group: section,
-                        isMutating: viewModel.isMutating,
-                        onAdd: { viewModel.openAddSheet(defaultMeal: section.meal) },
-                        onDelete: { item in
-                            Task { await viewModel.deleteItem(item) }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
+                case .error(let message):
+                    ContentUnavailableView {
+                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(message)
+                    } actions: {
+                        Button("重试") {
+                            Task { await viewModel.load() }
                         }
-                    )
-                }
-
-                if let error = viewModel.errorMessage, viewModel.loadState != .error(error) {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(.red)
-                            .font(.footnote)
                     }
+                case .empty, .loaded:
+                    List {
+                        Section {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(viewModel.displayTitle)
+                                    .font(.headline)
+                                Text(viewModel.selectedDateKey)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .monospaced()
+                                if !viewModel.isToday {
+                                    Text("补记将保存到该日期")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+
+                        Section(viewModel.isToday ? "今日汇总" : "当日汇总") {
+                            DailySummaryCard(summary: viewModel.summary)
+                        }
+
+                        if case .empty = viewModel.loadState {
+                            Section {
+                                ContentUnavailableView(
+                                    "还没有记录",
+                                    systemImage: "fork.knife",
+                                    description: Text(
+                                        viewModel.isToday
+                                            ? "点击右上角 + 手动添加今日食物，可附带照片。"
+                                            : "点击右上角 + 为 \(viewModel.displayTitle) 补记食物。"
+                                    )
+                                )
+                                .frame(maxWidth: .infinity)
+                                .listRowBackground(Color.clear)
+                            }
+                        }
+
+                        ForEach(viewModel.mealSections, id: \.meal) { section in
+                            MealSectionView(
+                                group: section,
+                                isMutating: viewModel.isMutating,
+                                onAdd: { viewModel.openAddSheet(defaultMeal: section.meal) },
+                                onDelete: { item in
+                                    Task { await viewModel.deleteItem(item) }
+                                }
+                            )
+                        }
+
+                        if let error = viewModel.errorMessage, viewModel.loadState != .error(error) {
+                            Section {
+                                Text(error)
+                                    .foregroundStyle(.red)
+                                    .font(.footnote)
+                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
                 }
             }
-            .listStyle(.insetGrouped)
+        }
+    }
+}
+
+/// Date navigation: previous / next / label / today / DatePicker.
+struct DiaryDateBar: View {
+    @Bindable var viewModel: TodayMealsViewModel
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                Button {
+                    Task { await viewModel.goToPreviousDay() }
+                } label: {
+                    Image(systemName: "chevron.left.circle.fill")
+                        .font(.title2)
+                }
+                .accessibilityLabel("前一天")
+                .disabled(viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+
+                Spacer(minLength: 4)
+
+                VStack(spacing: 2) {
+                    Text(viewModel.displayTitle)
+                        .font(.headline)
+                    Text(viewModel.selectedDateKey)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospaced()
+                }
+
+                Spacer(minLength: 4)
+
+                Button {
+                    Task { await viewModel.goToNextDay() }
+                } label: {
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.title2)
+                }
+                .accessibilityLabel("后一天")
+                .disabled(viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+            }
+
+            HStack(spacing: 12) {
+                Button("今天") {
+                    Task { await viewModel.goToToday() }
+                }
+                .buttonStyle(.bordered)
+                .disabled(viewModel.isToday || viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+
+                DatePicker(
+                    "选择日期",
+                    selection: Binding(
+                        get: { viewModel.selectedDate },
+                        set: { newValue in
+                            Task { await viewModel.selectDate(newValue) }
+                        }
+                    ),
+                    displayedComponents: [.date]
+                )
+                .labelsHidden()
+                .disabled(viewModel.isPresentingAddSheet || viewModel.isAnalyzing)
+            }
         }
     }
 }

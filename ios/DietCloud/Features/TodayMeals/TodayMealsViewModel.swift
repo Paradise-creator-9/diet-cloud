@@ -17,6 +17,9 @@ final class TodayMealsViewModel {
     private(set) var errorMessage: String?
     private(set) var isMutating = false
 
+    /// Selected diary day (local start-of-day). Drives all fetch / write dateKeys.
+    private(set) var selectedDate: Date
+
     /// Draft fields for add form (bound from view).
     var draftName = ""
     var draftMeal: MealType = .breakfast
@@ -38,13 +41,36 @@ final class TodayMealsViewModel {
     /// Short success summary after AI fill (not an error).
     private(set) var analysisSummary: String?
 
-    let dateKey: String
     let user: AuthUser
 
     private let foodRepository: FoodItemRepositoryProtocol
     private let photoRepository: MealPhotoRepositoryProtocol
     private let analyzeAPI: AnalyzeAPIClienting
     private let diaryCalendar: DiaryCalendar
+    /// Guards against out-of-order loads when the user flips dates quickly.
+    private var loadGeneration = 0
+
+    /// Current diary day key (`YYYY-MM-DD`) for the selected date.
+    var selectedDateKey: String {
+        diaryCalendar.dateKey(from: selectedDate)
+    }
+
+    /// Alias for call sites / tests that still use `dateKey`.
+    var dateKey: String { selectedDateKey }
+
+    var isToday: Bool {
+        diaryCalendar.isToday(selectedDateKey)
+    }
+
+    /// Chinese title for the selected day (今天 / 昨天 / 明天 / yyyy年M月d日).
+    var displayTitle: String {
+        diaryCalendar.displayTitle(forDateKey: selectedDateKey)
+    }
+
+    /// Navigation title: “今日饮食” on today, otherwise “饮食记录”.
+    var navigationTitle: String {
+        isToday ? "今日饮食" : "饮食记录"
+    }
 
     var summary: DailyNutritionSummary {
         foodRepository.nutritionSummary(for: items)
@@ -52,9 +78,10 @@ final class TodayMealsViewModel {
 
     /// All meal slots in Web display order (empty sections included when loaded).
     var mealSections: [MealGroup] {
-        MealType.displayOrder.map { meal in
+        let key = selectedDateKey
+        return MealType.displayOrder.map { meal in
             let filtered = items.filter { $0.meal == meal }
-            return MealGroup(dateKey: dateKey, meal: meal, items: filtered)
+            return MealGroup(dateKey: key, meal: meal, items: filtered)
         }
     }
 
@@ -79,23 +106,75 @@ final class TodayMealsViewModel {
         self.photoRepository = photoRepository
         self.analyzeAPI = analyzeAPI
         self.diaryCalendar = diaryCalendar
-        self.dateKey = dateKey ?? diaryCalendar.dateKey()
+        if let dateKey, let parsed = diaryCalendar.date(fromDateKey: dateKey) {
+            self.selectedDate = diaryCalendar.startOfDay(for: parsed)
+        } else {
+            self.selectedDate = diaryCalendar.startOfDay(for: Date())
+        }
     }
 
+    // MARK: - Date navigation
+
+    func goToPreviousDay() async {
+        let next = diaryCalendar.dateByAdding(days: -1, to: selectedDate)
+        await selectDate(next)
+    }
+
+    func goToNextDay() async {
+        let next = diaryCalendar.dateByAdding(days: 1, to: selectedDate)
+        await selectDate(next)
+    }
+
+    func goToToday() async {
+        await selectDate(diaryCalendar.startOfDay(for: Date()))
+    }
+
+    func selectDate(_ date: Date) async {
+        prepareForDateChange()
+        selectedDate = diaryCalendar.startOfDay(for: date)
+        await load()
+    }
+
+    func selectDateKey(_ key: String) async {
+        guard let date = diaryCalendar.date(fromDateKey: key) else {
+            errorMessage = "日期无效。"
+            return
+        }
+        await selectDate(date)
+    }
+
+    /// Closes add sheet / AI work so date switches stay consistent.
+    private func prepareForDateChange() {
+        if isPresentingAddSheet {
+            cancelAdd()
+        }
+        isAnalyzing = false
+        analysisSummary = nil
+    }
+
+    // MARK: - Load
+
     func load() async {
+        loadGeneration += 1
+        let generation = loadGeneration
+        let key = selectedDateKey
         loadState = .loading
         errorMessage = nil
         do {
-            let fetched = try await foodRepository.fetchByDateKey(dateKey)
+            let fetched = try await foodRepository.fetchByDateKey(key)
+            guard generation == loadGeneration else { return }
             items = fetched
             loadState = fetched.isEmpty ? .empty : .loaded
         } catch {
+            guard generation == loadGeneration else { return }
             let mapped = DataErrorMapping.map(error)
             errorMessage = mapped.userMessage
             loadState = .error(mapped.userMessage)
             items = []
         }
     }
+
+    // MARK: - Add form
 
     func openAddSheet(defaultMeal: MealType = .breakfast) {
         draftMeal = defaultMeal
@@ -114,6 +193,14 @@ final class TodayMealsViewModel {
 
     func cancelAdd() {
         isPresentingAddSheet = false
+        draftName = ""
+        draftCalories = ""
+        draftProtein = ""
+        draftCarbs = ""
+        draftFat = ""
+        draftGrams = ""
+        draftNote = ""
+        draftMeal = .breakfast
         clearDraftPhoto()
         errorMessage = nil
         analysisSummary = nil
@@ -144,6 +231,7 @@ final class TodayMealsViewModel {
     }
 
     /// Calls `/api/analyze-meal` and fills draft fields only — does **not** save.
+    /// AI is date-agnostic; save still uses `selectedDateKey`.
     func runAIAnalysis() async {
         errorMessage = nil
         analysisSummary = nil
@@ -169,7 +257,6 @@ final class TodayMealsViewModel {
         } catch {
             let mapped = mapAnalyzeError(error)
             errorMessage = mapped.userMessage
-            // Do not clear draft fields on failure — manual entry still works.
         }
     }
 
@@ -183,11 +270,13 @@ final class TodayMealsViewModel {
         isMutating = true
         defer { isMutating = false }
 
+        let writeDateKey = selectedDateKey
+
         do {
             var photoPaths: [String] = []
             if let photoData = draftPhotoData {
                 let uploaded = try await photoRepository.upload(
-                    dateKey: dateKey,
+                    dateKey: writeDateKey,
                     fileName: "meal.jpg",
                     data: photoData,
                     contentType: ImageCompressor.allowedContentType
@@ -196,7 +285,7 @@ final class TodayMealsViewModel {
             }
 
             let write = FoodItemWrite(
-                dateKey: dateKey,
+                dateKey: writeDateKey,
                 meal: draftMeal,
                 name: name,
                 grams: parseNumber(draftGrams),
@@ -234,7 +323,6 @@ final class TodayMealsViewModel {
 
     // MARK: - AI helpers
 
-    /// Prefer dedicated note as hint; fall back to draft name if it looks like a description.
     private func preferredAIHint() -> String {
         let note = draftNote.trimmingCharacters(in: .whitespacesAndNewlines)
         if !note.isEmpty { return note }
@@ -252,7 +340,6 @@ final class TodayMealsViewModel {
         draftNote = fill.note
         analysisSummary = fill.summary
         errorMessage = nil
-        // meal type left as user selection; API does not return mealType.
     }
 
     private func mapAnalyzeError(_ error: Error) -> AppError {

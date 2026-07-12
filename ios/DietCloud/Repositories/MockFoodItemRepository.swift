@@ -13,6 +13,9 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     /// Captured for tests asserting session ownership (never overwrites with external id).
     private(set) var lastWriteSessionUserId: String?
     private(set) var lastCreatePhotoPaths: [String] = []
+    /// Last `fetchByDateKey` argument (stage 6 date navigation tests).
+    private(set) var lastFetchDateKey: String?
+    private(set) var fetchByDateKeyCallCount = 0
 
     /// Test-only snapshot of stored items (no network).
     func itemsSnapshotForTest() -> [FoodItem] {
@@ -40,7 +43,9 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     func fetchByDateKey(_ dateKey: String) async throws -> [FoodItem] {
         try throwIfForced()
         return withLock {
-            items
+            lastFetchDateKey = dateKey
+            fetchByDateKeyCallCount += 1
+            return items
                 .filter { $0.dateKey == dateKey }
                 .sorted { $0.createdAt < $1.createdAt }
         }

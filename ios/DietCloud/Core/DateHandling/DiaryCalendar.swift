@@ -71,6 +71,45 @@ struct DiaryCalendar: Sendable {
         dateKey(from: now) == key
     }
 
+    func isYesterday(_ key: String, now: Date = Date()) -> Bool {
+        dateKey(from: dateByAdding(days: -1, to: now)) == key
+    }
+
+    func isTomorrow(_ key: String, now: Date = Date()) -> Bool {
+        dateKey(from: dateByAdding(days: 1, to: now)) == key
+    }
+
+    /// Adds whole calendar days in this diary calendar (device TZ by default).
+    func dateByAdding(days: Int, to date: Date) -> Date {
+        calendar.date(byAdding: .day, value: days, to: calendar.startOfDay(for: date))
+            ?? date
+    }
+
+    /// Shifts a `YYYY-MM-DD` key by whole days; returns nil if key is invalid.
+    func shiftingDateKey(_ key: String, byDays days: Int) -> String? {
+        guard let base = date(fromDateKey: key) else { return nil }
+        return dateKey(from: dateByAdding(days: days, to: base))
+    }
+
+    /// Chinese display label: 今天 / 昨天 / 明天 / yyyy年M月d日.
+    func displayTitle(forDateKey key: String, now: Date = Date()) -> String {
+        if isToday(key, now: now) { return "今天" }
+        if isYesterday(key, now: now) { return "昨天" }
+        if isTomorrow(key, now: now) { return "明天" }
+        guard let date = date(fromDateKey: key) else { return key }
+        let formatter = DateFormatter()
+        formatter.calendar = calendar
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.timeZone = calendar.timeZone
+        formatter.dateFormat = "yyyy年M月d日"
+        return formatter.string(from: date)
+    }
+
+    /// Start-of-day date for picker binding.
+    func startOfDay(for date: Date) -> Date {
+        calendar.startOfDay(for: date)
+    }
+
     /// Web `buildDates`: unique date keys, newest first (`localeCompare` reverse).
     func sortedDateKeysNewestFirst(_ keys: [String]) -> [String] {
         Array(Set(keys)).sorted { $0 > $1 }

@@ -298,6 +298,166 @@ final class TodayMealsViewModelTests: XCTestCase {
         XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
     }
 
+    // MARK: - Date navigation (stage 6)
+
+    func testDefaultSelectedDateIsTodayWhenNotInjected() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 9 * 3600)!
+        let diary = DiaryCalendar(calendar: calendar)
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let vm = TodayMealsViewModel(
+            user: user,
+            foodRepository: MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo),
+            photoRepository: photo,
+            analyzeAPI: MockAnalyzeAPIClient(),
+            diaryCalendar: diary
+        )
+        XCTAssertEqual(vm.selectedDateKey, diary.dateKey())
+        XCTAssertTrue(vm.isToday)
+        XCTAssertEqual(vm.displayTitle, "今天")
+    }
+
+    func testGoToPreviousDayFetchesYesterday() async {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let diary = DiaryCalendar(calendar: calendar)
+        let today = diary.dateKey()
+        let yesterday = diary.shiftingDateKey(today, byDays: -1)!
+        let (vm, repo, _, _) = makeVM(diaryCalendar: diary, dateKey: today)
+        await vm.load()
+        XCTAssertEqual(repo.lastFetchDateKey, today)
+
+        await vm.goToPreviousDay()
+        XCTAssertEqual(vm.selectedDateKey, yesterday)
+        XCTAssertEqual(repo.lastFetchDateKey, yesterday)
+        XCTAssertFalse(vm.isToday)
+        XCTAssertEqual(vm.displayTitle, "昨天")
+    }
+
+    func testGoToNextDayAndGoToToday() async {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let diary = DiaryCalendar(calendar: calendar)
+        let today = diary.dateKey()
+        let tomorrow = diary.shiftingDateKey(today, byDays: 1)!
+        let (vm, repo, _, _) = makeVM(diaryCalendar: diary, dateKey: today)
+
+        await vm.goToNextDay()
+        XCTAssertEqual(vm.selectedDateKey, tomorrow)
+        XCTAssertEqual(repo.lastFetchDateKey, tomorrow)
+        XCTAssertEqual(vm.displayTitle, "明天")
+
+        await vm.goToToday()
+        XCTAssertEqual(vm.selectedDateKey, today)
+        XCTAssertEqual(repo.lastFetchDateKey, today)
+        XCTAssertTrue(vm.isToday)
+    }
+
+    func testSelectDateFetchesSpecifiedDateKey() async {
+        let (vm, repo, _, _) = makeVM(dateKey: "2026-07-13")
+        await vm.selectDateKey("2026-07-10")
+        XCTAssertEqual(vm.selectedDateKey, "2026-07-10")
+        XCTAssertEqual(repo.lastFetchDateKey, "2026-07-10")
+    }
+
+    func testNonTodayAddWritesSelectedDateKeyOnly() async {
+        let historyKey = "2026-07-10"
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let seedToday = food(id: "t1", meal: .lunch, name: "今天的饭", cal: 300, protein: 10, carbs: 40, fat: 5, on: "2026-07-13")
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [seedToday], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo, dateKey: historyKey)
+
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .empty)
+        XCTAssertTrue(vm.items.isEmpty)
+        XCTAssertEqual(vm.summary.calories, 0)
+
+        vm.draftName = "历史测试"
+        vm.draftCalories = "111"
+        await vm.saveNewItem()
+
+        XCTAssertEqual(vm.items.count, 1)
+        XCTAssertEqual(vm.items.first?.dateKey, historyKey)
+        XCTAssertEqual(vm.items.first?.name, "历史测试")
+        XCTAssertEqual(vm.summary.calories, 111)
+
+        // Today still has only the seed item
+        let todayItems = foodRepo.itemsSnapshotForTest().filter { $0.dateKey == "2026-07-13" }
+        XCTAssertEqual(todayItems.count, 1)
+        XCTAssertEqual(todayItems.first?.name, "今天的饭")
+    }
+
+    func testDateSwitchEmptyAndLoadedStates() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let seed = food(id: "h1", meal: .snack, name: "香蕉", cal: 100, protein: 1, carbs: 20, fat: 0, on: "2026-07-10")
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [seed], photoRepository: photo)
+        let (vm, _, _, _) = makeVM(repo: repo, photo: photo, dateKey: "2026-07-13")
+
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .empty)
+
+        await vm.selectDateKey("2026-07-10")
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertEqual(vm.items.count, 1)
+        XCTAssertEqual(vm.summary.calories, 100)
+
+        await vm.selectDateKey("2026-07-11")
+        XCTAssertEqual(vm.loadState, .empty)
+        XCTAssertTrue(vm.items.isEmpty)
+    }
+
+    func testHistoryPhotoUploadUsesSelectedDateKey() async {
+        let historyKey = "2026-07-09"
+        let (vm, repo, photo, _) = makeVM(dateKey: historyKey)
+        await vm.setDraftPhoto(rawData: Self.tinyJPEG())
+        vm.draftName = "历史照片"
+        await vm.saveNewItem()
+        XCTAssertEqual(repo.lastCreatePhotoPaths.count, 1)
+        XCTAssertTrue(repo.lastCreatePhotoPaths[0].hasPrefix("\(user.id)/\(historyKey)/"))
+        XCTAssertEqual(photo.lastUploadPath, repo.lastCreatePhotoPaths.first)
+        XCTAssertFalse((photo.lastUploadPath ?? "").contains("eyJ"))
+    }
+
+    func testHistoryAIAnalysisFillsFormThenSaveUsesSelectedDateKey() async {
+        let historyKey = "2026-07-08"
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setResult(
+            MealAnalysisResult(
+                dishName: "补记面条",
+                confidence: 0.8,
+                total: MealAnalysisNutrition(grams: 200, calories: 400, protein: 12, carbs: 60, fat: 8, fiber: 2),
+                items: [],
+                notes: "历史 AI",
+                model: "mock"
+            )
+        )
+        let (vm, repo, _, _) = makeVM(analyze: analyze, dateKey: historyKey)
+        vm.draftNote = "一碗面条"
+        await vm.runAIAnalysis()
+        XCTAssertEqual(vm.draftName, "补记面条")
+        XCTAssertEqual(repo.itemsSnapshotForTest().count, 0)
+
+        await vm.saveNewItem()
+        XCTAssertEqual(vm.items.count, 1)
+        XCTAssertEqual(vm.items.first?.dateKey, historyKey)
+        XCTAssertEqual(vm.items.first?.calories, 400)
+    }
+
+    func testDateChangeClosesAddSheetAndDoesNotLeakSecrets() async {
+        let (vm, _, _, _) = makeVM(dateKey: "2026-07-13")
+        vm.openAddSheet()
+        vm.draftName = "draft"
+        XCTAssertTrue(vm.isPresentingAddSheet)
+        await vm.goToPreviousDay()
+        XCTAssertFalse(vm.isPresentingAddSheet)
+        XCTAssertEqual(vm.draftName, "")
+        XCTAssertNil(vm.errorMessage)
+        // No secret material on date-related strings
+        XCTAssertFalse(vm.selectedDateKey.contains("eyJ"))
+        XCTAssertFalse(vm.displayTitle.contains("Bearer"))
+        XCTAssertFalse(vm.displayTitle.lowercased().contains("base64"))
+    }
+
     private func food(
         id: String,
         meal: MealType,
@@ -306,11 +466,13 @@ final class TodayMealsViewModelTests: XCTestCase {
         protein: Double,
         carbs: Double,
         fat: Double,
-        paths: [String] = []
+        paths: [String] = [],
+        on date: String? = nil
     ) -> FoodItem {
-        FoodItem(
+        let key = date ?? dateKey
+        return FoodItem(
             id: id,
-            dateKey: dateKey,
+            dateKey: key,
             meal: meal,
             name: name,
             grams: 0,

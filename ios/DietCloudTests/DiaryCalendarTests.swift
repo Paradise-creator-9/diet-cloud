@@ -108,4 +108,23 @@ final class DiaryCalendarTests: XCTestCase {
         let sorted = diary.sortFoodItemsByCreatedAtAscending(rows) { $0.created }
         XCTAssertEqual(sorted.map(\.id), ["a", "c", "b"])
     }
+
+    func testShiftDateKeyAndDisplayTitle() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 9 * 3600)!
+        let diary = DiaryCalendar(calendar: calendar)
+
+        XCTAssertEqual(diary.shiftingDateKey("2026-07-13", byDays: -1), "2026-07-12")
+        XCTAssertEqual(diary.shiftingDateKey("2026-07-13", byDays: 1), "2026-07-14")
+
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 7
+        components.day = 13
+        let now = calendar.date(from: components)!
+        XCTAssertEqual(diary.displayTitle(forDateKey: "2026-07-13", now: now), "今天")
+        XCTAssertEqual(diary.displayTitle(forDateKey: "2026-07-12", now: now), "昨天")
+        XCTAssertEqual(diary.displayTitle(forDateKey: "2026-07-14", now: now), "明天")
+        XCTAssertEqual(diary.displayTitle(forDateKey: "2026-07-01", now: now), "2026年7月1日")
+    }
 }

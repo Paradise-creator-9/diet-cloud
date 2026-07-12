@@ -235,9 +235,66 @@ final class BodyActivityViewModelTests: XCTestCase {
         XCTAssertEqual(vm.dayEnergySummary.foodIntakeKcal, 500)
         XCTAssertEqual(vm.dayEnergySummary.exerciseBurnKcal, 250)
         XCTAssertEqual(vm.dayEnergySummary.activityBurnKcal, 200)
-        XCTAssertEqual(vm.dayEnergySummary.netKcal, 50)
+        XCTAssertEqual(vm.dayEnergySummary.netKcal, 50) // 500 - 200 - 250
         XCTAssertEqual(vm.dayEnergySummary.weightKg, 76)
         XCTAssertEqual(vm.dayEnergySummary.steps, 8000)
+    }
+
+    func testEnergySummaryZeroWhenNoData() async {
+        let (vm, _, _, _, _) = makeVM(dateKey: "2026-07-13")
+        await vm.load()
+        XCTAssertEqual(vm.dayEnergySummary, .zero)
+        XCTAssertEqual(vm.dayEnergySummary.netKcal, 0)
+        XCTAssertNil(vm.dayEnergySummary.weightKg)
+    }
+
+    func testEnergySummaryRefreshesAfterDeleteActivityAndExercise() async {
+        let dailyRepo = MockDailyActivityRepository(sessionUserId: user.id, seed: [
+            makeDaily(dateKey: "2026-07-13", steps: 1000, active: 300),
+        ])
+        let exerciseSeed = makeExercise(dateKey: "2026-07-13", title: "Bike", cal: 250)
+        let exerciseRepo = MockExerciseActivityRepository(sessionUserId: user.id, seed: [exerciseSeed])
+        let (vm, _, _, _, _) = makeVM(daily: dailyRepo, exercise: exerciseRepo)
+        await vm.load()
+        XCTAssertEqual(vm.dayEnergySummary.activityBurnKcal, 300)
+        XCTAssertEqual(vm.dayEnergySummary.exerciseBurnKcal, 250)
+        XCTAssertEqual(vm.dayEnergySummary.netKcal, -550)
+
+        await vm.deleteExercise(exerciseSeed)
+        XCTAssertEqual(vm.dayEnergySummary.exerciseBurnKcal, 0)
+        XCTAssertEqual(vm.dayEnergySummary.activityBurnKcal, 300)
+        XCTAssertEqual(vm.dayEnergySummary.netKcal, -300)
+
+        await vm.deleteDailyActivity()
+        XCTAssertEqual(vm.dayEnergySummary.activityBurnKcal, 0)
+        XCTAssertEqual(vm.dayEnergySummary.steps, 0)
+        XCTAssertEqual(vm.dayEnergySummary.netKcal, 0)
+    }
+
+    func testEnergySummaryDoesNotMixOtherDateAfterSwitch() async {
+        let dailyRepo = MockDailyActivityRepository(sessionUserId: user.id, seed: [
+            makeDaily(dateKey: "2026-07-13", steps: 8000, active: 200),
+            makeDaily(dateKey: "2026-07-12", steps: 1, active: 999),
+        ])
+        let exerciseRepo = MockExerciseActivityRepository(sessionUserId: user.id, seed: [
+            makeExercise(dateKey: "2026-07-13", title: "Today", cal: 100),
+            makeExercise(dateKey: "2026-07-12", title: "Yest", cal: 900),
+        ])
+        let (vm, _, _, _, _) = makeVM(
+            dateKey: "2026-07-13",
+            daily: dailyRepo,
+            exercise: exerciseRepo
+        )
+        await vm.load()
+        XCTAssertEqual(vm.dayEnergySummary.activityBurnKcal, 200)
+        XCTAssertEqual(vm.dayEnergySummary.exerciseBurnKcal, 100)
+
+        await vm.selectDateKey("2026-07-12")
+        XCTAssertEqual(vm.dayEnergySummary.activityBurnKcal, 999)
+        XCTAssertEqual(vm.dayEnergySummary.exerciseBurnKcal, 900)
+        XCTAssertEqual(vm.dayEnergySummary.steps, 1)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
+        XCTAssertFalse(vm.selectedDateKey.contains(user.id))
     }
 
     func testRepositoryErrorDoesNotLeakToken() async {

@@ -105,16 +105,21 @@ final class TodayMealsViewModel {
         foodRepository.nutritionSummary(for: items)
     }
 
-    /// Food + exercise + daily activity rollup for the selected day only.
+    /// Food + exercise + daily activity rollup for the **selected day only**.
+    /// Refreshes whenever `items` / `dailyActivity` / `exercises` / `bodyMetric` update after load or mutation.
     var dayEnergySummary: DayEnergySummary {
-        let exerciseBurn = exercises.reduce(0) { $0 + $1.activeCalories }
+        let exerciseBurn = exercises.reduce(0.0) { $0 + $1.activeCalories }
         let activity = dailyActivity
+        let weight: Double? = {
+            guard let body = bodyMetric else { return nil }
+            return body.weightKg
+        }()
         return DayEnergySummary(
             foodIntakeKcal: summary.calories,
             exerciseBurnKcal: exerciseBurn,
             activityBurnKcal: activity?.activeCalories ?? 0,
             steps: activity?.steps ?? 0,
-            weightKg: bodyMetric.map(\.weightKg)
+            weightKg: weight
         )
     }
 

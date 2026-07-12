@@ -58,6 +58,12 @@ struct TodayMealsView: View {
                 .padding(.vertical, 10)
                 .background(Color(.systemBackground))
 
+            // Pinned below date bar so it is always visible (not buried in List).
+            DayEnergySummaryCard(energy: viewModel.dayEnergySummary)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+                .background(Color(.systemBackground))
+
             Group {
                 switch viewModel.loadState {
                 case .loading:
@@ -97,9 +103,13 @@ struct TodayMealsView: View {
                             .padding(.vertical, 4)
                         }
 
-                        Section(viewModel.isToday ? "今日汇总" : "当日汇总") {
-                            DayEnergySummaryCard(energy: viewModel.dayEnergySummary)
-                            DailySummaryCard(summary: viewModel.summary)
+                        if viewModel.summary.calories > 0
+                            || viewModel.summary.protein > 0
+                            || viewModel.summary.carbs > 0
+                            || viewModel.summary.fat > 0 {
+                            Section("饮食营养") {
+                                DailySummaryCard(summary: viewModel.summary)
+                            }
                         }
 
                         BodyMetricSection(viewModel: viewModel)
@@ -150,39 +160,61 @@ struct TodayMealsView: View {
 
 // MARK: - Energy / body / activity sections
 
+/// Minimal day overview pinned under the date bar (no ring charts).
 struct DayEnergySummaryCard: View {
     let energy: DayEnergySummary
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            metric("食物摄入", "\(format(energy.foodIntakeKcal)) kcal")
-            metric("运动消耗", "\(format(energy.exerciseBurnKcal)) kcal")
-            metric("活动消耗", "\(format(energy.activityBurnKcal)) kcal")
-            metric("净热量", "\(format(energy.netKcal)) kcal")
-            if energy.steps > 0 {
-                metric("步数", format(energy.steps))
+        VStack(alignment: .leading, spacing: 10) {
+            Text("当日总览")
+                .font(.headline)
+
+            VStack(spacing: 6) {
+                metric("摄入", "\(formatKcal(energy.foodIntakeKcal)) kcal")
+                metric("活动消耗", "\(formatKcal(energy.activityBurnKcal)) kcal")
+                metric("运动消耗", "\(formatKcal(energy.exerciseBurnKcal)) kcal")
+                metric("净热量", "\(formatKcal(energy.netKcal)) kcal")
+                    .fontWeight(.semibold)
+                metric("步数", energy.steps > 0 ? formatNumber(energy.steps) : "—")
+                metric(
+                    "体重",
+                    energy.weightKg.map { $0 > 0 ? "\(formatNumber($0)) kg" : "—" } ?? "—"
+                )
             }
-            if let weight = energy.weightKg, weight > 0 {
-                metric("体重", "\(format(weight)) kg")
-            }
-            Text("净热量 = 摄入 − 运动 − 活动（active calories）")
+
+            Text("净热量 = 摄入 − 活动消耗 − 运动消耗")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("当日总览")
     }
 
     private func metric(_ title: String, _ value: String) -> some View {
         HStack {
             Text(title)
+                .foregroundStyle(.secondary)
             Spacer()
-            Text(value).fontWeight(.semibold).monospacedDigit()
+            Text(value)
+                .monospacedDigit()
         }
         .font(.subheadline)
     }
 
-    private func format(_ value: Double) -> String {
-        value.rounded() == value ? String(Int(value)) : String(format: "%.1f", value)
+    private func formatKcal(_ value: Double) -> String {
+        formatNumber(value)
+    }
+
+    private func formatNumber(_ value: Double) -> String {
+        if !value.isFinite { return "0" }
+        if value.rounded() == value { return String(Int(value)) }
+        return String(format: "%.1f", value)
     }
 }
 

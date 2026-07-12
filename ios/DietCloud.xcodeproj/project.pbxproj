@@ -663,7 +663,6 @@
 				CODE_SIGN_ENTITLEMENTS = DietCloud/Resources/DietCloud.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6CHHC6R7ZB;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DietCloud/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "膳食志";
@@ -770,7 +769,6 @@
 				CODE_SIGN_ENTITLEMENTS = DietCloud/Resources/DietCloud.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 6CHHC6R7ZB;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DietCloud/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "膳食志";

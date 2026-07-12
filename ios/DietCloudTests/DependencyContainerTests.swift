@@ -8,7 +8,8 @@ final class DependencyContainerTests: XCTestCase {
             supabaseURL: URL(string: "https://abc.supabase.co")!,
             supabaseAnonKey: "anon-public-key",
             apiBaseURL: URL(string: "https://diet-cloud.vercel.app")!,
-            storageBucket: "meal-photos"
+            storageBucket: "meal-photos",
+            authRedirectURL: AppConfig.defaultAuthRedirectURL
         )
         let container = AppDependencyContainer(config: config, credentialStore: InMemoryCredentialStore())
 
@@ -20,6 +21,7 @@ final class DependencyContainerTests: XCTestCase {
             container.analyzeAPI.analyzeBodyURL().absoluteString,
             "https://diet-cloud.vercel.app/api/analyze-body"
         )
+        XCTAssertEqual(container.config.authRedirectURL.absoluteString, "dietcloud://auth-callback")
         XCTAssertTrue(container.supabase.isConfigured)
         XCTAssertNotNil(container.supabase.client)
         XCTAssertFalse(container.diaryCalendar.dateKey().isEmpty)
@@ -30,7 +32,8 @@ final class DependencyContainerTests: XCTestCase {
             supabaseURL: URL(string: "https://YOUR_PROJECT.supabase.co")!,
             supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY",
             apiBaseURL: URL(string: "https://diet-cloud.vercel.app")!,
-            storageBucket: "meal-photos"
+            storageBucket: "meal-photos",
+            authRedirectURL: AppConfig.defaultAuthRedirectURL
         )
         let container = AppDependencyContainer(config: config, credentialStore: InMemoryCredentialStore())
         XCTAssertFalse(container.supabase.isConfigured)

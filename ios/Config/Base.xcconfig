@@ -16,5 +16,10 @@ API_BASE_URL = https:/$()/diet-cloud.vercel.app
 // Private meal-photos bucket name (default matches Web).
 STORAGE_BUCKET = meal-photos
 
+// Magic Link redirect back into the iOS app (not a secret).
+// Must be added manually in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs.
+// xcconfig: "://" uses /$()/ so // is not treated as a comment.
+DIETCLOUD_AUTH_REDIRECT_URL = dietcloud:/$()/auth-callback
+
 // Expose the values into Info.plist substitution.
 INFOPLIST_PREPROCESSOR_DEFINITIONS =

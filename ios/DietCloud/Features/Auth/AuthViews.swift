@@ -71,7 +71,7 @@ struct AuthEmailView: View {
                 }
 
                 Section("说明") {
-                    Text("与 Web 相同，使用 Supabase 邮箱登录邮件。完成方式取决于邮件模板：可能是登录链接、验证码，或两者都有。生产环境需人工验证。")
+                    Text("主路径：打开邮件中的登录链接（Magic Link）回到本 App。请先在 Supabase Dashboard 的 Redirect URLs 中添加 dietcloud://auth-callback。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -95,16 +95,16 @@ struct AuthOTPView: View {
                     Text("登录邮件已发送至")
                     Text(email)
                         .foregroundStyle(.secondary)
-                    Text("请检查邮箱中的登录链接或验证码。")
+                    Text("请打开邮箱中的登录链接。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 
-                Section {
-                    Text("如果邮件中包含验证码，请在下方输入（可选路径，非保证一定有码）。")
+                Section("备用：验证码") {
+                    Text("如果邮件中包含验证码，也可以在下方输入。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    TextField("验证码（若邮件中有）", text: $viewModel.otpInput)
+                    TextField("验证码（可选）", text: $viewModel.otpInput)
                         .textContentType(.oneTimeCode)
                         .keyboardType(.numberPad)
                         .textInputAutocapitalization(.never)
@@ -122,12 +122,6 @@ struct AuthOTPView: View {
                         }
                     }
                     .disabled(viewModel.isBusy || viewModel.otpInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-
-                Section("登录链接") {
-                    Text("如果使用登录链接：请在手机上打开该链接。当前 App 已注册 dietcloud:// 回调处理，但生产 Supabase Redirect URLs 未在本仓库配置，默认邮件链接通常回到网站，不一定会打开本 App。")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
 
                 if let status = viewModel.statusMessage {

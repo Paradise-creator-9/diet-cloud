@@ -37,7 +37,7 @@ final class AuthViewModel {
                 phase = .signedIn(session.user)
             } else {
                 phase = .signedOut
-                statusMessage = "输入邮箱后，会收到一封登录邮件（链接和/或验证码，取决于邮件模板）。"
+                statusMessage = "输入邮箱后，会收到一封登录邮件。请打开邮件中的登录链接。"
             }
         } catch {
             phase = .signedOut
@@ -59,14 +59,13 @@ final class AuthViewModel {
             let email = try AuthRepository.normalizedEmail(emailInput)
             try await repository.sendOTP(email: email)
             phase = .awaitingOTP(email: email)
-            statusMessage = "请检查邮箱中的登录链接或验证码。如果邮件中包含验证码，请在下方输入；如果使用登录链接，请在手机上打开该链接（deep link 需额外配置，默认不一定会打开本 App）。"
+            statusMessage = "请打开邮箱中的登录链接以完成登录。如果邮件中包含验证码，也可以在下方输入。"
             otpInput = ""
         } catch {
             let mapped = AuthErrorSanitizer.mapAuthFailure(error)
             errorMessage = mapped.userMessage
-            // Keep user on email entry after a failed send (including invalid email).
             if case .awaitingOTP = phase {
-                // stay on OTP screen for resend failures
+                // stay on completion screen for resend failures
             } else {
                 phase = .signedOut
             }
@@ -99,7 +98,12 @@ final class AuthViewModel {
                 statusMessage = nil
             }
         } catch {
-            errorMessage = AuthErrorSanitizer.mapAuthFailure(error).userMessage
+            let mapped = AuthErrorSanitizer.mapAuthFailure(error)
+            errorMessage = mapped.userMessage
+            // Stay on current phase (often awaitingOTP) so user can retry or use code.
+            if case .loading = phase {
+                phase = .signedOut
+            }
         }
     }
 
@@ -116,7 +120,6 @@ final class AuthViewModel {
             statusMessage = "已退出登录。"
             otpInput = ""
         } catch {
-            // Even if remote sign-out fails, clear local phase after best-effort.
             phase = .signedOut
             errorMessage = AuthErrorSanitizer.mapAuthFailure(error).userMessage
         }
@@ -126,6 +129,6 @@ final class AuthViewModel {
         phase = .signedOut
         otpInput = ""
         errorMessage = nil
-        statusMessage = "输入邮箱后，会收到一封登录邮件（链接和/或验证码，取决于邮件模板）。"
+        statusMessage = "输入邮箱后，会收到一封登录邮件。请打开邮件中的登录链接。"
     }
 }

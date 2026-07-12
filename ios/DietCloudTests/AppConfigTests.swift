@@ -8,14 +8,46 @@ final class AppConfigTests: XCTestCase {
             "SUPABASE_ANON_KEY": "anon-public-key",
             "API_BASE_URL": "https://diet-cloud.vercel.app",
             "STORAGE_BUCKET": "meal-photos",
+            "DIETCLOUD_AUTH_REDIRECT_URL": "dietcloud://auth-callback",
         ])
 
         XCTAssertEqual(config.supabaseURL.host, "abc.supabase.co")
         XCTAssertEqual(config.supabaseAnonKey, "anon-public-key")
         XCTAssertEqual(config.apiBaseURL.host, "diet-cloud.vercel.app")
         XCTAssertEqual(config.storageBucket, "meal-photos")
+        XCTAssertEqual(config.authRedirectURL.absoluteString, "dietcloud://auth-callback")
         XCTAssertTrue(config.isReadyForNetwork)
         XCTAssertFalse(config.isPlaceholder)
+    }
+
+    func testMissingRedirectURLUsesSafeDefault() throws {
+        let config = try AppConfigLoader.load(from: [
+            "SUPABASE_URL": "https://abc.supabase.co",
+            "SUPABASE_ANON_KEY": "anon-public-key",
+            "API_BASE_URL": "https://diet-cloud.vercel.app",
+            "STORAGE_BUCKET": "meal-photos",
+        ])
+        XCTAssertEqual(config.authRedirectURL, AppConfig.defaultAuthRedirectURL)
+        XCTAssertEqual(config.authRedirectURL.absoluteString, "dietcloud://auth-callback")
+    }
+
+    func testRedirectURLWithTokenQueryIsRejected() {
+        XCTAssertThrowsError(
+            try AppConfigLoader.load(from: [
+                "SUPABASE_URL": "https://abc.supabase.co",
+                "SUPABASE_ANON_KEY": "anon-public-key",
+                "API_BASE_URL": "https://diet-cloud.vercel.app",
+                "STORAGE_BUCKET": "meal-photos",
+                "DIETCLOUD_AUTH_REDIRECT_URL": "dietcloud://auth-callback?access_token=secret",
+            ])
+        ) { error in
+            guard let appError = error as? AppError else {
+                return XCTFail("Expected AppError")
+            }
+            XCTAssertEqual(appError.code, "configuration")
+            XCTAssertFalse(appError.userMessage.contains("secret"))
+            XCTAssertFalse(appError.userMessage.contains("access_token="))
+        }
     }
 
     func testPlaceholderDetection() throws {
@@ -28,6 +60,7 @@ final class AppConfigTests: XCTestCase {
 
         XCTAssertTrue(config.isPlaceholder)
         XCTAssertFalse(config.isReadyForNetwork)
+        XCTAssertEqual(config.authRedirectURL, AppConfig.defaultAuthRedirectURL)
     }
 
     func testMissingKeyThrows() {
@@ -68,5 +101,13 @@ final class AppConfigTests: XCTestCase {
                 XCTFail("Expected invalidURL, got \(appError)")
             }
         }
+    }
+
+    func testExampleConfigValuesAreNotSecrets() {
+        // Guard that committed examples never look like JWTs or service keys.
+        let exampleRedirect = "dietcloud://auth-callback"
+        XCTAssertFalse(exampleRedirect.contains("eyJ"))
+        XCTAssertFalse(exampleRedirect.contains("service_role"))
+        XCTAssertEqual(AppConfig.defaultAuthRedirectURL.absoluteString, exampleRedirect)
     }
 }

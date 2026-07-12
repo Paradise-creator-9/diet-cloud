@@ -26,7 +26,8 @@ struct RootView: View {
         supabaseURL: URL(string: "https://YOUR_PROJECT.supabase.co")!,
         supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY",
         apiBaseURL: URL(string: "https://diet-cloud.vercel.app")!,
-        storageBucket: "meal-photos"
+        storageBucket: "meal-photos",
+        authRedirectURL: AppConfig.defaultAuthRedirectURL
     )
     let store = InMemoryCredentialStore()
     let container = AppDependencyContainer(config: config, credentialStore: store)

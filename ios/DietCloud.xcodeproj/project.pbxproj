@@ -24,6 +24,7 @@
 		813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21702E88765536EB03176846 /* MockAuthRepository.swift */; };
 		8AEBE92718314B67F9F38643 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C674AF0BFB1426E71DA2BB5 /* AppError.swift */; };
 		970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */; };
+		9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */; };
 		9C54ED7B032AE8F90AA0D7BC /* DiaryCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3762E293F50FF63036987FC7 /* DiaryCalendar.swift */; };
 		9FE50854A3157105E888E6BF /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B833007E61FB03A31014E59C /* Supabase */; };
 		AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */; };
@@ -48,6 +49,7 @@
 
 /* Begin PBXFileReference section */
 		21702E88765536EB03176846 /* MockAuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthRepository.swift; sourceTree = "<group>"; };
+		287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryParametersTests.swift; sourceTree = "<group>"; };
 		2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietCloudApp.swift; sourceTree = "<group>"; };
 		3762E293F50FF63036987FC7 /* DiaryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendar.swift; sourceTree = "<group>"; };
 		408833F9E547197115F04318 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClientProvider.swift; sourceTree = "<group>"; };
@@ -207,6 +209,7 @@
 				98C4B2FB2471164D47F87342 /* AppConfigTests.swift */,
 				F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */,
 				DEA5E92D46CE16038385089F /* AuthErrorSanitizerTests.swift */,
+				287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */,
 				924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */,
 				51578621B12841023EA296BA /* AuthViewModelTests.swift */,
 				960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */,
@@ -377,6 +380,7 @@
 				4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */,
 				0074825B99DE31F851A4E9B8 /* AppErrorTests.swift in Sources */,
 				FFD9B056BBACC96F4B14B283 /* AuthErrorSanitizerTests.swift in Sources */,
+				9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */,
 				970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */,
 				D62E64746D379E3F1726ADBF /* AuthViewModelTests.swift in Sources */,
 				AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */,

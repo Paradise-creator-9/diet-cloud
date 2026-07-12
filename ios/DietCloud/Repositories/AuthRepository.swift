@@ -1,10 +1,18 @@
 import Foundation
 import Supabase
 
+/// Parameters used when requesting an email login message (no tokens).
+struct AuthSendOTPParameters: Equatable, Sendable {
+    let email: String
+    let redirectTo: URL
+}
+
 /// Auth operations used by the feature layer. Implementations must not log tokens.
 protocol AuthRepositoryProtocol: Sendable {
     /// Restore session from secure storage (Keychain via SDK storage).
     func restoreSession() async throws -> AuthSessionSnapshot?
+    /// Builds send parameters (email + redirect). Exposed for unit tests without network.
+    func makeSendOTPParameters(email: String) async throws -> AuthSendOTPParameters
     func sendOTP(email: String) async throws
     func verifyOTP(email: String, token: String) async throws -> AuthSessionSnapshot
     /// Magic-link / deep-link completion when Supabase redirects into the app.
@@ -38,23 +46,28 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
             }
             return Self.snapshot(from: session)
         } catch {
-            // No local session or invalid refresh → signed out (not a hard crash).
             return nil
         }
     }
 
-    func sendOTP(email: String) async throws {
+    func makeSendOTPParameters(email: String) async throws -> AuthSendOTPParameters {
         let normalized = try Self.normalizedEmail(email)
+        // Always use configured Magic Link redirect (default dietcloud://auth-callback).
+        let redirect = provider.config.authRedirectURL
+        return AuthSendOTPParameters(email: normalized, redirectTo: redirect)
+    }
+
+    func sendOTP(email: String) async throws {
+        let params = try await makeSendOTPParameters(email: email)
         let client = try requireClient()
         do {
-            // Same Auth API family as Web `signInWithOtp({ email })`.
-            // Intentionally omit `redirectTo`: Web uses `emailRedirectTo: window.location.origin`
-            // (Magic Link → browser). Passing `dietcloud://…` here would require that URL to
-            // already be on the Supabase Redirect allowlist; we do not change production Auth.
-            // Completion on iOS therefore depends on the live email template:
-            // - if the message contains a token/code → optional `verifyOTP`
-            // - if only a Magic Link → needs a reachable app redirect (not guaranteed today)
-            try await client.auth.signInWithOTP(email: normalized)
+            // Web: signInWithOtp + emailRedirectTo: origin (browser Magic Link).
+            // iOS: same API family with redirectTo → dietcloud://auth-callback (app Magic Link).
+            // Requires Supabase Dashboard Redirect URLs to include this value (manual; not in repo).
+            try await client.auth.signInWithOTP(
+                email: params.email,
+                redirectTo: params.redirectTo
+            )
         } catch {
             throw AuthErrorSanitizer.mapAuthFailure(error)
         }
@@ -75,7 +88,6 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
             if let session = response.session {
                 return Self.snapshot(from: session)
             }
-            // Some SDK paths return user without embedding session — re-read local session.
             let session = try await client.auth.session
             return Self.snapshot(from: session)
         } catch {
@@ -83,16 +95,13 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
         }
     }
 
-    /// Completes Magic Link **only if** the OS opens an auth callback URL into the app
-    /// (e.g. `dietcloud://…` with tokens). Code is wired via `RootView.onOpenURL`, but
-    /// production emails will not hit this path until Redirect URLs + `redirectTo` are set.
+    /// Completes Magic Link when OS opens the auth callback URL into the app.
     func handleAuthURL(_ url: URL) async throws -> AuthSessionSnapshot? {
         let client = try requireClient()
         do {
             let session = try await client.auth.session(from: url)
             return Self.snapshot(from: session)
         } catch {
-            // Not an auth callback URL — ignore quietly for app open handlers.
             if url.scheme?.hasPrefix("dietcloud") != true {
                 return nil
             }
@@ -128,7 +137,6 @@ final class AuthRepository: AuthRepositoryProtocol, @unchecked Sendable {
     }
 
     static func snapshot(from session: Session) -> AuthSessionSnapshot {
-        // `expiresAt` is unix time (TimeInterval) in supabase-swift Session.
         AuthSessionSnapshot(
             user: AuthUser(id: session.user.id.uuidString, email: session.user.email),
             expiresAt: Date(timeIntervalSince1970: session.expiresAt)

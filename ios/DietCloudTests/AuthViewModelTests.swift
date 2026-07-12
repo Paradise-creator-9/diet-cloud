@@ -13,7 +13,7 @@ final class AuthViewModelTests: XCTestCase {
     func testBootstrapWithValidSessionIsSignedIn() async {
         let repo = MockAuthRepository()
         let user = AuthUser(id: "abc", email: "user@example.com")
-        await repo.setSession(
+        repo.setSession(
             AuthSessionSnapshot(user: user, expiresAt: Date().addingTimeInterval(3600))
         )
         let vm = AuthViewModel(repository: repo, isConfigured: true)
@@ -30,14 +30,17 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
     }
 
-    func testSendOTPSuccessMovesToAwaitingOTP() async {
+    func testSendOTPSuccessMovesToAwaitingOTPAndUsesRedirect() async {
         let repo = MockAuthRepository()
+        let customRedirect = URL(string: "dietcloud://auth-callback")!
+        repo.setConfiguredRedirect(customRedirect)
         let vm = AuthViewModel(repository: repo, isConfigured: true)
         vm.emailInput = "User@Example.com"
         await vm.sendOTP()
         XCTAssertEqual(vm.phase, .awaitingOTP(email: "user@example.com"))
-        let count = await repo.sendOTPCallCount
-        XCTAssertEqual(count, 1)
+        XCTAssertEqual(repo.sendOTPCallCount, 1)
+        XCTAssertEqual(repo.lastRedirectTo, customRedirect)
+        XCTAssertTrue(vm.statusMessage?.contains("登录链接") == true)
     }
 
     func testVerifyOTPSuccessSignsIn() async {
@@ -56,7 +59,7 @@ final class AuthViewModelTests: XCTestCase {
 
     func testVerifyOTPFailureSetsErrorAndStaysAwaiting() async {
         let repo = MockAuthRepository()
-        await repo.setVerifyError(AppError.auth(.invalidOTP))
+        repo.setVerifyError(AppError.auth(.invalidOTP))
         let vm = AuthViewModel(repository: repo, isConfigured: true)
         vm.emailInput = "user@example.com"
         await vm.sendOTP()
@@ -66,20 +69,50 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertEqual(vm.errorMessage, AppError.auth(.invalidOTP).userMessage)
     }
 
+    func testHandleOpenURLSuccessSignsIn() async {
+        let repo = MockAuthRepository()
+        let user = AuthUser(id: "from-link", email: "link@example.com")
+        repo.setHandleAuthResult(
+            AuthSessionSnapshot(user: user, expiresAt: Date().addingTimeInterval(3600))
+        )
+        let vm = AuthViewModel(repository: repo, isConfigured: true)
+        vm.emailInput = "link@example.com"
+        await vm.sendOTP()
+        XCTAssertEqual(vm.phase, .awaitingOTP(email: "link@example.com"))
+
+        await vm.handleOpenURL(URL(string: "dietcloud://auth-callback")!)
+        XCTAssertEqual(vm.phase, .signedIn(user))
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertEqual(repo.handleAuthURLCallCount, 1)
+    }
+
+    func testHandleOpenURLFailureSetsSafeErrorWithoutTokenLeak() async {
+        let repo = MockAuthRepository()
+        let jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.payload.signature"
+        repo.setHandleAuthError(AppError.auth(.provider(message: "bad session \(jwt)")))
+        let vm = AuthViewModel(repository: repo, isConfigured: true)
+        vm.emailInput = "user@example.com"
+        await vm.sendOTP()
+
+        await vm.handleOpenURL(URL(string: "dietcloud://auth-callback")!)
+        XCTAssertEqual(vm.phase, .awaitingOTP(email: "user@example.com"))
+        XCTAssertNotNil(vm.errorMessage)
+        XCTAssertFalse(vm.errorMessage!.contains("eyJ"))
+        XCTAssertFalse(vm.errorMessage!.contains(jwt))
+    }
+
     func testSignOutReturnsToSignedOut() async {
         let repo = MockAuthRepository()
         let user = AuthUser(id: "abc", email: "user@example.com")
-        await repo.setSession(
+        repo.setSession(
             AuthSessionSnapshot(user: user, expiresAt: Date().addingTimeInterval(3600))
         )
         let vm = AuthViewModel(repository: repo, isConfigured: true)
         await vm.bootstrap()
         await vm.signOut()
         XCTAssertEqual(vm.phase, .signedOut)
-        let count = await repo.signOutCallCount
-        XCTAssertEqual(count, 1)
-        let session = await repo.session
-        XCTAssertNil(session)
+        XCTAssertEqual(repo.signOutCallCount, 1)
+        XCTAssertNil(repo.session)
     }
 
     func testInvalidEmailDoesNotCallRepository() async {
@@ -89,18 +122,6 @@ final class AuthViewModelTests: XCTestCase {
         await vm.sendOTP()
         XCTAssertEqual(vm.phase, .signedOut)
         XCTAssertEqual(vm.errorMessage, AppError.auth(.invalidEmail).userMessage)
-        let count = await repo.sendOTPCallCount
-        XCTAssertEqual(count, 0)
-    }
-}
-
-// Helpers to mutate actor state from tests without exposing setters on production types.
-extension MockAuthRepository {
-    func setSession(_ value: AuthSessionSnapshot?) {
-        session = value
-    }
-
-    func setVerifyError(_ error: Error?) {
-        verifyOTPError = error
+        XCTAssertEqual(repo.sendOTPCallCount, 0)
     }
 }

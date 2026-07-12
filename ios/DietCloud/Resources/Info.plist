@@ -39,6 +39,8 @@
 	<string>$(API_BASE_URL)</string>
 	<key>STORAGE_BUCKET</key>
 	<string>$(STORAGE_BUCKET)</string>
+	<key>DIETCLOUD_AUTH_REDIRECT_URL</key>
+	<string>$(DIETCLOUD_AUTH_REDIRECT_URL)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

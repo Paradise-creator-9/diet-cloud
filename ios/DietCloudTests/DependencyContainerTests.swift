@@ -25,6 +25,12 @@ final class DependencyContainerTests: XCTestCase {
         XCTAssertTrue(container.supabase.isConfigured)
         XCTAssertNotNil(container.supabase.client)
         XCTAssertFalse(container.diaryCalendar.dateKey().isEmpty)
+        // Stage 2 data layer is wired for later UI stages.
+        XCTAssertNotNil(container.foodItemRepository)
+        XCTAssertNotNil(container.bodyMetricsRepository)
+        XCTAssertNotNil(container.dailyActivityRepository)
+        XCTAssertNotNil(container.exerciseActivityRepository)
+        XCTAssertNotNil(container.mealPhotoRepository)
     }
 
     func testPlaceholderConfigNotNetworkReady() {

@@ -91,6 +91,22 @@ dietcloud://auth-callback
 
 Session：`KeychainCredentialStore` + supabase-swift `AuthLocalStorage`（**不用** UserDefaults）。
 
+### 阶段 2 — Models + Repositories（数据层，无正式 UI）✅
+
+与 Web / `supabase/schema.sql` 对齐的领域模型与 Repository（RLS + 用户 Session；无 service-role）。
+
+| Schema 表 | Domain | Repository |
+| --- | --- | --- |
+| `food_items` | `FoodItem` / `FoodItemWrite` / `MealGroup`（客户端分组，非表） | `FoodItemRepository` + `MockFoodItemRepository` |
+| `body_metrics` | `BodyMetric` / `BodyMetricWrite` | `BodyMetricsRepository` |
+| `daily_activities` | `DailyActivity` | `DailyActivityRepository` |
+| `exercise_activities` | `ExerciseActivity` | `ExerciseActivityRepository` |
+| Storage `meal-photos` | `MealPhotoRef` / path helpers | `MealPhotoRepository`（signed URL 接口；无上传 UI） |
+
+**不在当前 schema（未实现表）**：`user_goals`、`favorite_foods`、独立 `meals` 聚合表、`profiles`。
+
+`dateKey`：设备本地日历 `YYYY-MM-DD`（与 Web `main.tsx` `dateKey` 一致）；提供 `DiaryCalendar.tokyo()` 仅供测试/对照 ingest。
+
 ## 测试
 
 ```bash

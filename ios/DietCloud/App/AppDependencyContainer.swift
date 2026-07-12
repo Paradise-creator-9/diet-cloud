@@ -12,6 +12,12 @@ final class AppDependencyContainer: @unchecked Sendable {
     let diaryCalendar: DiaryCalendar
     let authRepository: AuthRepositoryProtocol
     let credentialStore: SecureCredentialStoring
+    let sessionIdentity: SessionIdentityProviding
+    let foodItemRepository: FoodItemRepositoryProtocol
+    let bodyMetricsRepository: BodyMetricsRepositoryProtocol
+    let dailyActivityRepository: DailyActivityRepositoryProtocol
+    let exerciseActivityRepository: ExerciseActivityRepositoryProtocol
+    let mealPhotoRepository: MealPhotoRepositoryProtocol
 
     init(
         config: AppConfig,
@@ -19,6 +25,12 @@ final class AppDependencyContainer: @unchecked Sendable {
         supabase: SupabaseClientProviding? = nil,
         analyzeAPI: AnalyzeAPIClienting? = nil,
         authRepository: AuthRepositoryProtocol? = nil,
+        sessionIdentity: SessionIdentityProviding? = nil,
+        foodItemRepository: FoodItemRepositoryProtocol? = nil,
+        bodyMetricsRepository: BodyMetricsRepositoryProtocol? = nil,
+        dailyActivityRepository: DailyActivityRepositoryProtocol? = nil,
+        exerciseActivityRepository: ExerciseActivityRepositoryProtocol? = nil,
+        mealPhotoRepository: MealPhotoRepositoryProtocol? = nil,
         diaryCalendar: DiaryCalendar = DiaryCalendar()
     ) {
         self.config = config
@@ -28,6 +40,20 @@ final class AppDependencyContainer: @unchecked Sendable {
         self.analyzeAPI = analyzeAPI ?? AnalyzeAPIClient(provider: provider)
         self.authRepository = authRepository ?? AuthRepository(provider: provider)
         self.diaryCalendar = diaryCalendar
+
+        let identity = sessionIdentity ?? SupabaseSessionIdentity(provider: provider)
+        self.sessionIdentity = identity
+
+        let photos = mealPhotoRepository ?? MealPhotoRepository(provider: provider, identity: identity)
+        self.mealPhotoRepository = photos
+        self.foodItemRepository = foodItemRepository
+            ?? FoodItemRepository(provider: provider, identity: identity, photoRepository: photos)
+        self.bodyMetricsRepository = bodyMetricsRepository
+            ?? BodyMetricsRepository(provider: provider, identity: identity)
+        self.dailyActivityRepository = dailyActivityRepository
+            ?? DailyActivityRepository(provider: provider, identity: identity)
+        self.exerciseActivityRepository = exerciseActivityRepository
+            ?? ExerciseActivityRepository(provider: provider, identity: identity)
     }
 
     @MainActor

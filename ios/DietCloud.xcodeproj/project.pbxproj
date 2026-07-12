@@ -8,33 +8,54 @@
 
 /* Begin PBXBuildFile section */
 		0074825B99DE31F851A4E9B8 /* AppErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */; };
+		054B48A569DDDF8D25B44B63 /* MockFoodItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF7D1A42E3826CAA26E4B753 /* MockFoodItemRepository.swift */; };
+		06CA232870FA15CBA1BC50FB /* ActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA8E9785419E54129E0EE487 /* ActivityModels.swift */; };
+		0E4A49FA6AFB4C5549EB1BC1 /* FoodItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A931928902FF7BFE0916186F /* FoodItem.swift */; };
 		10B72269E2ED85C9F29D51A7 /* DependencyContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */; };
+		17F4FB6502561A58CDD3D5A5 /* MealPhoto.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */; };
+		20F041A712CE71CAE4CEB7F4 /* DataErrorMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFEAEB7F866518E6957AE52A /* DataErrorMapping.swift */; };
 		2A8E37B7E03110E6AF97CE75 /* KeychainCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 533611A60E602AA7CE7D4878 /* KeychainCredentialStore.swift */; };
 		2D2E30699110C0631BEC26CC /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408833F9E547197115F04318 /* SupabaseClientProvider.swift */; };
 		31B9E184DD0210A9FD313309 /* AuthErrorSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7FED1D03128CC0B6FBDDAE9 /* AuthErrorSanitizer.swift */; };
+		37DB9CE240FFB9FDE1E72277 /* ActivityMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */; };
+		461A6E8D9A60A705BEA1E4B4 /* MealPhotoRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */; };
 		4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C4B2FB2471164D47F87342 /* AppConfigTests.swift */; };
 		524E5FEB2BE280CBA2DA1337 /* AnalyzeAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */; };
 		5366F1D757F2A43D8E6E59CF /* AuthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD20A4FB837E36B1E20F0A9 /* AuthViews.swift */; };
 		539971DF9206A4CA89AFABFC /* SecureCredentialStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BB9B55B44E0A75DCF26F75 /* SecureCredentialStoring.swift */; };
+		63915502CC2DFF2A223FAF77 /* BodyMetricsRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38007A1DABD0C603A8489C27 /* BodyMetricsRepository.swift */; };
 		6470F85EFB7179883AC6ACB6 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BFE81F892F8613C080BC00A /* AuthModels.swift */; };
 		690FBF7CF4FF0EB84F804862 /* DiaryCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */; };
+		6C5D1C99091E5C7ABCB6C324 /* BodyMetricDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED97D6293611E5D896A4BE52 /* BodyMetricDTO.swift */; };
 		73F934AE61B1678461F07431 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */; };
+		745B3B2CB893EEC11FA099A8 /* MealType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565E62F2F164A98BB038B28A /* MealType.swift */; };
 		77D14F03BCC117246AC20E40 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 996F299CD3F15723D3368BBF /* RootView.swift */; };
 		7F6FF1E67B003D9B9508314E /* SupabaseAuthLocalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A46E5BFA7DE7E05E1FF0AC /* SupabaseAuthLocalStorage.swift */; };
 		813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21702E88765536EB03176846 /* MockAuthRepository.swift */; };
+		8187112D3D5ACB424C443A63 /* FoodItemDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = D803A31EB953E909706DAAA8 /* FoodItemDTO.swift */; };
 		8AEBE92718314B67F9F38643 /* AppError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C674AF0BFB1426E71DA2BB5 /* AppError.swift */; };
 		970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */; };
 		9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */; };
 		9C54ED7B032AE8F90AA0D7BC /* DiaryCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3762E293F50FF63036987FC7 /* DiaryCalendar.swift */; };
+		9FAA043BC6E4A3DC73DC1616 /* DailyNutritionSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F589EC305863550A8C98F02 /* DailyNutritionSummary.swift */; };
 		9FE50854A3157105E888E6BF /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B833007E61FB03A31014E59C /* Supabase */; };
+		A2D390090F8096D4059534D7 /* FoodItemMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEAB18E99AE995450EF58215 /* FoodItemMapperTests.swift */; };
 		AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */; };
 		B10296039BACEFB61B7DC408 /* DietCloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */; };
+		B7C6783097E209890ADBAE6C /* FoodItemRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E3960AA4F8B4D4F03E1727 /* FoodItemRepositoryTests.swift */; };
 		C1CA40D9C597D2BA2CF70DEA /* InMemoryCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CC2DDC9FD796F57E37A75C /* InMemoryCredentialStore.swift */; };
+		C4D49991FDD8AF71CED06F5E /* FoodItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91B241AE9A00994F0126D6AD /* FoodItemRepository.swift */; };
 		C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */; };
 		D5BAD5D575A28918A63E2BE9 /* LaunchUISmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */; };
 		D62E64746D379E3F1726ADBF /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51578621B12841023EA296BA /* AuthViewModelTests.swift */; };
+		D6D91DDC5C093DB533B3EFC0 /* ActivityRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0846C5DA24DC42A159FF8819 /* ActivityRepository.swift */; };
 		D79A32118F3018A0D65F6799 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90817DE265258D5318F64D48 /* AuthViewModel.swift */; };
+		D9944F24A84A66DD64C27A87 /* ActivityDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */; };
+		DC6DAD7E1637BB0FB394095E /* MealPhotoRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7878FEC01579FF3062A1BAB8 /* MealPhotoRepositoryTests.swift */; };
 		E3FCA953FE00662D53869C50 /* AuthRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72B9FB0CE62D1B9E68E18884 /* AuthRepository.swift */; };
+		E46903CF2B296FFC093B62E4 /* BodyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2938AEB5BC8A6EFB25BD4370 /* BodyMetric.swift */; };
+		E5CC5D294F96DED704CEBCF2 /* BodyMetricMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCAD2C1465311164B8F22D7D /* BodyMetricMapperTests.swift */; };
+		F7266405641246CB776FF535 /* SessionIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A61FA08D7A7B858F4FE959D /* SessionIdentity.swift */; };
 		FFD9B056BBACC96F4B14B283 /* AuthErrorSanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEA5E92D46CE16038385089F /* AuthErrorSanitizerTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -49,18 +70,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0846C5DA24DC42A159FF8819 /* ActivityRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityRepository.swift; sourceTree = "<group>"; };
+		0A61FA08D7A7B858F4FE959D /* SessionIdentity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionIdentity.swift; sourceTree = "<group>"; };
+		1F589EC305863550A8C98F02 /* DailyNutritionSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyNutritionSummary.swift; sourceTree = "<group>"; };
 		21702E88765536EB03176846 /* MockAuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAuthRepository.swift; sourceTree = "<group>"; };
 		287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepositoryParametersTests.swift; sourceTree = "<group>"; };
+		2938AEB5BC8A6EFB25BD4370 /* BodyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetric.swift; sourceTree = "<group>"; };
 		2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietCloudApp.swift; sourceTree = "<group>"; };
 		3762E293F50FF63036987FC7 /* DiaryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendar.swift; sourceTree = "<group>"; };
+		38007A1DABD0C603A8489C27 /* BodyMetricsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricsRepository.swift; sourceTree = "<group>"; };
+		3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
 		408833F9E547197115F04318 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClientProvider.swift; sourceTree = "<group>"; };
 		41E5A424C48E249F4CACC137 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		51578621B12841023EA296BA /* AuthViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModelTests.swift; sourceTree = "<group>"; };
 		533611A60E602AA7CE7D4878 /* KeychainCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainCredentialStore.swift; sourceTree = "<group>"; };
+		565E62F2F164A98BB038B28A /* MealType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealType.swift; sourceTree = "<group>"; };
+		5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDTO.swift; sourceTree = "<group>"; };
+		5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhotoRepository.swift; sourceTree = "<group>"; };
 		66C3B5758B800F25C9F13A1D /* DietCloudTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DietCloudTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		68EB4D091D8EA9C16B9F7982 /* DietCloud.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DietCloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7058D16434745DA311001977 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		72B9FB0CE62D1B9E68E18884 /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
+		7878FEC01579FF3062A1BAB8 /* MealPhotoRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhotoRepositoryTests.swift; sourceTree = "<group>"; };
 		7C674AF0BFB1426E71DA2BB5 /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
 		7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendarTests.swift; sourceTree = "<group>"; };
 		7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
@@ -68,23 +99,33 @@
 		8BFE81F892F8613C080BC00A /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
 		8CD20A4FB837E36B1E20F0A9 /* AuthViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViews.swift; sourceTree = "<group>"; };
 		90817DE265258D5318F64D48 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
+		91B241AE9A00994F0126D6AD /* FoodItemRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemRepository.swift; sourceTree = "<group>"; };
 		924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthUserTests.swift; sourceTree = "<group>"; };
 		94BB9B55B44E0A75DCF26F75 /* SecureCredentialStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureCredentialStoring.swift; sourceTree = "<group>"; };
 		960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStoreTests.swift; sourceTree = "<group>"; };
 		98C4B2FB2471164D47F87342 /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		996F299CD3F15723D3368BBF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		9DF8F0E9A872AA0A590AF709 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A931928902FF7BFE0916186F /* FoodItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItem.swift; sourceTree = "<group>"; };
+		AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhoto.swift; sourceTree = "<group>"; };
 		B0F13CBCD5826DBC6312D10A /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		B45F44E696C2591A96BD3A88 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainerTests.swift; sourceTree = "<group>"; };
 		B9CC2DDC9FD796F57E37A75C /* InMemoryCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryCredentialStore.swift; sourceTree = "<group>"; };
 		C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencyContainer.swift; sourceTree = "<group>"; };
+		CF7D1A42E3826CAA26E4B753 /* MockFoodItemRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFoodItemRepository.swift; sourceTree = "<group>"; };
+		D803A31EB953E909706DAAA8 /* FoodItemDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemDTO.swift; sourceTree = "<group>"; };
+		D8E3960AA4F8B4D4F03E1727 /* FoodItemRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemRepositoryTests.swift; sourceTree = "<group>"; };
+		DA8E9785419E54129E0EE487 /* ActivityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityModels.swift; sourceTree = "<group>"; };
+		DCAD2C1465311164B8F22D7D /* BodyMetricMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricMapperTests.swift; sourceTree = "<group>"; };
 		DEA5E92D46CE16038385089F /* AuthErrorSanitizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorSanitizerTests.swift; sourceTree = "<group>"; };
+		ED97D6293611E5D896A4BE52 /* BodyMetricDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricDTO.swift; sourceTree = "<group>"; };
+		EEAB18E99AE995450EF58215 /* FoodItemMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodItemMapperTests.swift; sourceTree = "<group>"; };
 		F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppErrorTests.swift; sourceTree = "<group>"; };
 		F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIClient.swift; sourceTree = "<group>"; };
-		F6DB7F44637EEE8A8B766538 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		F7FED1D03128CC0B6FBDDAE9 /* AuthErrorSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorSanitizer.swift; sourceTree = "<group>"; };
 		FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchUISmokeTests.swift; sourceTree = "<group>"; };
+		FFEAEB7F866518E6957AE52A /* DataErrorMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataErrorMapping.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +144,7 @@
 			isa = PBXGroup;
 			children = (
 				F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */,
+				0A61FA08D7A7B858F4FE959D /* SessionIdentity.swift */,
 				408833F9E547197115F04318 /* SupabaseClientProvider.swift */,
 			);
 			path = Networking;
@@ -148,7 +190,13 @@
 		73D17475E4E0E20639B23A2A /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				F6DB7F44637EEE8A8B766538 /* .gitkeep */,
+				B5A2988B0C48DB63AD0C82D0 /* DTO */,
+				DA8E9785419E54129E0EE487 /* ActivityModels.swift */,
+				2938AEB5BC8A6EFB25BD4370 /* BodyMetric.swift */,
+				1F589EC305863550A8C98F02 /* DailyNutritionSummary.swift */,
+				A931928902FF7BFE0916186F /* FoodItem.swift */,
+				AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */,
+				565E62F2F164A98BB038B28A /* MealType.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -157,7 +205,12 @@
 			isa = PBXGroup;
 			children = (
 				B0F13CBCD5826DBC6312D10A /* .gitkeep */,
+				0846C5DA24DC42A159FF8819 /* ActivityRepository.swift */,
 				72B9FB0CE62D1B9E68E18884 /* AuthRepository.swift */,
+				38007A1DABD0C603A8489C27 /* BodyMetricsRepository.swift */,
+				91B241AE9A00994F0126D6AD /* FoodItemRepository.swift */,
+				5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */,
+				CF7D1A42E3826CAA26E4B753 /* MockFoodItemRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -205,19 +258,34 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		B5A2988B0C48DB63AD0C82D0 /* DTO */ = {
+			isa = PBXGroup;
+			children = (
+				5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */,
+				ED97D6293611E5D896A4BE52 /* BodyMetricDTO.swift */,
+				D803A31EB953E909706DAAA8 /* FoodItemDTO.swift */,
+			);
+			path = DTO;
+			sourceTree = "<group>";
+		};
 		C731AF3D621D166303EEE58F /* DietCloudTests */ = {
 			isa = PBXGroup;
 			children = (
+				3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */,
 				98C4B2FB2471164D47F87342 /* AppConfigTests.swift */,
 				F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */,
 				DEA5E92D46CE16038385089F /* AuthErrorSanitizerTests.swift */,
 				287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */,
 				924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */,
 				51578621B12841023EA296BA /* AuthViewModelTests.swift */,
+				DCAD2C1465311164B8F22D7D /* BodyMetricMapperTests.swift */,
 				960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */,
 				B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */,
 				7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */,
+				EEAB18E99AE995450EF58215 /* FoodItemMapperTests.swift */,
+				D8E3960AA4F8B4D4F03E1727 /* FoodItemRepositoryTests.swift */,
 				FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */,
+				7878FEC01579FF3062A1BAB8 /* MealPhotoRepositoryTests.swift */,
 				21702E88765536EB03176846 /* MockAuthRepository.swift */,
 			);
 			path = DietCloudTests;
@@ -227,6 +295,7 @@
 			isa = PBXGroup;
 			children = (
 				7C674AF0BFB1426E71DA2BB5 /* AppError.swift */,
+				FFEAEB7F866518E6957AE52A /* DataErrorMapping.swift */,
 			);
 			path = Errors;
 			sourceTree = "<group>";
@@ -356,6 +425,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D9944F24A84A66DD64C27A87 /* ActivityDTO.swift in Sources */,
+				06CA232870FA15CBA1BC50FB /* ActivityModels.swift in Sources */,
+				D6D91DDC5C093DB533B3EFC0 /* ActivityRepository.swift in Sources */,
 				524E5FEB2BE280CBA2DA1337 /* AnalyzeAPIClient.swift in Sources */,
 				73F934AE61B1678461F07431 /* AppConfig.swift in Sources */,
 				C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */,
@@ -365,12 +437,25 @@
 				E3FCA953FE00662D53869C50 /* AuthRepository.swift in Sources */,
 				D79A32118F3018A0D65F6799 /* AuthViewModel.swift in Sources */,
 				5366F1D757F2A43D8E6E59CF /* AuthViews.swift in Sources */,
+				E46903CF2B296FFC093B62E4 /* BodyMetric.swift in Sources */,
+				6C5D1C99091E5C7ABCB6C324 /* BodyMetricDTO.swift in Sources */,
+				63915502CC2DFF2A223FAF77 /* BodyMetricsRepository.swift in Sources */,
+				9FAA043BC6E4A3DC73DC1616 /* DailyNutritionSummary.swift in Sources */,
+				20F041A712CE71CAE4CEB7F4 /* DataErrorMapping.swift in Sources */,
 				9C54ED7B032AE8F90AA0D7BC /* DiaryCalendar.swift in Sources */,
 				B10296039BACEFB61B7DC408 /* DietCloudApp.swift in Sources */,
+				0E4A49FA6AFB4C5549EB1BC1 /* FoodItem.swift in Sources */,
+				8187112D3D5ACB424C443A63 /* FoodItemDTO.swift in Sources */,
+				C4D49991FDD8AF71CED06F5E /* FoodItemRepository.swift in Sources */,
 				C1CA40D9C597D2BA2CF70DEA /* InMemoryCredentialStore.swift in Sources */,
 				2A8E37B7E03110E6AF97CE75 /* KeychainCredentialStore.swift in Sources */,
+				17F4FB6502561A58CDD3D5A5 /* MealPhoto.swift in Sources */,
+				461A6E8D9A60A705BEA1E4B4 /* MealPhotoRepository.swift in Sources */,
+				745B3B2CB893EEC11FA099A8 /* MealType.swift in Sources */,
+				054B48A569DDDF8D25B44B63 /* MockFoodItemRepository.swift in Sources */,
 				77D14F03BCC117246AC20E40 /* RootView.swift in Sources */,
 				539971DF9206A4CA89AFABFC /* SecureCredentialStoring.swift in Sources */,
+				F7266405641246CB776FF535 /* SessionIdentity.swift in Sources */,
 				7F6FF1E67B003D9B9508314E /* SupabaseAuthLocalStorage.swift in Sources */,
 				2D2E30699110C0631BEC26CC /* SupabaseClientProvider.swift in Sources */,
 			);
@@ -380,16 +465,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37DB9CE240FFB9FDE1E72277 /* ActivityMapperTests.swift in Sources */,
 				4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */,
 				0074825B99DE31F851A4E9B8 /* AppErrorTests.swift in Sources */,
 				FFD9B056BBACC96F4B14B283 /* AuthErrorSanitizerTests.swift in Sources */,
 				9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */,
 				970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */,
 				D62E64746D379E3F1726ADBF /* AuthViewModelTests.swift in Sources */,
+				E5CC5D294F96DED704CEBCF2 /* BodyMetricMapperTests.swift in Sources */,
 				AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */,
 				10B72269E2ED85C9F29D51A7 /* DependencyContainerTests.swift in Sources */,
 				690FBF7CF4FF0EB84F804862 /* DiaryCalendarTests.swift in Sources */,
+				A2D390090F8096D4059534D7 /* FoodItemMapperTests.swift in Sources */,
+				B7C6783097E209890ADBAE6C /* FoodItemRepositoryTests.swift in Sources */,
 				D5BAD5D575A28918A63E2BE9 /* LaunchUISmokeTests.swift in Sources */,
+				DC6DAD7E1637BB0FB394095E /* MealPhotoRepositoryTests.swift in Sources */,
 				813FB6ABCCBFEF63F36ED513 /* MockAuthRepository.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

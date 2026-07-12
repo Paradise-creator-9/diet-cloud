@@ -4,6 +4,8 @@ import Supabase
 protocol BodyMetricsRepositoryProtocol: Sendable {
     func fetchAll() async throws -> [BodyMetric]
     func fetchByDateKey(_ dateKey: String) async throws -> BodyMetric?
+    /// Inclusive range on `measured_on` (`YYYY-MM-DD`).
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [BodyMetric]
     func upsert(_ write: BodyMetricWrite) async throws -> BodyMetric
     func delete(id: String) async throws
 }
@@ -54,6 +56,25 @@ final class BodyMetricsRepository: BodyMetricsRepositoryProtocol, @unchecked Sen
                 .value
             guard let row = rows.first else { return nil }
             return try BodyMetricMapper.domain(from: row)
+        } catch {
+            throw DataErrorMapping.map(error)
+        }
+    }
+
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [BodyMetric] {
+        let client = try requireClient()
+        _ = try await identity.requireUserId()
+        do {
+            let rows: [BodyMetricRow] = try await client
+                .from("body_metrics")
+                .select()
+                .gte("measured_on", value: startDateKey)
+                .lte("measured_on", value: endDateKey)
+                .order("measured_on", ascending: true)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return try rows.map { try BodyMetricMapper.domain(from: $0) }
         } catch {
             throw DataErrorMapping.map(error)
         }
@@ -121,6 +142,19 @@ final class MockBodyMetricsRepository: BodyMetricsRepositoryProtocol, @unchecked
         try throwIfForced()
         lastFetchDateKey = dateKey
         return items.first { $0.dateKey == dateKey }
+    }
+
+    private(set) var lastFetchBetween: (String, String)?
+
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [BodyMetric] {
+        try throwIfForced()
+        lastFetchBetween = (startDateKey, endDateKey)
+        return items
+            .filter { $0.dateKey >= startDateKey && $0.dateKey <= endDateKey }
+            .sorted { lhs, rhs in
+                if lhs.dateKey != rhs.dateKey { return lhs.dateKey < rhs.dateKey }
+                return lhs.createdAt > rhs.createdAt
+            }
     }
 
     func upsert(_ write: BodyMetricWrite) async throws -> BodyMetric {

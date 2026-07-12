@@ -215,6 +215,17 @@ final class TodayMealsViewModel {
         SettingsViewModel(user: user, goalsStore: goalsStore, onSignOut: onSignOut)
     }
 
+    func makeTrendsViewModel() -> TrendsViewModel {
+        TrendsViewModel(
+            foodRepository: foodRepository,
+            bodyRepository: bodyRepository,
+            dailyActivityRepository: dailyActivityRepository,
+            exerciseRepository: exerciseRepository,
+            goalsStore: goalsStore,
+            diaryCalendar: diaryCalendar
+        )
+    }
+
     var isHealthKitAvailable: Bool {
         healthKitClient.isAvailable
     }

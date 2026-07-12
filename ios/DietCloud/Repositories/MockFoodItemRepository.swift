@@ -16,6 +16,8 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     /// Last `fetchByDateKey` argument (stage 6 date navigation tests).
     private(set) var lastFetchDateKey: String?
     private(set) var fetchByDateKeyCallCount = 0
+    private(set) var lastFetchBetween: (String, String)?
+    private(set) var fetchBetweenCallCount = 0
 
     /// Test-only snapshot of stored items (no network).
     func itemsSnapshotForTest() -> [FoodItem] {
@@ -48,6 +50,20 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
             return items
                 .filter { $0.dateKey == dateKey }
                 .sorted { $0.createdAt < $1.createdAt }
+        }
+    }
+
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [FoodItem] {
+        try throwIfForced()
+        return withLock {
+            lastFetchBetween = (startDateKey, endDateKey)
+            fetchBetweenCallCount += 1
+            return items
+                .filter { $0.dateKey >= startDateKey && $0.dateKey <= endDateKey }
+                .sorted { lhs, rhs in
+                    if lhs.dateKey != rhs.dateKey { return lhs.dateKey < rhs.dateKey }
+                    return lhs.createdAt < rhs.createdAt
+                }
         }
     }
 

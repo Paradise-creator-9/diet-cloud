@@ -4,6 +4,8 @@ import Supabase
 protocol FoodItemRepositoryProtocol: Sendable {
     func fetchAll() async throws -> [FoodItem]
     func fetchByDateKey(_ dateKey: String) async throws -> [FoodItem]
+    /// Inclusive range on `eaten_on` (`YYYY-MM-DD`), ordered oldest→newest then created_at.
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [FoodItem]
     func fetchById(_ id: String) async throws -> FoodItem?
     func create(_ write: FoodItemWrite) async throws -> FoodItem
     func update(id: String, write: FoodItemWrite) async throws -> FoodItem
@@ -59,6 +61,25 @@ final class FoodItemRepository: FoodItemRepositoryProtocol, @unchecked Sendable 
                 .from("food_items")
                 .select()
                 .eq("eaten_on", value: dateKey)
+                .order("created_at", ascending: true)
+                .execute()
+                .value
+            return try await mapRows(rows)
+        } catch {
+            throw DataErrorMapping.map(error)
+        }
+    }
+
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [FoodItem] {
+        let client = try requireClient()
+        _ = try await identity.requireUserId()
+        do {
+            let rows: [FoodItemRow] = try await client
+                .from("food_items")
+                .select()
+                .gte("eaten_on", value: startDateKey)
+                .lte("eaten_on", value: endDateKey)
+                .order("eaten_on", ascending: true)
                 .order("created_at", ascending: true)
                 .execute()
                 .value

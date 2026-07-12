@@ -6,6 +6,7 @@ struct TodayMealsView: View {
     let onSignOut: () -> Void
     @State private var isPresentingSettings = false
     @State private var isPresentingSignOutConfirm = false
+    @State private var isShowingTrends = false
 
     var body: some View {
         NavigationStack {
@@ -28,6 +29,13 @@ struct TodayMealsView: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         HStack(spacing: 14) {
                             Button {
+                                isShowingTrends = true
+                            } label: {
+                                Image(systemName: "chart.xyaxis.line")
+                            }
+                            .accessibilityLabel("趋势与统计")
+
+                            Button {
                                 isPresentingSettings = true
                             } label: {
                                 Image(systemName: "gearshape")
@@ -45,6 +53,9 @@ struct TodayMealsView: View {
                             .disabled(viewModel.isPresentingAddSheet)
                         }
                     }
+                }
+                .navigationDestination(isPresented: $isShowingTrends) {
+                    TrendsView(viewModel: viewModel.makeTrendsViewModel())
                 }
                 .sheet(isPresented: $viewModel.isPresentingAddSheet) {
                     AddFoodItemView(viewModel: viewModel)

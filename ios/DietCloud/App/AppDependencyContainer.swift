@@ -83,6 +83,18 @@ final class AppDependencyContainer: @unchecked Sendable {
         )
     }
 
+    @MainActor
+    func makeTrendsViewModel() -> TrendsViewModel {
+        TrendsViewModel(
+            foodRepository: foodItemRepository,
+            bodyRepository: bodyMetricsRepository,
+            dailyActivityRepository: dailyActivityRepository,
+            exerciseRepository: exerciseActivityRepository,
+            goalsStore: goalsStore,
+            diaryCalendar: diaryCalendar
+        )
+    }
+
     /// Bootstrap from the main bundle; always returns a container (never throws).
     static func makeDefault() -> AppDependencyContainer {
         do {

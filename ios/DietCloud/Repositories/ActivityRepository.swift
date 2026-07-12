@@ -4,6 +4,8 @@ import Supabase
 protocol DailyActivityRepositoryProtocol: Sendable {
     func fetchAll() async throws -> [DailyActivity]
     func fetchByDateKey(_ dateKey: String) async throws -> [DailyActivity]
+    /// Inclusive range on `activity_on` (`YYYY-MM-DD`).
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [DailyActivity]
     func upsert(_ write: DailyActivityWrite) async throws -> DailyActivity
     func delete(id: String) async throws
 }
@@ -11,6 +13,8 @@ protocol DailyActivityRepositoryProtocol: Sendable {
 protocol ExerciseActivityRepositoryProtocol: Sendable {
     func fetchAll() async throws -> [ExerciseActivity]
     func fetchByDateKey(_ dateKey: String) async throws -> [ExerciseActivity]
+    /// Inclusive range on `activity_on` (`YYYY-MM-DD`).
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [ExerciseActivity]
     func create(_ write: ExerciseActivityWrite) async throws -> ExerciseActivity
     func delete(id: String) async throws
 }
@@ -32,23 +36,31 @@ final class DailyActivityRepository: DailyActivityRepositoryProtocol, @unchecked
     }
 
     func fetchAll() async throws -> [DailyActivity] {
-        try await fetch(dateKey: nil)
+        try await fetch(dateKey: nil, startDateKey: nil, endDateKey: nil)
     }
 
     func fetchByDateKey(_ dateKey: String) async throws -> [DailyActivity] {
-        try await fetch(dateKey: dateKey)
+        try await fetch(dateKey: dateKey, startDateKey: nil, endDateKey: nil)
     }
 
-    private func fetch(dateKey: String?) async throws -> [DailyActivity] {
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [DailyActivity] {
+        try await fetch(dateKey: nil, startDateKey: startDateKey, endDateKey: endDateKey)
+    }
+
+    private func fetch(dateKey: String?, startDateKey: String?, endDateKey: String?) async throws -> [DailyActivity] {
         let client = try requireClient()
         _ = try await identity.requireUserId()
         do {
             var query = client.from("daily_activities").select()
             if let dateKey {
                 query = query.eq("activity_on", value: dateKey)
+            } else if let startDateKey, let endDateKey {
+                query = query
+                    .gte("activity_on", value: startDateKey)
+                    .lte("activity_on", value: endDateKey)
             }
             let rows: [DailyActivityRow] = try await query
-                .order("activity_on", ascending: false)
+                .order("activity_on", ascending: startDateKey != nil)
                 .order("created_at", ascending: false)
                 .execute()
                 .value
@@ -111,23 +123,31 @@ final class ExerciseActivityRepository: ExerciseActivityRepositoryProtocol, @unc
     }
 
     func fetchAll() async throws -> [ExerciseActivity] {
-        try await fetch(dateKey: nil)
+        try await fetch(dateKey: nil, startDateKey: nil, endDateKey: nil)
     }
 
     func fetchByDateKey(_ dateKey: String) async throws -> [ExerciseActivity] {
-        try await fetch(dateKey: dateKey)
+        try await fetch(dateKey: dateKey, startDateKey: nil, endDateKey: nil)
     }
 
-    private func fetch(dateKey: String?) async throws -> [ExerciseActivity] {
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [ExerciseActivity] {
+        try await fetch(dateKey: nil, startDateKey: startDateKey, endDateKey: endDateKey)
+    }
+
+    private func fetch(dateKey: String?, startDateKey: String?, endDateKey: String?) async throws -> [ExerciseActivity] {
         let client = try requireClient()
         _ = try await identity.requireUserId()
         do {
             var query = client.from("exercise_activities").select()
             if let dateKey {
                 query = query.eq("activity_on", value: dateKey)
+            } else if let startDateKey, let endDateKey {
+                query = query
+                    .gte("activity_on", value: startDateKey)
+                    .lte("activity_on", value: endDateKey)
             }
             let rows: [ExerciseActivityRow] = try await query
-                .order("activity_on", ascending: false)
+                .order("activity_on", ascending: startDateKey != nil)
                 .order("started_at", ascending: false)
                 .order("created_at", ascending: false)
                 .execute()
@@ -205,6 +225,18 @@ final class MockDailyActivityRepository: DailyActivityRepositoryProtocol, @unche
         }
     }
 
+    private(set) var lastFetchBetween: (String, String)?
+
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [DailyActivity] {
+        try throwIfForced()
+        return withLock {
+            lastFetchBetween = (startDateKey, endDateKey)
+            return items
+                .filter { $0.dateKey >= startDateKey && $0.dateKey <= endDateKey }
+                .sorted { $0.dateKey < $1.dateKey }
+        }
+    }
+
     func upsert(_ write: DailyActivityWrite) async throws -> DailyActivity {
         try throwIfForced()
         let payload = DailyActivityMapper.upsertPayload(from: write, sessionUserId: sessionUserId)
@@ -276,6 +308,18 @@ final class MockExerciseActivityRepository: ExerciseActivityRepositoryProtocol, 
         return withLock {
             lastFetchDateKey = dateKey
             return items.filter { $0.dateKey == dateKey }
+        }
+    }
+
+    private(set) var lastFetchBetween: (String, String)?
+
+    func fetchBetween(startDateKey: String, endDateKey: String) async throws -> [ExerciseActivity] {
+        try throwIfForced()
+        return withLock {
+            lastFetchBetween = (startDateKey, endDateKey)
+            return items
+                .filter { $0.dateKey >= startDateKey && $0.dateKey <= endDateKey }
+                .sorted { $0.dateKey < $1.dateKey }
         }
     }
 

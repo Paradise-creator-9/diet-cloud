@@ -9,27 +9,51 @@ enum TodayMealsLoadState: Equatable, Sendable {
     case error(String)
 }
 
+/// Add vs edit food form presented by the same sheet.
+enum FoodFormMode: Equatable, Sendable {
+    case add
+    case edit
+}
+
 @MainActor
 @Observable
 final class TodayMealsViewModel {
     private(set) var loadState: TodayMealsLoadState = .loading
     private(set) var items: [FoodItem] = []
     private(set) var errorMessage: String?
+    /// Non-error banner (e.g. saved to another date).
+    private(set) var statusMessage: String?
     private(set) var isMutating = false
 
     /// Selected diary day (local start-of-day). Drives all fetch / write dateKeys.
     private(set) var selectedDate: Date
 
-    /// Draft fields for add form (bound from view).
+    /// Draft fields for add/edit form (bound from view).
     var draftName = ""
     var draftMeal: MealType = .breakfast
     var draftCalories = ""
     var draftProtein = ""
     var draftCarbs = ""
     var draftFat = ""
+    var draftFiber = ""
     var draftGrams = ""
     var draftNote = ""
+    /// Edit-mode date only (add mode still uses `selectedDateKey`).
+    var draftDate: Date = Date()
     var isPresentingAddSheet = false
+    private(set) var foodFormMode: FoodFormMode = .add
+    /// Preserved across edit save — never write signed URLs to DB.
+    private(set) var editingItemId: String?
+    private(set) var editingPhotoPaths: [String] = []
+    private(set) var editingSourceId: String?
+    /// Read-only display URLs for edit sheet thumbnail (not persisted).
+    private(set) var editingPhotoDisplayURLs: [String] = []
+
+    var isEditingFood: Bool { foodFormMode == .edit }
+
+    var foodFormNavigationTitle: String {
+        isEditingFood ? "编辑食物" : "新增食物"
+    }
 
     /// Optional JPEG-ready image chosen in the add sheet (not a secret).
     private(set) var draftPhotoData: Data?
@@ -162,8 +186,9 @@ final class TodayMealsViewModel {
         }
     }
 
-    /// True when user provided enough input for AI (hint and/or photo).
+    /// True when user provided enough input for AI (hint and/or photo). Add mode only.
     var canRunAIAnalysis: Bool {
+        guard !isEditingFood else { return false }
         let hasHint = !draftNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             || !draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasPhoto = draftPhotoData != nil
@@ -324,36 +349,89 @@ final class TodayMealsViewModel {
         rows.first(where: { $0.source == "manual" }) ?? rows.first
     }
 
-    // MARK: - Add form
+    // MARK: - Food form (add / edit)
 
     func openAddSheet(defaultMeal: MealType = .breakfast) {
+        resetFoodFormDrafts()
+        foodFormMode = .add
+        editingItemId = nil
+        editingPhotoPaths = []
+        editingSourceId = nil
+        editingPhotoDisplayURLs = []
         draftMeal = defaultMeal
-        draftName = ""
-        draftCalories = ""
-        draftProtein = ""
-        draftCarbs = ""
-        draftFat = ""
-        draftGrams = ""
-        draftNote = ""
+        draftDate = selectedDate
         clearDraftPhoto()
         errorMessage = nil
+        statusMessage = nil
+        analysisSummary = nil
+        isPresentingAddSheet = true
+    }
+
+    func openEdit(_ item: FoodItem) {
+        foodFormMode = .edit
+        editingItemId = item.id
+        editingPhotoPaths = item.photoPaths
+        editingSourceId = item.sourceId
+        editingPhotoDisplayURLs = item.photoURLs
+        draftName = item.name
+        draftMeal = item.meal
+        draftCalories = formatDraftNumber(item.calories)
+        draftProtein = formatDraftNumber(item.protein)
+        draftCarbs = formatDraftNumber(item.carbs)
+        draftFat = formatDraftNumber(item.fat)
+        draftFiber = formatDraftNumber(item.fiber)
+        draftGrams = formatDraftNumber(item.grams)
+        draftNote = item.note
+        if let day = diaryCalendar.date(fromDateKey: item.dateKey) {
+            draftDate = diaryCalendar.startOfDay(for: day)
+        } else {
+            draftDate = selectedDate
+        }
+        clearDraftPhoto()
+        errorMessage = nil
+        statusMessage = nil
         analysisSummary = nil
         isPresentingAddSheet = true
     }
 
     func cancelAdd() {
         isPresentingAddSheet = false
+        clearFoodFormSession()
+    }
+
+    /// Called when the food sheet is dismissed (cancel, save success, or interactive dismiss).
+    /// Ensures edit snapshots never leak into the next add session.
+    func handleFoodFormDismissed() {
+        // Binding may already have set isPresentingAddSheet = false.
+        clearFoodFormSession()
+    }
+
+    private func clearFoodFormSession() {
+        resetFoodFormDrafts()
+        foodFormMode = .add
+        editingItemId = nil
+        editingPhotoPaths = []
+        editingSourceId = nil
+        editingPhotoDisplayURLs = []
+        clearDraftPhoto()
+        // Keep errorMessage only while sheet is open; clear on dismiss.
+        if !isPresentingAddSheet {
+            errorMessage = nil
+            analysisSummary = nil
+        }
+    }
+
+    private func resetFoodFormDrafts() {
         draftName = ""
         draftCalories = ""
         draftProtein = ""
         draftCarbs = ""
         draftFat = ""
+        draftFiber = ""
         draftGrams = ""
         draftNote = ""
         draftMeal = .breakfast
-        clearDraftPhoto()
-        errorMessage = nil
-        analysisSummary = nil
+        draftDate = selectedDate
     }
 
     func clearDraftPhoto() {
@@ -365,8 +443,9 @@ final class TodayMealsViewModel {
         errorMessage = message
     }
 
-    /// Compresses picker data to JPEG before upload / AI (HEIC → JPEG).
+    /// Compresses picker data to JPEG before upload / AI (HEIC → JPEG). Add mode only.
     func setDraftPhoto(rawData: Data) async {
+        guard !isEditingFood else { return }
         isPreparingPhoto = true
         defer { isPreparingPhoto = false }
         do {
@@ -381,8 +460,9 @@ final class TodayMealsViewModel {
     }
 
     /// Calls `/api/analyze-meal` and fills draft fields only — does **not** save.
-    /// AI is date-agnostic; save still uses `selectedDateKey`.
+    /// Add mode only; AI is date-agnostic; save still uses `selectedDateKey` for create.
     func runAIAnalysis() async {
+        guard !isEditingFood else { return }
         errorMessage = nil
         analysisSummary = nil
 
@@ -410,56 +490,125 @@ final class TodayMealsViewModel {
         }
     }
 
-    func saveNewItem() async {
+    /// Unified save for add (`create`) and edit (`update`). Prefer this over `saveNewItem`.
+    func saveFoodItem() async {
         let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else {
             errorMessage = "请填写食物名称。"
             return
         }
 
+        let calories: Double
+        let protein: Double
+        let carbs: Double
+        let fat: Double
+        let fiber: Double
+        let grams: Double
+        do {
+            calories = try parseNonNegativeField(draftCalories, name: "热量")
+            protein = try parseNonNegativeField(draftProtein, name: "蛋白质")
+            carbs = try parseNonNegativeField(draftCarbs, name: "碳水")
+            fat = try parseNonNegativeField(draftFat, name: "脂肪")
+            fiber = try parseNonNegativeField(draftFiber, name: "膳食纤维")
+            grams = try parseNonNegativeField(draftGrams, name: "份量")
+        } catch let message as FoodFormValidationMessage {
+            errorMessage = message.text
+            return
+        } catch {
+            errorMessage = "输入无效，请检查后重试。"
+            return
+        }
+
+        guard !isMutating else { return }
         isMutating = true
         defer { isMutating = false }
 
-        let writeDateKey = selectedDateKey
+        let writeDateKey: String
+        switch foodFormMode {
+        case .add:
+            writeDateKey = selectedDateKey
+        case .edit:
+            writeDateKey = diaryCalendar.dateKey(from: draftDate)
+        }
 
         do {
-            var photoPaths: [String] = []
-            if let photoData = draftPhotoData {
-                let uploaded = try await photoRepository.upload(
+            let write: FoodItemWrite
+            switch foodFormMode {
+            case .add:
+                var photoPaths: [String] = []
+                if let photoData = draftPhotoData {
+                    let uploaded = try await photoRepository.upload(
+                        dateKey: writeDateKey,
+                        fileName: "meal.jpg",
+                        data: photoData,
+                        contentType: ImageCompressor.allowedContentType
+                    )
+                    photoPaths = [uploaded.path]
+                }
+                write = FoodItemWrite(
                     dateKey: writeDateKey,
-                    fileName: "meal.jpg",
-                    data: photoData,
-                    contentType: ImageCompressor.allowedContentType
+                    meal: draftMeal,
+                    name: name,
+                    grams: grams,
+                    calories: calories,
+                    protein: protein,
+                    carbs: carbs,
+                    fat: fat,
+                    fiber: fiber,
+                    note: draftNote.trimmingCharacters(in: .whitespacesAndNewlines),
+                    photoPaths: photoPaths,
+                    sourceId: nil
                 )
-                photoPaths = [uploaded.path]
+                _ = try await foodRepository.create(write)
+
+            case .edit:
+                guard let id = editingItemId else {
+                    errorMessage = "无法保存：缺少记录标识。"
+                    return
+                }
+                // Critical: always write original storage paths, never signed URLs / never empty wipe.
+                write = FoodItemWrite(
+                    dateKey: writeDateKey,
+                    meal: draftMeal,
+                    name: name,
+                    grams: grams,
+                    calories: calories,
+                    protein: protein,
+                    carbs: carbs,
+                    fat: fat,
+                    fiber: fiber,
+                    note: draftNote.trimmingCharacters(in: .whitespacesAndNewlines),
+                    photoPaths: editingPhotoPaths,
+                    sourceId: editingSourceId
+                )
+                _ = try await foodRepository.update(id: id, write: write)
             }
 
-            let write = FoodItemWrite(
-                dateKey: writeDateKey,
-                meal: draftMeal,
-                name: name,
-                grams: parseNumber(draftGrams),
-                calories: parseNumber(draftCalories),
-                protein: parseNumber(draftProtein),
-                carbs: parseNumber(draftCarbs),
-                fat: parseNumber(draftFat),
-                fiber: 0,
-                note: draftNote.trimmingCharacters(in: .whitespacesAndNewlines),
-                photoPaths: photoPaths
-            )
-
-            _ = try await foodRepository.create(write)
+            let dateMovedAway = foodFormMode == .edit && writeDateKey != selectedDateKey
+            let movedToKey = writeDateKey
             isPresentingAddSheet = false
-            clearDraftPhoto()
+            clearFoodFormSession()
             errorMessage = nil
             analysisSummary = nil
+            if dateMovedAway {
+                statusMessage = "已保存到 \(movedToKey)"
+            } else {
+                statusMessage = nil
+            }
             await load()
         } catch {
             errorMessage = DataErrorMapping.map(error).userMessage
+            // Keep sheet open; drafts and edit snapshot (photoPaths / sourceId) intact.
         }
     }
 
+    /// Backward-compatible alias used by older call sites / tests.
+    func saveNewItem() async {
+        await saveFoodItem()
+    }
+
     func deleteItem(_ item: FoodItem) async {
+        guard !isMutating else { return }
         isMutating = true
         defer { isMutating = false }
         do {
@@ -486,10 +635,35 @@ final class TodayMealsViewModel {
         draftProtein = fill.protein
         draftCarbs = fill.carbs
         draftFat = fill.fat
+        draftFiber = formatDraftNumber(fill.fiber)
         draftGrams = fill.grams
         draftNote = fill.note
         analysisSummary = fill.summary
         errorMessage = nil
+    }
+
+    private struct FoodFormValidationMessage: Error {
+        let text: String
+    }
+
+    /// Empty → 0; invalid / negative → error (does not call repository).
+    /// Accepts `.` or `,` as decimal separator (not mixed thousands grouping).
+    private func parseNonNegativeField(_ text: String, name: String) throws -> Double {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return 0 }
+        let normalized: String
+        if trimmed.contains(","), !trimmed.contains(".") {
+            normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+        } else {
+            normalized = trimmed
+        }
+        guard let value = Double(normalized), value.isFinite else {
+            throw FoodFormValidationMessage(text: "\(name)需为有效数字。")
+        }
+        if value < 0 {
+            throw FoodFormValidationMessage(text: "\(name)不能为负数。")
+        }
+        return value
     }
 
     private func mapAnalyzeError(_ error: Error) -> AppError {

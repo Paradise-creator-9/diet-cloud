@@ -57,7 +57,9 @@ struct TodayMealsView: View {
                 .navigationDestination(isPresented: $isShowingTrends) {
                     TrendsView(viewModel: viewModel.makeTrendsViewModel())
                 }
-                .sheet(isPresented: $viewModel.isPresentingAddSheet) {
+                .sheet(isPresented: $viewModel.isPresentingAddSheet, onDismiss: {
+                    viewModel.handleFoodFormDismissed()
+                }) {
                     AddFoodItemView(viewModel: viewModel)
                         .interactiveDismissDisabled(viewModel.isAnalyzing || viewModel.isMutating)
                 }
@@ -203,10 +205,21 @@ struct TodayMealsView: View {
                                 group: section,
                                 isMutating: viewModel.isMutating,
                                 onAdd: { viewModel.openAddSheet(defaultMeal: section.meal) },
+                                onEdit: { item in
+                                    viewModel.openEdit(item)
+                                },
                                 onDelete: { item in
                                     Task { await viewModel.deleteItem(item) }
                                 }
                             )
+                        }
+
+                        if let status = viewModel.statusMessage {
+                            Section {
+                                Text(status)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
 
                         if let error = viewModel.errorMessage, viewModel.loadState != .error(error) {
@@ -915,6 +928,7 @@ struct MealSectionView: View {
     let group: MealGroup
     let isMutating: Bool
     let onAdd: () -> Void
+    var onEdit: (FoodItem) -> Void = { _ in }
     let onDelete: (FoodItem) -> Void
 
     var body: some View {
@@ -925,15 +939,31 @@ struct MealSectionView: View {
                     .font(.footnote)
             } else {
                 ForEach(group.items) { item in
-                    FoodItemRowView(item: item)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                            Button(role: .destructive) {
-                                onDelete(item)
-                            } label: {
-                                Label("删除", systemImage: "trash")
-                            }
-                            .disabled(isMutating)
+                    Button {
+                        onEdit(item)
+                    } label: {
+                        FoodItemRowView(item: item)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isMutating)
+                    .accessibilityLabel("编辑 \(item.name)")
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            onDelete(item)
+                        } label: {
+                            Label("删除", systemImage: "trash")
                         }
+                        .disabled(isMutating)
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                        Button {
+                            onEdit(item)
+                        } label: {
+                            Label("编辑", systemImage: "pencil")
+                        }
+                        .tint(.accentColor)
+                        .disabled(isMutating)
+                    }
                 }
             }
         } header: {
@@ -1058,75 +1088,92 @@ struct AddFoodItemView: View {
                             Text(meal.titleZh).tag(meal)
                         }
                     }
+                    if viewModel.isEditingFood {
+                        DatePicker(
+                            "日期",
+                            selection: $viewModel.draftDate,
+                            displayedComponents: .date
+                        )
+                        .environment(\.locale, Locale(identifier: "zh_CN"))
+                    }
                     TextField("热量 kcal", text: $viewModel.draftCalories)
                         .keyboardType(.decimalPad)
                 }
 
-                Section {
-                    Text("写备注或选照片后分析。结果只填入表单，需你确认后保存。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Button {
-                        Task { await viewModel.runAIAnalysis() }
-                    } label: {
-                        if viewModel.isAnalyzing {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Label("AI 分析餐食", systemImage: "sparkles")
-                                .font(.body.weight(.semibold))
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!viewModel.canRunAIAnalysis)
-                    if let summary = viewModel.analysisSummary {
-                        Text(summary)
-                            .font(.footnote)
+                if !viewModel.isEditingFood {
+                    Section {
+                        Text("写备注或选照片后分析。结果只填入表单，需你确认后保存。")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
-                    }
-                } header: {
-                    Label("AI 分析", systemImage: "sparkles")
-                }
-
-                Section("照片（可选）") {
-                    PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
-                        Label(
-                            viewModel.draftPhotoPreview == nil ? "从相册选择" : "重新选择",
-                            systemImage: "photo.on.rectangle"
-                        )
-                    }
-                    .onChange(of: pickerItem) { _, newItem in
-                        guard let newItem else { return }
-                        Task {
-                            if let data = try? await newItem.loadTransferable(type: Data.self) {
-                                await viewModel.setDraftPhoto(rawData: data)
+                        Button {
+                            Task { await viewModel.runAIAnalysis() }
+                        } label: {
+                            if viewModel.isAnalyzing {
+                                ProgressView()
+                                    .frame(maxWidth: .infinity)
                             } else {
-                                viewModel.reportUserFacingError("无法读取所选图片。")
+                                Label("AI 分析餐食", systemImage: "sparkles")
+                                    .font(.body.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
                             }
                         }
-                    }
-
-                    if viewModel.isPreparingPhoto {
-                        ProgressView("正在处理图片…")
-                    }
-
-                    if let preview = viewModel.draftPhotoPreview {
-                        Image(uiImage: preview)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 160)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        Button("移除照片", role: .destructive) {
-                            viewModel.clearDraftPhoto()
-                            pickerItem = nil
+                        .buttonStyle(.borderedProminent)
+                        .disabled(!viewModel.canRunAIAnalysis)
+                        if let summary = viewModel.analysisSummary {
+                            Text(summary)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         }
+                    } header: {
+                        Label("AI 分析", systemImage: "sparkles")
                     }
 
-                    Text("照片将上传到私有 meal-photos，路径为当前用户目录；列表通过 signed URL 显示。AI 分析使用本地压缩图，不发送 signed URL。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Section("照片（可选）") {
+                        PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
+                            Label(
+                                viewModel.draftPhotoPreview == nil ? "从相册选择" : "重新选择",
+                                systemImage: "photo.on.rectangle"
+                            )
+                        }
+                        .onChange(of: pickerItem) { _, newItem in
+                            guard let newItem else { return }
+                            Task {
+                                if let data = try? await newItem.loadTransferable(type: Data.self) {
+                                    await viewModel.setDraftPhoto(rawData: data)
+                                } else {
+                                    viewModel.reportUserFacingError("无法读取所选图片。")
+                                }
+                            }
+                        }
+
+                        if viewModel.isPreparingPhoto {
+                            ProgressView("正在处理图片…")
+                        }
+
+                        if let preview = viewModel.draftPhotoPreview {
+                            Image(uiImage: preview)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 160)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            Button("移除照片", role: .destructive) {
+                                viewModel.clearDraftPhoto()
+                                pickerItem = nil
+                            }
+                        }
+
+                        Text("照片将上传到私有 meal-photos，路径为当前用户目录；列表通过 signed URL 显示。AI 分析使用本地压缩图，不发送 signed URL。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if !viewModel.editingPhotoPaths.isEmpty {
+                    Section("照片") {
+                        editModePhotoThumbnail
+                        Text("编辑时保留原照片，暂不支持更换或删除。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("营养（可选）") {
@@ -1136,10 +1183,16 @@ struct AddFoodItemView: View {
                         .keyboardType(.decimalPad)
                     TextField("脂肪 g", text: $viewModel.draftFat)
                         .keyboardType(.decimalPad)
-                    TextField("重量 g", text: $viewModel.draftGrams)
+                    TextField("膳食纤维 g", text: $viewModel.draftFiber)
                         .keyboardType(.decimalPad)
-                    TextField("备注 / AI 文字说明", text: $viewModel.draftNote, axis: .vertical)
-                        .lineLimit(2 ... 5)
+                    TextField("份量 g", text: $viewModel.draftGrams)
+                        .keyboardType(.decimalPad)
+                    TextField(
+                        viewModel.isEditingFood ? "备注" : "备注 / AI 文字说明",
+                        text: $viewModel.draftNote,
+                        axis: .vertical
+                    )
+                    .lineLimit(2 ... 5)
                 }
 
                 if let error = viewModel.errorMessage {
@@ -1150,7 +1203,7 @@ struct AddFoodItemView: View {
                     }
                 }
             }
-            .navigationTitle("新增食物")
+            .navigationTitle(viewModel.foodFormNavigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1158,6 +1211,7 @@ struct AddFoodItemView: View {
                         viewModel.cancelAdd()
                         dismiss()
                     }
+                    .disabled(viewModel.isMutating)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if viewModel.isMutating {
@@ -1165,7 +1219,7 @@ struct AddFoodItemView: View {
                     } else {
                         Button("保存") {
                             Task {
-                                await viewModel.saveNewItem()
+                                await viewModel.saveFoodItem()
                                 if !viewModel.isPresentingAddSheet {
                                     dismiss()
                                 }
@@ -1179,6 +1233,42 @@ struct AddFoodItemView: View {
                     }
                 }
             }
+            .interactiveDismissDisabled(viewModel.isAnalyzing || viewModel.isMutating)
         }
+    }
+
+    @ViewBuilder
+    private var editModePhotoThumbnail: some View {
+        let urlString = viewModel.editingPhotoDisplayURLs.first
+        if let urlString, let url = URL(string: urlString), url.scheme?.hasPrefix("http") == true {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .failure, .empty:
+                    photoPlaceholder
+                @unknown default:
+                    photoPlaceholder
+                }
+            }
+            .frame(height: 120)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        } else {
+            photoPlaceholder
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        }
+    }
+
+    private var photoPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .fill(Color(.secondarySystemFill))
+            .frame(height: 120)
+            .overlay {
+                Image(systemName: "photo")
+                    .foregroundStyle(.secondary)
+            }
     }
 }

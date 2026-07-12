@@ -458,6 +458,326 @@ final class TodayMealsViewModelTests: XCTestCase {
         XCTAssertFalse(vm.displayTitle.lowercased().contains("base64"))
     }
 
+    // MARK: - Edit food (Stage 13)
+
+    func testOpenEditPrefillsAllFields() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(
+            id: "e1",
+            meal: .lunch,
+            name: "鸡胸",
+            cal: 200,
+            protein: 40,
+            carbs: 5,
+            fat: 4,
+            paths: ["\(user.id)/2026-07-13/p.jpg"],
+            on: dateKey,
+            grams: 150,
+            fiber: 2,
+            note: "水煮",
+            sourceId: "manual-abc"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, _, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        XCTAssertTrue(vm.isPresentingAddSheet)
+        XCTAssertTrue(vm.isEditingFood)
+        XCTAssertEqual(vm.editingItemId, "e1")
+        XCTAssertEqual(vm.draftName, "鸡胸")
+        XCTAssertEqual(vm.draftMeal, .lunch)
+        XCTAssertEqual(vm.draftCalories, "200")
+        XCTAssertEqual(vm.draftProtein, "40")
+        XCTAssertEqual(vm.draftCarbs, "5")
+        XCTAssertEqual(vm.draftFat, "4")
+        XCTAssertEqual(vm.draftFiber, "2")
+        XCTAssertEqual(vm.draftGrams, "150")
+        XCTAssertEqual(vm.draftNote, "水煮")
+        XCTAssertEqual(vm.editingPhotoPaths, ["\(user.id)/2026-07-13/p.jpg"])
+        XCTAssertEqual(vm.editingSourceId, "manual-abc")
+        let cal = DiaryCalendar()
+        XCTAssertEqual(cal.dateKey(from: vm.draftDate), dateKey)
+    }
+
+    func testEditCallsUpdateNotCreateAndPreservesPhotosAndSourceId() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let paths = ["\(user.id)/2026-07-13/keep.jpg"]
+        let item = food(
+            id: "keep-id",
+            meal: .dinner,
+            name: "旧名",
+            cal: 100,
+            protein: 10,
+            carbs: 10,
+            fat: 1,
+            paths: paths,
+            fiber: 8,
+            note: "旧备注",
+            sourceId: "src-keep"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        vm.draftName = "新名"
+        vm.draftMeal = .breakfast
+        vm.draftCalories = "180"
+        vm.draftProtein = "20"
+        vm.draftFiber = "8"
+        await vm.saveFoodItem()
+
+        XCTAssertEqual(foodRepo.updateCallCount, 1)
+        XCTAssertEqual(foodRepo.createCallCount, 0)
+        XCTAssertEqual(foodRepo.lastUpdateId, "keep-id")
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.name, "新名")
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.meal, .breakfast)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.calories, 180)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.photoPaths, paths)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.sourceId, "src-keep")
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.fiber, 8)
+        XCTAssertFalse(vm.isPresentingAddSheet)
+        XCTAssertEqual(vm.items.first?.id, "keep-id")
+        XCTAssertEqual(vm.items.first?.name, "新名")
+    }
+
+    func testEditDateMoveKeepsSelectedDateAndShowsStatus() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(id: "m1", meal: .snack, name: "香蕉", cal: 90, protein: 1, carbs: 20, fat: 0)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        XCTAssertEqual(vm.selectedDateKey, dateKey)
+        vm.openEdit(item)
+        // Move to previous day
+        let cal = DiaryCalendar()
+        vm.draftDate = cal.dateByAdding(days: -1, to: vm.selectedDate)
+        let newKey = cal.dateKey(from: vm.draftDate)
+        await vm.saveFoodItem()
+
+        XCTAssertEqual(vm.selectedDateKey, dateKey, "must not auto-navigate")
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.dateKey, newKey)
+        XCTAssertTrue(vm.items.isEmpty, "item should leave current day")
+        XCTAssertEqual(vm.statusMessage, "已保存到 \(newKey)")
+        do {
+            let moved = try await foodRepo.fetchByDateKey(newKey)
+            XCTAssertEqual(moved.count, 1)
+            XCTAssertEqual(moved.first?.id, "m1")
+        } catch {
+            XCTFail("fetch after move failed: \(error)")
+        }
+    }
+
+    func testAddSavesFiberNotHardcodedZero() async {
+        let (vm, repo, _, _) = makeVM()
+        await vm.load()
+        vm.openAddSheet(defaultMeal: .lunch)
+        vm.draftName = "燕麦"
+        vm.draftCalories = "150"
+        vm.draftFiber = "5.5"
+        await vm.saveFoodItem()
+        XCTAssertEqual(repo.lastCreateWrite?.fiber, 5.5)
+        XCTAssertEqual(vm.items.first?.fiber, 5.5)
+    }
+
+    func testEditEmptyNameDoesNotCallRepository() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(id: "n1", meal: .lunch, name: "饭", cal: 200, protein: 4, carbs: 40, fat: 1)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        vm.draftName = "   "
+        await vm.saveFoodItem()
+        XCTAssertEqual(foodRepo.updateCallCount, 0)
+        XCTAssertTrue(vm.isPresentingAddSheet)
+        XCTAssertNotNil(vm.errorMessage)
+    }
+
+    func testEditNegativeNumberDoesNotCallRepository() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(id: "n2", meal: .lunch, name: "饭", cal: 200, protein: 4, carbs: 40, fat: 1)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        vm.draftCalories = "-10"
+        await vm.saveFoodItem()
+        XCTAssertEqual(foodRepo.updateCallCount, 0)
+        XCTAssertTrue(vm.isPresentingAddSheet)
+        XCTAssertTrue((vm.errorMessage ?? "").contains("热量") || (vm.errorMessage ?? "").contains("负"))
+    }
+
+    func testEditFailureKeepsSheetAndDraft() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(id: "f1", meal: .lunch, name: "汤", cal: 50, protein: 2, carbs: 5, fat: 1, fiber: 1)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        vm.draftName = "新汤"
+        foodRepo.forcedError = AppError.network(message: "down")
+        await vm.saveFoodItem()
+        XCTAssertTrue(vm.isPresentingAddSheet)
+        XCTAssertEqual(vm.draftName, "新汤")
+        XCTAssertEqual(vm.editingItemId, "f1")
+        XCTAssertNotNil(vm.errorMessage)
+        foodRepo.forcedError = nil
+        let still = foodRepo.itemsSnapshotForTest()
+        XCTAssertEqual(still.first?.name, "汤")
+    }
+
+    func testDeleteStillWorksAfterEditSupport() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(id: "d1", meal: .breakfast, name: "蛋", cal: 70, protein: 6, carbs: 1, fat: 5)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, _, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        await vm.deleteItem(item)
+        XCTAssertTrue(vm.items.isEmpty)
+    }
+
+    func testOpenAddAfterEditClearsEditState() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(
+            id: "x1",
+            meal: .lunch,
+            name: "旧",
+            cal: 100,
+            protein: 1,
+            carbs: 1,
+            fat: 1,
+            paths: ["a/b.jpg"],
+            fiber: 3,
+            sourceId: "old-src"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, _, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        XCTAssertTrue(vm.isEditingFood)
+        vm.cancelAdd()
+        vm.openAddSheet(defaultMeal: .snack)
+        XCTAssertFalse(vm.isEditingFood)
+        XCTAssertNil(vm.editingItemId)
+        XCTAssertTrue(vm.editingPhotoPaths.isEmpty)
+        XCTAssertNil(vm.editingSourceId)
+        XCTAssertEqual(vm.draftName, "")
+        XCTAssertEqual(vm.draftFiber, "")
+        XCTAssertEqual(vm.draftMeal, .snack)
+    }
+
+    func testMultiPhotoPathsPreservedAndNoUploadOnEdit() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let paths = [
+            "\(user.id)/2026-07-13/a.jpg",
+            "\(user.id)/2026-07-13/b.jpg"
+        ]
+        let item = FoodItem(
+            id: "multi",
+            dateKey: dateKey,
+            meal: .dinner,
+            name: "双图",
+            grams: 100,
+            calories: 300,
+            protein: 10,
+            carbs: 20,
+            fat: 5,
+            fiber: 1,
+            note: "",
+            photoPaths: paths,
+            photoURLs: [], // signed URLs missing must not wipe paths
+            createdAt: "2026-07-13T08:00:00Z",
+            sourceId: "src-multi"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, photoRepo, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        XCTAssertEqual(vm.editingPhotoPaths, paths)
+        vm.draftName = "双图改"
+        await vm.saveFoodItem()
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.photoPaths, paths)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.sourceId, "src-multi")
+        XCTAssertEqual(photoRepo.uploadCallCount, 0)
+        XCTAssertEqual(foodRepo.createCallCount, 0)
+        XCTAssertEqual(foodRepo.updateCallCount, 1)
+    }
+
+    func testEditNilSourceIdStaysNil() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(id: "nil-src", meal: .lunch, name: "无源", cal: 50, protein: 1, carbs: 5, fat: 0, sourceId: nil)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        XCTAssertNil(vm.editingSourceId)
+        vm.draftName = "无源改"
+        await vm.saveFoodItem()
+        XCTAssertNil(foodRepo.lastUpdateWrite?.sourceId)
+    }
+
+    func testInvalidNumberDoesNotCallRepository() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let item = food(id: "bad", meal: .lunch, name: "饭", cal: 200, protein: 4, carbs: 40, fat: 1)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        vm.draftProtein = "abc"
+        await vm.saveFoodItem()
+        XCTAssertEqual(foodRepo.updateCallCount, 0)
+        XCTAssertTrue((vm.errorMessage ?? "").contains("蛋白质"))
+    }
+
+    func testCommaDecimalAcceptedForFiber() async {
+        let (vm, repo, _, _) = makeVM()
+        await vm.load()
+        vm.openAddSheet()
+        vm.draftName = "豆类"
+        vm.draftFiber = "4,5"
+        await vm.saveFoodItem()
+        XCTAssertEqual(repo.lastCreateWrite?.fiber ?? -1, 4.5, accuracy: 0.0001)
+    }
+
+    func testAIAnalysisFiberSavedOnCreate() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setResult(
+            MealAnalysisResult(
+                dishName: "沙拉",
+                confidence: 0.8,
+                total: MealAnalysisNutrition(
+                    grams: 200, calories: 120, protein: 5, carbs: 15, fat: 4, fiber: 7
+                ),
+                items: [],
+                notes: "",
+                model: "mock"
+            )
+        )
+        let (vm, repo, _, _) = makeVM(analyze: analyze)
+        await vm.load()
+        vm.openAddSheet()
+        vm.draftNote = "一碗沙拉"
+        await vm.runAIAnalysis()
+        XCTAssertEqual(vm.draftFiber, "7")
+        await vm.saveFoodItem()
+        XCTAssertEqual(repo.lastCreateWrite?.fiber, 7)
+        XCTAssertEqual(repo.createCallCount, 1)
+    }
+
+    func testRapidOpenEditUsesLatestItem() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let a = food(id: "a", meal: .breakfast, name: "A", cal: 1, protein: 0, carbs: 0, fat: 0)
+        let b = food(id: "b", meal: .lunch, name: "B", cal: 2, protein: 0, carbs: 0, fat: 0)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [a, b], photoRepository: photo)
+        let (vm, _, _, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(a)
+        vm.openEdit(b)
+        XCTAssertEqual(vm.editingItemId, "b")
+        XCTAssertEqual(vm.draftName, "B")
+        XCTAssertEqual(vm.draftMeal, .lunch)
+    }
+
     private func food(
         id: String,
         meal: MealType,
@@ -467,7 +787,11 @@ final class TodayMealsViewModelTests: XCTestCase {
         carbs: Double,
         fat: Double,
         paths: [String] = [],
-        on date: String? = nil
+        on date: String? = nil,
+        grams: Double = 0,
+        fiber: Double = 0,
+        note: String = "",
+        sourceId: String? = nil
     ) -> FoodItem {
         let key = date ?? dateKey
         return FoodItem(
@@ -475,17 +799,17 @@ final class TodayMealsViewModelTests: XCTestCase {
             dateKey: key,
             meal: meal,
             name: name,
-            grams: 0,
+            grams: grams,
             calories: cal,
             protein: protein,
             carbs: carbs,
             fat: fat,
-            fiber: 0,
-            note: "",
+            fiber: fiber,
+            note: note,
             photoPaths: paths,
             photoURLs: paths.map { "https://example.invalid/signed/\($0)" },
             createdAt: "2026-07-13T08:00:00Z",
-            sourceId: nil
+            sourceId: sourceId
         )
     }
 

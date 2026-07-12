@@ -147,6 +147,7 @@ final class MockMealPhotoRepository: MealPhotoRepositoryProtocol, @unchecked Sen
     private(set) var lastUploadPath: String?
     private(set) var lastUploadContentType: String?
     private(set) var lastUploadByteCount: Int?
+    private(set) var uploadCallCount = 0
     private(set) var deletedPaths: [String] = []
     var forcedError: Error?
     /// Simulated object store for ownership checks.
@@ -184,6 +185,7 @@ final class MockMealPhotoRepository: MealPhotoRepositoryProtocol, @unchecked Sen
         lastUploadPath = path
         lastUploadContentType = contentType
         lastUploadByteCount = data.count
+        uploadCallCount += 1
         storedPaths.insert(path)
         return MealPhotoRef(
             path: path,

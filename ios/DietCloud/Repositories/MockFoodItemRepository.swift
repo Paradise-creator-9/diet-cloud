@@ -13,6 +13,11 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     /// Captured for tests asserting session ownership (never overwrites with external id).
     private(set) var lastWriteSessionUserId: String?
     private(set) var lastCreatePhotoPaths: [String] = []
+    private(set) var createCallCount = 0
+    private(set) var updateCallCount = 0
+    private(set) var lastCreateWrite: FoodItemWrite?
+    private(set) var lastUpdateId: String?
+    private(set) var lastUpdateWrite: FoodItemWrite?
     /// Last `fetchByDateKey` argument (stage 6 date navigation tests).
     private(set) var lastFetchDateKey: String?
     private(set) var fetchByDateKeyCallCount = 0
@@ -99,6 +104,8 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
             sourceId: payload.source_id
         )
         lastCreatePhotoPaths = payload.photo_urls
+        lastCreateWrite = write
+        createCallCount += 1
         withLock { items.append(item) }
         return item
     }
@@ -106,6 +113,9 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     func update(id: String, write: FoodItemWrite) async throws -> FoodItem {
         try throwIfForced()
         lastWriteSessionUserId = sessionUserId
+        lastUpdateId = id
+        lastUpdateWrite = write
+        updateCallCount += 1
         let payload = FoodItemMapper.insertPayload(from: write, generatedSourceId: write.sourceId)
         precondition(FoodItemMapper.assertPayloadHasNoUserId(payload))
         return try withLock {
@@ -126,7 +136,7 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
                 fiber: payload.fiber,
                 note: payload.note ?? "",
                 photoPaths: payload.photo_urls,
-                photoURLs: payload.photo_urls,
+                photoURLs: previous.photoURLs.isEmpty ? payload.photo_urls : previous.photoURLs,
                 createdAt: previous.createdAt,
                 sourceId: payload.source_id ?? previous.sourceId
             )

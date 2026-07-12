@@ -10,7 +10,7 @@ final class DependencyContainerTests: XCTestCase {
             apiBaseURL: URL(string: "https://diet-cloud.vercel.app")!,
             storageBucket: "meal-photos"
         )
-        let container = AppDependencyContainer(config: config)
+        let container = AppDependencyContainer(config: config, credentialStore: InMemoryCredentialStore())
 
         XCTAssertEqual(
             container.analyzeAPI.analyzeMealURL().absoluteString,
@@ -21,6 +21,7 @@ final class DependencyContainerTests: XCTestCase {
             "https://diet-cloud.vercel.app/api/analyze-body"
         )
         XCTAssertTrue(container.supabase.isConfigured)
+        XCTAssertNotNil(container.supabase.client)
         XCTAssertFalse(container.diaryCalendar.dateKey().isEmpty)
     }
 
@@ -31,7 +32,8 @@ final class DependencyContainerTests: XCTestCase {
             apiBaseURL: URL(string: "https://diet-cloud.vercel.app")!,
             storageBucket: "meal-photos"
         )
-        let container = AppDependencyContainer(config: config)
+        let container = AppDependencyContainer(config: config, credentialStore: InMemoryCredentialStore())
         XCTAssertFalse(container.supabase.isConfigured)
+        XCTAssertNil(container.supabase.client)
     }
 }

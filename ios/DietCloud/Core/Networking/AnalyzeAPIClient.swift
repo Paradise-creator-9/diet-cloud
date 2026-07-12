@@ -1,7 +1,7 @@
 import Foundation
 
 /// Placeholder client for Phase 4 Gemini calls via Vercel.
-/// Phase 0: does not perform network I/O.
+/// Phase 0/1: does not perform network I/O.
 ///
 /// Contract (for later):
 /// - POST `{API_BASE}/api/analyze-meal` or `/api/analyze-body`
@@ -13,17 +13,21 @@ protocol AnalyzeAPIClienting: Sendable {
 }
 
 struct AnalyzeAPIClient: AnalyzeAPIClienting {
-    private let provider: SupabaseClientProviding
+    private let apiBaseURL: URL
 
     init(provider: SupabaseClientProviding) {
-        self.provider = provider
+        self.apiBaseURL = provider.config.apiBaseURL
+    }
+
+    init(apiBaseURL: URL) {
+        self.apiBaseURL = apiBaseURL
     }
 
     func analyzeMealURL() -> URL {
-        provider.config.apiBaseURL.appending(path: "api/analyze-meal")
+        apiBaseURL.appending(path: "api/analyze-meal")
     }
 
     func analyzeBodyURL() -> URL {
-        provider.config.apiBaseURL.appending(path: "api/analyze-body")
+        apiBaseURL.appending(path: "api/analyze-body")
     }
 }

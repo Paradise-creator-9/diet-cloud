@@ -5,16 +5,23 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     private let lock = NSLock()
     private var items: [FoodItem] = []
     private let sessionUserId: String
+    private let photoRepository: MockMealPhotoRepository?
 
     /// If set, create/update/delete throw this error.
     var forcedError: Error?
 
     /// Captured for tests asserting session ownership (never overwrites with external id).
     private(set) var lastWriteSessionUserId: String?
+    private(set) var lastCreatePhotoPaths: [String] = []
 
-    init(sessionUserId: String = "11111111-1111-1111-1111-111111111111", seed: [FoodItem] = []) {
+    init(
+        sessionUserId: String = "11111111-1111-1111-1111-111111111111",
+        seed: [FoodItem] = [],
+        photoRepository: MockMealPhotoRepository? = nil
+    ) {
         self.sessionUserId = sessionUserId
         self.items = seed
+        self.photoRepository = photoRepository
     }
 
     func fetchAll() async throws -> [FoodItem] {
@@ -65,6 +72,7 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
             createdAt: ISO8601DateFormatter().string(from: Date()),
             sourceId: payload.source_id
         )
+        lastCreatePhotoPaths = payload.photo_urls
         withLock { items.append(item) }
         return item
     }
@@ -104,7 +112,22 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
     func delete(id: String) async throws {
         try throwIfForced()
         lastWriteSessionUserId = sessionUserId
-        withLock { items.removeAll { $0.id == id } }
+        let removedPaths: [String] = withLock {
+            let paths = items.first(where: { $0.id == id })?.photoPaths ?? []
+            items.removeAll { $0.id == id }
+            return paths
+        }
+        if let photoRepository, !removedPaths.isEmpty {
+            // Still referenced?
+            let stillUsed = withLock {
+                items.contains { item in
+                    item.photoPaths.contains { removedPaths.contains($0) }
+                }
+            }
+            if !stillUsed {
+                try await photoRepository.delete(paths: removedPaths)
+            }
+        }
     }
 
     func nutritionSummary(for items: [FoodItem]) -> DailyNutritionSummary {

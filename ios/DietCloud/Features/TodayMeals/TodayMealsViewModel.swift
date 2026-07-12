@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import UIKit
 
 enum TodayMealsLoadState: Equatable, Sendable {
     case loading
@@ -27,10 +28,16 @@ final class TodayMealsViewModel {
     var draftNote = ""
     var isPresentingAddSheet = false
 
+    /// Optional JPEG-ready image chosen in the add sheet (not a secret).
+    private(set) var draftPhotoData: Data?
+    private(set) var draftPhotoPreview: UIImage?
+    private(set) var isPreparingPhoto = false
+
     let dateKey: String
     let user: AuthUser
 
     private let foodRepository: FoodItemRepositoryProtocol
+    private let photoRepository: MealPhotoRepositoryProtocol
     private let diaryCalendar: DiaryCalendar
 
     var summary: DailyNutritionSummary {
@@ -48,11 +55,13 @@ final class TodayMealsViewModel {
     init(
         user: AuthUser,
         foodRepository: FoodItemRepositoryProtocol,
+        photoRepository: MealPhotoRepositoryProtocol,
         diaryCalendar: DiaryCalendar = DiaryCalendar(),
         dateKey: String? = nil
     ) {
         self.user = user
         self.foodRepository = foodRepository
+        self.photoRepository = photoRepository
         self.diaryCalendar = diaryCalendar
         self.dateKey = dateKey ?? diaryCalendar.dateKey()
     }
@@ -81,13 +90,39 @@ final class TodayMealsViewModel {
         draftFat = ""
         draftGrams = ""
         draftNote = ""
+        clearDraftPhoto()
         errorMessage = nil
         isPresentingAddSheet = true
     }
 
     func cancelAdd() {
         isPresentingAddSheet = false
+        clearDraftPhoto()
         errorMessage = nil
+    }
+
+    func clearDraftPhoto() {
+        draftPhotoData = nil
+        draftPhotoPreview = nil
+    }
+
+    func reportUserFacingError(_ message: String) {
+        errorMessage = message
+    }
+
+    /// Compresses picker data to JPEG before upload (HEIC → JPEG).
+    func setDraftPhoto(rawData: Data) async {
+        isPreparingPhoto = true
+        defer { isPreparingPhoto = false }
+        do {
+            let compressed = try ImageCompressor.compressToJPEG(data: rawData, preferredFileName: "meal.jpg")
+            draftPhotoData = compressed.data
+            draftPhotoPreview = UIImage(data: compressed.data)
+            errorMessage = nil
+        } catch {
+            clearDraftPhoto()
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
     }
 
     func saveNewItem() async {
@@ -100,22 +135,35 @@ final class TodayMealsViewModel {
         isMutating = true
         defer { isMutating = false }
 
-        let write = FoodItemWrite(
-            dateKey: dateKey,
-            meal: draftMeal,
-            name: name,
-            grams: parseNumber(draftGrams),
-            calories: parseNumber(draftCalories),
-            protein: parseNumber(draftProtein),
-            carbs: parseNumber(draftCarbs),
-            fat: parseNumber(draftFat),
-            fiber: 0,
-            note: draftNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        )
-
         do {
+            var photoPaths: [String] = []
+            if let photoData = draftPhotoData {
+                let uploaded = try await photoRepository.upload(
+                    dateKey: dateKey,
+                    fileName: "meal.jpg",
+                    data: photoData,
+                    contentType: ImageCompressor.allowedContentType
+                )
+                photoPaths = [uploaded.path]
+            }
+
+            let write = FoodItemWrite(
+                dateKey: dateKey,
+                meal: draftMeal,
+                name: name,
+                grams: parseNumber(draftGrams),
+                calories: parseNumber(draftCalories),
+                protein: parseNumber(draftProtein),
+                carbs: parseNumber(draftCarbs),
+                fat: parseNumber(draftFat),
+                fiber: 0,
+                note: draftNote.trimmingCharacters(in: .whitespacesAndNewlines),
+                photoPaths: photoPaths
+            )
+
             _ = try await foodRepository.create(write)
             isPresentingAddSheet = false
+            clearDraftPhoto()
             errorMessage = nil
             await load()
         } catch {

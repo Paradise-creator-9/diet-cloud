@@ -66,6 +66,7 @@ final class AppDependencyContainer: @unchecked Sendable {
         TodayMealsViewModel(
             user: user,
             foodRepository: foodItemRepository,
+            photoRepository: mealPhotoRepository,
             diaryCalendar: diaryCalendar
         )
     }

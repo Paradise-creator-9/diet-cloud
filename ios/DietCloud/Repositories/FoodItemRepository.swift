@@ -128,15 +128,54 @@ final class FoodItemRepository: FoodItemRepositoryProtocol, @unchecked Sendable 
 
     func delete(id: String) async throws {
         let client = try requireClient()
-        _ = try await identity.requireUserId()
+        let userId = try await identity.requireUserId()
         do {
+            // Capture photo paths before delete (Web: deleteFoodItem + removeUnreferencedPhotoPaths).
+            let existing: [FoodItemRow] = try await client
+                .from("food_items")
+                .select()
+                .eq("id", value: id)
+                .limit(1)
+                .execute()
+                .value
+            let paths = existing.first?.photo_urls ?? []
+
             try await client
                 .from("food_items")
                 .delete()
                 .eq("id", value: id)
                 .execute()
+
+            if let photoRepository, !paths.isEmpty {
+                try await removeUnreferencedPhotos(userId: userId, paths: paths, photoRepository: photoRepository, client: client)
+            }
         } catch {
             throw DataErrorMapping.map(error)
+        }
+    }
+
+    /// Best-effort orphan cleanup — only deletes paths no longer referenced by any food_items row.
+    private func removeUnreferencedPhotos(
+        userId: String,
+        paths: [String],
+        photoRepository: MealPhotoRepositoryProtocol,
+        client: SupabaseClient
+    ) async throws {
+        var removable: [String] = []
+        for path in paths where MealPhotoPath.isOwned(path: path, byUserId: userId) {
+            let refs: [FoodItemRow] = try await client
+                .from("food_items")
+                .select("id")
+                .contains("photo_urls", value: [path])
+                .limit(1)
+                .execute()
+                .value
+            if refs.isEmpty {
+                removable.append(path)
+            }
+        }
+        if !removable.isEmpty {
+            try await photoRepository.delete(paths: removable)
         }
     }
 

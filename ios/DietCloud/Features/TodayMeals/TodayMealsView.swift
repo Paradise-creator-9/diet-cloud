@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 struct TodayMealsView: View {
@@ -82,7 +83,7 @@ struct TodayMealsView: View {
                         ContentUnavailableView(
                             "还没有记录",
                             systemImage: "fork.knife",
-                            description: Text("点击右上角 + 手动添加今日食物。")
+                            description: Text("点击右上角 + 手动添加今日食物，可附带照片。")
                         )
                         .frame(maxWidth: .infinity)
                         .listRowBackground(Color.clear)
@@ -217,39 +218,77 @@ struct FoodItemRowView: View {
     let item: FoodItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(item.name)
-                    .font(.body.weight(.medium))
-                Spacer()
-                Text("\(format(item.calories)) kcal")
-                    .font(.subheadline)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
-            HStack(spacing: 12) {
-                if item.protein > 0 {
-                    Text("P \(format(item.protein))g")
+        HStack(alignment: .top, spacing: 12) {
+            thumbnail
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(item.name)
+                        .font(.body.weight(.medium))
+                    Spacer()
+                    Text("\(format(item.calories)) kcal")
+                        .font(.subheadline)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
                 }
-                if item.carbs > 0 {
-                    Text("C \(format(item.carbs))g")
+                HStack(spacing: 12) {
+                    if item.protein > 0 {
+                        Text("P \(format(item.protein))g")
+                    }
+                    if item.carbs > 0 {
+                        Text("C \(format(item.carbs))g")
+                    }
+                    if item.fat > 0 {
+                        Text("F \(format(item.fat))g")
+                    }
+                    if item.grams > 0 {
+                        Text("\(format(item.grams))g")
+                    }
                 }
-                if item.fat > 0 {
-                    Text("F \(format(item.fat))g")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                if !item.note.isEmpty {
+                    Text(item.note)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                if item.grams > 0 {
-                    Text("\(format(item.grams))g")
-                }
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            if !item.note.isEmpty {
-                Text(item.note)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 2)
+    }
+
+    @ViewBuilder
+    private var thumbnail: some View {
+        let urlString = item.photoURLs.first ?? item.photoPaths.first
+        if let urlString, let url = URL(string: urlString), url.scheme?.hasPrefix("http") == true {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .failure:
+                    photoPlaceholder
+                case .empty:
+                    ProgressView()
+                @unknown default:
+                    photoPlaceholder
+                }
+            }
+            .frame(width: 56, height: 56)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        } else if !item.photoPaths.isEmpty {
+            photoPlaceholder
+        }
+    }
+
+    private var photoPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color(.secondarySystemFill))
+            .frame(width: 56, height: 56)
+            .overlay {
+                Image(systemName: "photo")
+                    .foregroundStyle(.secondary)
+            }
     }
 
     private func format(_ value: Double) -> String {
@@ -260,6 +299,7 @@ struct FoodItemRowView: View {
 struct AddFoodItemView: View {
     @Bindable var viewModel: TodayMealsViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var pickerItem: PhotosPickerItem?
 
     var body: some View {
         NavigationStack {
@@ -273,6 +313,46 @@ struct AddFoodItemView: View {
                     }
                     TextField("热量 kcal", text: $viewModel.draftCalories)
                         .keyboardType(.decimalPad)
+                }
+
+                Section("照片（可选）") {
+                    PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
+                        Label(
+                            viewModel.draftPhotoPreview == nil ? "从相册选择" : "重新选择",
+                            systemImage: "photo.on.rectangle"
+                        )
+                    }
+                    .onChange(of: pickerItem) { _, newItem in
+                        guard let newItem else { return }
+                        Task {
+                            if let data = try? await newItem.loadTransferable(type: Data.self) {
+                                await viewModel.setDraftPhoto(rawData: data)
+                            } else {
+                                viewModel.reportUserFacingError("无法读取所选图片。")
+                            }
+                        }
+                    }
+
+                    if viewModel.isPreparingPhoto {
+                        ProgressView("正在处理图片…")
+                    }
+
+                    if let preview = viewModel.draftPhotoPreview {
+                        Image(uiImage: preview)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        Button("移除照片", role: .destructive) {
+                            viewModel.clearDraftPhoto()
+                            pickerItem = nil
+                        }
+                    }
+
+                    Text("照片将上传到私有 meal-photos，路径为当前用户目录；列表通过 signed URL 显示。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("营养（可选）") {
@@ -316,7 +396,10 @@ struct AddFoodItemView: View {
                                 }
                             }
                         }
-                        .disabled(viewModel.draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(
+                            viewModel.draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                || viewModel.isPreparingPhoto
+                        )
                     }
                 }
             }

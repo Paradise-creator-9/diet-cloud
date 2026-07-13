@@ -69,6 +69,7 @@
 		9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */; };
 		9C2F85F496D4176BCD66DB4A /* FavoriteFoodsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5CB976ED8AB025708228C0 /* FavoriteFoodsStore.swift */; };
 		9C54ED7B032AE8F90AA0D7BC /* DiaryCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3762E293F50FF63036987FC7 /* DiaryCalendar.swift */; };
+		9D3D5195745F61DBF94A4DE9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7F0B6E7D55A283D06C2B2494 /* Assets.xcassets */; };
 		9DAF3617C3865BF61A537B2B /* TodayMealsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4A282D6F77B87B1EAFC1DF /* TodayMealsViewModelTests.swift */; };
 		9FAA043BC6E4A3DC73DC1616 /* DailyNutritionSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F589EC305863550A8C98F02 /* DailyNutritionSummary.swift */; };
 		9FE50854A3157105E888E6BF /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B833007E61FB03A31014E59C /* Supabase */; };
@@ -89,6 +90,7 @@
 		C4D49991FDD8AF71CED06F5E /* FoodItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91B241AE9A00994F0126D6AD /* FoodItemRepository.swift */; };
 		C7D76D5A962026923E98EDF1 /* TrendModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43250488AAAFEBE9920B3C43 /* TrendModels.swift */; };
 		C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */; };
+		CBC083967166C9372218130D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C6C26824CCDD0227F6188CCD /* PrivacyInfo.xcprivacy */; };
 		CD22D85F2169E4E21B1659C0 /* MealAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B61C146B72BDB5D2CFA1F3F /* MealAnalysis.swift */; };
 		D5BAD5D575A28918A63E2BE9 /* LaunchUISmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6586D0488B545838669A3B /* LaunchUISmokeTests.swift */; };
 		D62E64746D379E3F1726ADBF /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51578621B12841023EA296BA /* AuthViewModelTests.swift */; };
@@ -169,6 +171,7 @@
 		7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendarTests.swift; sourceTree = "<group>"; };
 		7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		7E6E3DDC9952ECB8DC603770 /* TrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendsView.swift; sourceTree = "<group>"; };
+		7F0B6E7D55A283D06C2B2494 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		86A46E5BFA7DE7E05E1FF0AC /* SupabaseAuthLocalStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthLocalStorage.swift; sourceTree = "<group>"; };
 		8799D54AA937EE3C2C96F88F /* NotificationScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduling.swift; sourceTree = "<group>"; };
 		8BFE81F892F8613C080BC00A /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
@@ -198,6 +201,7 @@
 		B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainerTests.swift; sourceTree = "<group>"; };
 		B9CC2DDC9FD796F57E37A75C /* InMemoryCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemoryCredentialStore.swift; sourceTree = "<group>"; };
 		BAC2ACFD522C4351DF8A181A /* ReminderScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderScheduleTests.swift; sourceTree = "<group>"; };
+		C6C26824CCDD0227F6188CCD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencyContainer.swift; sourceTree = "<group>"; };
 		C86AFB4E4A3BE2BB8A444A3B /* TodayMealsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMealsView.swift; sourceTree = "<group>"; };
 		CF7D1A42E3826CAA26E4B753 /* MockFoodItemRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFoodItemRepository.swift; sourceTree = "<group>"; };
@@ -444,8 +448,10 @@
 		B00E8991F08684979A782218 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				7F0B6E7D55A283D06C2B2494 /* Assets.xcassets */,
 				53AB94BF6F13B0B022C83B2D /* DietCloud.entitlements */,
 				9DF8F0E9A872AA0A590AF709 /* Info.plist */,
+				C6C26824CCDD0227F6188CCD /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -577,6 +583,7 @@
 			buildConfigurationList = 66B668151FBE71DB62E4E32E /* Build configuration list for PBXNativeTarget "DietCloud" */;
 			buildPhases = (
 				6602C3980D9A40205BB98AEB /* Sources */,
+				D0F691B680E55042D3EE43C3 /* Resources */,
 				4D4FCCB6D4CE31C005672E86 /* Frameworks */,
 			);
 			buildRules = (
@@ -642,6 +649,18 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D0F691B680E55042D3EE43C3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9D3D5195745F61DBF94A4DE9 /* Assets.xcassets in Resources */,
+				CBC083967166C9372218130D /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		6602C3980D9A40205BB98AEB /* Sources */ = {

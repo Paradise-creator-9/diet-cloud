@@ -1449,6 +1449,7 @@ struct AddFoodItemView: View {
     @Bindable var viewModel: TodayMealsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var pickerItem: PhotosPickerItem?
+    @State private var isPresentingCamera = false
 
     var body: some View {
         NavigationStack {
@@ -1501,48 +1502,58 @@ struct AddFoodItemView: View {
                     }
 
                     Section("照片（可选）") {
-                        PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
-                            Label(
-                                viewModel.draftPhotoPreview == nil ? "从相册选择" : "重新选择",
-                                systemImage: "photo.on.rectangle"
-                            )
-                        }
-                        .onChange(of: pickerItem) { _, newItem in
-                            guard let newItem else { return }
-                            Task {
-                                if let data = try? await newItem.loadTransferable(type: Data.self) {
-                                    await viewModel.setDraftPhoto(rawData: data)
-                                } else {
-                                    viewModel.reportUserFacingError("无法读取所选图片。")
-                                }
+                        mealPhotoControls
+                        Text("照片将上传到私有 meal-photos，路径为当前用户目录；列表通过 signed URL 显示。AI 分析使用本地压缩图，不发送 signed URL。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Section("照片") {
+                        if viewModel.showsOriginalEditPhoto {
+                            editModePhotoThumbnail
+                            if viewModel.editingPhotoPaths.count > 1 {
+                                Text("当前记录有 \(viewModel.editingPhotoPaths.count) 张图。更换照片将替换为单张新图。")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
                             }
-                        }
-
-                        if viewModel.isPreparingPhoto {
-                            ProgressView("正在处理图片…")
-                        }
-
-                        if let preview = viewModel.draftPhotoPreview {
+                        } else if let preview = viewModel.draftPhotoPreview {
                             Image(uiImage: preview)
                                 .resizable()
                                 .scaledToFill()
                                 .frame(height: 160)
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                            Button("移除照片", role: .destructive) {
-                                viewModel.clearDraftPhoto()
-                                pickerItem = nil
-                            }
+                            Text("将保存为单张新图，替换原有照片。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else if viewModel.editPhotoRemoved {
+                            Text("已标记删除照片，保存后生效。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("无照片")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
 
-                        Text("照片将上传到私有 meal-photos，路径为当前用户目录；列表通过 signed URL 显示。AI 分析使用本地压缩图，不发送 signed URL。")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                } else if !viewModel.editingPhotoPaths.isEmpty {
-                    Section("照片") {
-                        editModePhotoThumbnail
-                        Text("编辑时保留原照片，暂不支持更换或删除。")
+                        mealPhotoControls
+
+                        if viewModel.showsOriginalEditPhoto || viewModel.draftPhotoPreview != nil {
+                            Button("删除照片", role: .destructive) {
+                                viewModel.markEditPhotoRemoved()
+                                pickerItem = nil
+                            }
+                            .disabled(viewModel.isMutating || viewModel.isPreparingPhoto)
+                        }
+                        if viewModel.editPhotoRemoved || viewModel.draftPhotoPreview != nil {
+                            Button("恢复原照片") {
+                                viewModel.clearPendingEditPhotoReplace()
+                                pickerItem = nil
+                            }
+                            .disabled(viewModel.isMutating)
+                        }
+
+                        Text("编辑时不支持 AI 重分析。未改动则保留原图路径。")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -1606,6 +1617,72 @@ struct AddFoodItemView: View {
                 }
             }
             .interactiveDismissDisabled(viewModel.isAnalyzing || viewModel.isMutating)
+            .fullScreenCover(isPresented: $isPresentingCamera) {
+                CameraImagePicker(
+                    onImage: { data in
+                        isPresentingCamera = false
+                        Task { await viewModel.setDraftPhoto(rawData: data) }
+                    },
+                    onCancel: {
+                        isPresentingCamera = false
+                    },
+                    onUnavailable: {
+                        isPresentingCamera = false
+                        viewModel.reportUserFacingError("此设备无法使用相机，请从相册选择照片。")
+                    }
+                )
+                .ignoresSafeArea()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var mealPhotoControls: some View {
+        PhotosPicker(selection: $pickerItem, matching: .images, photoLibrary: .shared()) {
+            Label(
+                viewModel.draftPhotoPreview == nil ? "从相册选择" : "从相册重新选择",
+                systemImage: "photo.on.rectangle"
+            )
+        }
+        .disabled(viewModel.isMutating || viewModel.isPreparingPhoto || viewModel.isAnalyzing)
+        .onChange(of: pickerItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self) {
+                    await viewModel.setDraftPhoto(rawData: data)
+                } else {
+                    viewModel.reportUserFacingError("无法读取所选图片。")
+                }
+                pickerItem = nil
+            }
+        }
+
+        Button {
+            if CameraImagePicker.isCameraAvailable {
+                isPresentingCamera = true
+            } else {
+                viewModel.reportUserFacingError("此设备无法使用相机，请从相册选择照片。")
+            }
+        } label: {
+            Label("拍照", systemImage: "camera")
+        }
+        .disabled(viewModel.isMutating || viewModel.isPreparingPhoto || viewModel.isAnalyzing)
+
+        if viewModel.isPreparingPhoto {
+            ProgressView("正在处理图片…")
+        }
+
+        if !viewModel.isEditingFood, let preview = viewModel.draftPhotoPreview {
+            Image(uiImage: preview)
+                .resizable()
+                .scaledToFill()
+                .frame(height: 160)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            Button("移除照片", role: .destructive) {
+                viewModel.clearDraftPhoto()
+                pickerItem = nil
+            }
         }
     }
 

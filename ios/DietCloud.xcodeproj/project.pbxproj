@@ -46,8 +46,10 @@
 		6470F85EFB7179883AC6ACB6 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BFE81F892F8613C080BC00A /* AuthModels.swift */; };
 		690FBF7CF4FF0EB84F804862 /* DiaryCalendarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D1AADC7A111B26C422A64EE /* DiaryCalendarTests.swift */; };
 		6C5D1C99091E5C7ABCB6C324 /* BodyMetricDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED97D6293611E5D896A4BE52 /* BodyMetricDTO.swift */; };
+		6E8C58692E2B8628FADFD31E /* AppNotificationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D51E8B79E46E737DB9FE324 /* AppNotificationDelegate.swift */; };
 		73F934AE61B1678461F07431 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA8BFFEC1D0C89996A32400 /* AppConfig.swift */; };
 		745B3B2CB893EEC11FA099A8 /* MealType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565E62F2F164A98BB038B28A /* MealType.swift */; };
+		7687CBB04B49E31B731731FD /* CameraImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 975EE390152DB3B866A19888 /* CameraImagePicker.swift */; };
 		77D14F03BCC117246AC20E40 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 996F299CD3F15723D3368BBF /* RootView.swift */; };
 		7D9AD8D6F09212201E5AFF02 /* HealthKitImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B358849434F00743448024F /* HealthKitImportTests.swift */; };
 		7F6FF1E67B003D9B9508314E /* SupabaseAuthLocalStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A46E5BFA7DE7E05E1FF0AC /* SupabaseAuthLocalStorage.swift */; };
@@ -62,6 +64,7 @@
 		8D5D90C3AD76AF42D3A99DAF /* FavoriteFoodsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E72A2394BC7D49118296976 /* FavoriteFoodsStoreTests.swift */; };
 		970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */; };
 		9779D661871103D1EA4B9C5A /* BodyAnalysisMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A525B390FD7CCC05C5DFBC9 /* BodyAnalysisMapperTests.swift */; };
+		99736810F24900F7CF5ADE15 /* AppRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = B30DD9ED4EFB862F3F7B7723 /* AppRoute.swift */; };
 		9BB251DA8901631C9E532FCC /* TodayMealsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFAB48C59D565787CD10749D /* TodayMealsViewModel.swift */; };
 		9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */; };
 		9C2F85F496D4176BCD66DB4A /* FavoriteFoodsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5CB976ED8AB025708228C0 /* FavoriteFoodsStore.swift */; };
@@ -80,6 +83,7 @@
 		B7C6783097E209890ADBAE6C /* FoodItemRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E3960AA4F8B4D4F03E1727 /* FoodItemRepositoryTests.swift */; };
 		BA22C21DECBA63074F1D8813 /* ReminderScheduleApplier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E7189F47163AD4A2CB049C /* ReminderScheduleApplier.swift */; };
 		BB05928C4374A72AF3A9673A /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9B4BA6121717C9EB4D775B /* SettingsViewModel.swift */; };
+		C06457D95B4F4AC3B0C08532 /* AppRouteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8555595AF51F2FD9FEF716 /* AppRouteTests.swift */; };
 		C186F6B288162887BDE9C55B /* AnalyzeAPIClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1389E782AE726656538F091B /* AnalyzeAPIClientTests.swift */; };
 		C1CA40D9C597D2BA2CF70DEA /* InMemoryCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9CC2DDC9FD796F57E37A75C /* InMemoryCredentialStore.swift */; };
 		C4D49991FDD8AF71CED06F5E /* FoodItemRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91B241AE9A00994F0126D6AD /* FoodItemRepository.swift */; };
@@ -155,6 +159,7 @@
 		5E6061E530271707F3319FB6 /* PhotoLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryView.swift; sourceTree = "<group>"; };
 		66C3B5758B800F25C9F13A1D /* DietCloudTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DietCloudTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		68EB4D091D8EA9C16B9F7982 /* DietCloud.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = DietCloud.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E8555595AF51F2FD9FEF716 /* AppRouteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouteTests.swift; sourceTree = "<group>"; };
 		7058D16434745DA311001977 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		70B4D896438CDEA91930486C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		72B9FB0CE62D1B9E68E18884 /* AuthRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthRepository.swift; sourceTree = "<group>"; };
@@ -173,8 +178,10 @@
 		924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthUserTests.swift; sourceTree = "<group>"; };
 		94BB9B55B44E0A75DCF26F75 /* SecureCredentialStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureCredentialStoring.swift; sourceTree = "<group>"; };
 		960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStoreTests.swift; sourceTree = "<group>"; };
+		975EE390152DB3B866A19888 /* CameraImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraImagePicker.swift; sourceTree = "<group>"; };
 		98C4B2FB2471164D47F87342 /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
 		996F299CD3F15723D3368BBF /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		9D51E8B79E46E737DB9FE324 /* AppNotificationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotificationDelegate.swift; sourceTree = "<group>"; };
 		9DF8F0E9A872AA0A590AF709 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		9ED1861292877B1E816DA9C6 /* TrendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendsViewModel.swift; sourceTree = "<group>"; };
 		A566AFB4C25A3AD509B6BC99 /* PhotoLibraryViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryViewModelTests.swift; sourceTree = "<group>"; };
@@ -185,6 +192,7 @@
 		AB5DCE128BB6EB37820042E8 /* MealPhoto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhoto.swift; sourceTree = "<group>"; };
 		AFAB48C59D565787CD10749D /* TodayMealsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayMealsViewModel.swift; sourceTree = "<group>"; };
 		B0F13CBCD5826DBC6312D10A /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
+		B30DD9ED4EFB862F3F7B7723 /* AppRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRoute.swift; sourceTree = "<group>"; };
 		B40244B35869BA678D5D190C /* HTTPSessioning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPSessioning.swift; sourceTree = "<group>"; };
 		B45F44E696C2591A96BD3A88 /* .gitkeep */ = {isa = PBXFileReference; path = .gitkeep; sourceTree = "<group>"; };
 		B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyContainerTests.swift; sourceTree = "<group>"; };
@@ -270,6 +278,7 @@
 			isa = PBXGroup;
 			children = (
 				C6EB8B3454787B1D59656121 /* AppDependencyContainer.swift */,
+				9D51E8B79E46E737DB9FE324 /* AppNotificationDelegate.swift */,
 				2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */,
 				996F299CD3F15723D3368BBF /* RootView.swift */,
 			);
@@ -413,6 +422,7 @@
 		AACFF66B59486ECCA925D96E /* TodayMeals */ = {
 			isa = PBXGroup;
 			children = (
+				975EE390152DB3B866A19888 /* CameraImagePicker.swift */,
 				C86AFB4E4A3BE2BB8A444A3B /* TodayMealsView.swift */,
 				AFAB48C59D565787CD10749D /* TodayMealsViewModel.swift */,
 			);
@@ -422,6 +432,7 @@
 		AC1B163911C748DBF0CD9569 /* Reminders */ = {
 			isa = PBXGroup;
 			children = (
+				B30DD9ED4EFB862F3F7B7723 /* AppRoute.swift */,
 				8799D54AA937EE3C2C96F88F /* NotificationScheduling.swift */,
 				545DC1F13F264D10C31EEE40 /* ReminderModels.swift */,
 				24E7189F47163AD4A2CB049C /* ReminderScheduleApplier.swift */,
@@ -458,6 +469,7 @@
 				1389E782AE726656538F091B /* AnalyzeAPIClientTests.swift */,
 				98C4B2FB2471164D47F87342 /* AppConfigTests.swift */,
 				F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */,
+				6E8555595AF51F2FD9FEF716 /* AppRouteTests.swift */,
 				DEA5E92D46CE16038385089F /* AuthErrorSanitizerTests.swift */,
 				287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */,
 				924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */,
@@ -645,6 +657,8 @@
 				73F934AE61B1678461F07431 /* AppConfig.swift in Sources */,
 				C87B2E9E20D59CED5109B7C2 /* AppDependencyContainer.swift in Sources */,
 				8AEBE92718314B67F9F38643 /* AppError.swift in Sources */,
+				6E8C58692E2B8628FADFD31E /* AppNotificationDelegate.swift in Sources */,
+				99736810F24900F7CF5ADE15 /* AppRoute.swift in Sources */,
 				31B9E184DD0210A9FD313309 /* AuthErrorSanitizer.swift in Sources */,
 				6470F85EFB7179883AC6ACB6 /* AuthModels.swift in Sources */,
 				E3FCA953FE00662D53869C50 /* AuthRepository.swift in Sources */,
@@ -655,6 +669,7 @@
 				E46903CF2B296FFC093B62E4 /* BodyMetric.swift in Sources */,
 				6C5D1C99091E5C7ABCB6C324 /* BodyMetricDTO.swift in Sources */,
 				63915502CC2DFF2A223FAF77 /* BodyMetricsRepository.swift in Sources */,
+				7687CBB04B49E31B731731FD /* CameraImagePicker.swift in Sources */,
 				9FAA043BC6E4A3DC73DC1616 /* DailyNutritionSummary.swift in Sources */,
 				20F041A712CE71CAE4CEB7F4 /* DataErrorMapping.swift in Sources */,
 				9C54ED7B032AE8F90AA0D7BC /* DiaryCalendar.swift in Sources */,
@@ -710,6 +725,7 @@
 				C186F6B288162887BDE9C55B /* AnalyzeAPIClientTests.swift in Sources */,
 				4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */,
 				0074825B99DE31F851A4E9B8 /* AppErrorTests.swift in Sources */,
+				C06457D95B4F4AC3B0C08532 /* AppRouteTests.swift in Sources */,
 				FFD9B056BBACC96F4B14B283 /* AuthErrorSanitizerTests.swift in Sources */,
 				9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */,
 				970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */,

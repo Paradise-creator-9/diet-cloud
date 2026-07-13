@@ -69,6 +69,13 @@ struct SignedInTodayMealsHost: View {
             if todayViewModel == nil {
                 todayViewModel = makeViewModel(user)
             }
+            // Consume reminder deep link after login / host creation (once).
+            await todayViewModel?.consumePendingRouteIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: PendingDeepLinkStore.didSetNotification)) { _ in
+            Task {
+                await todayViewModel?.consumePendingRouteIfNeeded()
+            }
         }
     }
 }

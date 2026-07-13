@@ -61,6 +61,8 @@ final class SystemNotificationScheduler: NotificationScheduling, @unchecked Send
             content.title = descriptor.title
             content.body = descriptor.body
             content.sound = .default
+            // Deep-link payload for Stage 17 (no secrets / no health metrics).
+            content.userInfo = ReminderUserInfo.make(kind: descriptor.kind)
 
             var comps = DateComponents()
             comps.hour = descriptor.hour

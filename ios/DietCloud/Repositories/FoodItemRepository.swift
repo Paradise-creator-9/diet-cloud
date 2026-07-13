@@ -129,10 +129,20 @@ final class FoodItemRepository: FoodItemRepositoryProtocol, @unchecked Sendable 
 
     func update(id: String, write: FoodItemWrite) async throws -> FoodItem {
         let client = try requireClient()
-        _ = try await identity.requireUserId()
+        let userId = try await identity.requireUserId()
         let payload = FoodItemMapper.insertPayload(from: write, generatedSourceId: write.sourceId)
         precondition(FoodItemMapper.assertPayloadHasNoUserId(payload))
         do {
+            // Capture previous photo paths so we can clean unreferenced objects after a successful update.
+            let existing: [FoodItemRow] = try await client
+                .from("food_items")
+                .select()
+                .eq("id", value: id)
+                .limit(1)
+                .execute()
+                .value
+            let previousPaths = existing.first?.photo_urls ?? []
+
             let row: FoodItemRow = try await client
                 .from("food_items")
                 .update(payload)
@@ -141,6 +151,19 @@ final class FoodItemRepository: FoodItemRepositoryProtocol, @unchecked Sendable 
                 .single()
                 .execute()
                 .value
+
+            let nextPaths = Set(write.photoPaths)
+            let removed = previousPaths.filter { !nextPaths.contains($0) }
+            if let photoRepository, !removed.isEmpty {
+                // Best-effort: update already succeeded if this cleanup fails.
+                try? await removeUnreferencedPhotos(
+                    userId: userId,
+                    paths: removed,
+                    photoRepository: photoRepository,
+                    client: client
+                )
+            }
+
             return try await mapRows([row]).first!
         } catch {
             throw DataErrorMapping.map(error)

@@ -55,10 +55,14 @@ final class TodayMealsViewModel {
         isEditingFood ? "编辑食物" : "新增食物"
     }
 
-    /// Optional JPEG-ready image chosen in the add sheet (not a secret).
+    /// Optional JPEG-ready image chosen in the add/edit sheet (not a secret).
     private(set) var draftPhotoData: Data?
     private(set) var draftPhotoPreview: UIImage?
     private(set) var isPreparingPhoto = false
+    /// Edit mode: user explicitly removed the meal photo (may replace multi-image with empty).
+    private(set) var editPhotoRemoved = false
+    /// Soft message when old Storage cleanup fails after a successful DB write.
+    private(set) var photoCleanupWarning: String?
 
     /// AI analysis in progress (does not write DB).
     private(set) var isAnalyzing = false
@@ -427,11 +431,13 @@ final class TodayMealsViewModel {
         editingPhotoPaths = []
         editingSourceId = nil
         editingPhotoDisplayURLs = []
+        editPhotoRemoved = false
         draftMeal = defaultMeal
         draftDate = selectedDate
         clearDraftPhoto()
         errorMessage = nil
         statusMessage = nil
+        photoCleanupWarning = nil
         analysisSummary = nil
         isPresentingAddSheet = true
     }
@@ -442,6 +448,7 @@ final class TodayMealsViewModel {
         editingPhotoPaths = item.photoPaths
         editingSourceId = item.sourceId
         editingPhotoDisplayURLs = item.photoURLs
+        editPhotoRemoved = false
         draftName = item.name
         draftMeal = item.meal
         draftCalories = formatDraftNumber(item.calories)
@@ -459,8 +466,36 @@ final class TodayMealsViewModel {
         clearDraftPhoto()
         errorMessage = nil
         statusMessage = nil
+        photoCleanupWarning = nil
         analysisSummary = nil
         isPresentingAddSheet = true
+    }
+
+    // MARK: - Reminder / deep-link routing (Stage 17)
+
+    /// Apply a pending app route once (today + open the right sheet).
+    func consumePendingRouteIfNeeded() async {
+        guard let route = PendingDeepLinkStore.shared.consume() else { return }
+        await applyRoute(route)
+    }
+
+    func applyRoute(_ route: AppRoute) async {
+        // Always land on today for reminder-driven navigation.
+        if !isToday {
+            await goToToday()
+        }
+        switch route {
+        case .addMeal(let meal):
+            if isPresentingBodySheet { cancelBodySheet() }
+            openAddSheet(defaultMeal: meal)
+        case .bodyMetric:
+            if isPresentingAddSheet { cancelAdd() }
+            openBodySheet()
+        case .homeToday:
+            // Already on today; close stray sheets for a clean home.
+            if isPresentingAddSheet { cancelAdd() }
+            if isPresentingBodySheet { cancelBodySheet() }
+        }
     }
 
     func cancelAdd() {
@@ -482,6 +517,7 @@ final class TodayMealsViewModel {
         editingPhotoPaths = []
         editingSourceId = nil
         editingPhotoDisplayURLs = []
+        editPhotoRemoved = false
         clearDraftPhoto()
         // Keep errorMessage only while sheet is open; clear on dismiss.
         if !isPresentingAddSheet {
@@ -512,20 +548,43 @@ final class TodayMealsViewModel {
         errorMessage = message
     }
 
-    /// Compresses picker data to JPEG before upload / AI (HEIC → JPEG). Add mode only.
+    /// Compresses picker/camera data to JPEG before upload / AI (HEIC → JPEG).
+    /// In edit mode, choosing a photo marks a **single-image replace** (replaces all existing paths).
     func setDraftPhoto(rawData: Data) async {
-        guard !isEditingFood else { return }
         isPreparingPhoto = true
         defer { isPreparingPhoto = false }
         do {
             let compressed = try ImageCompressor.compressToJPEG(data: rawData, preferredFileName: "meal.jpg")
             draftPhotoData = compressed.data
             draftPhotoPreview = UIImage(data: compressed.data)
+            if isEditingFood {
+                editPhotoRemoved = false
+            }
             errorMessage = nil
         } catch {
             clearDraftPhoto()
             errorMessage = DataErrorMapping.map(error).userMessage
         }
+    }
+
+    /// Edit mode: remove meal photo(s) on next successful save (no Storage call until save).
+    func markEditPhotoRemoved() {
+        guard isEditingFood else { return }
+        editPhotoRemoved = true
+        clearDraftPhoto()
+        errorMessage = nil
+    }
+
+    /// Clear a pending replace selection in edit mode (revert to original paths).
+    func clearPendingEditPhotoReplace() {
+        guard isEditingFood else { return }
+        clearDraftPhoto()
+        editPhotoRemoved = false
+    }
+
+    /// Whether edit form shows original storage photo (not replaced / not removed).
+    var showsOriginalEditPhoto: Bool {
+        isEditingFood && !editPhotoRemoved && draftPhotoData == nil && !editingPhotoPaths.isEmpty
     }
 
     /// Calls `/api/analyze-meal` and fills draft fields only — does **not** save.
@@ -600,6 +659,7 @@ final class TodayMealsViewModel {
             writeDateKey = diaryCalendar.dateKey(from: draftDate)
         }
 
+        var uploadedPathForRollback: String?
         do {
             let write: FoodItemWrite
             switch foodFormMode {
@@ -613,6 +673,7 @@ final class TodayMealsViewModel {
                         contentType: ImageCompressor.allowedContentType
                     )
                     photoPaths = [uploaded.path]
+                    uploadedPathForRollback = uploaded.path
                 }
                 write = FoodItemWrite(
                     dateKey: writeDateKey,
@@ -628,14 +689,40 @@ final class TodayMealsViewModel {
                     photoPaths: photoPaths,
                     sourceId: nil
                 )
-                _ = try await foodRepository.create(write)
+                do {
+                    _ = try await foodRepository.create(write)
+                } catch {
+                    if let path = uploadedPathForRollback {
+                        try? await photoRepository.delete(paths: [path])
+                    }
+                    throw error
+                }
 
             case .edit:
                 guard let id = editingItemId else {
                     errorMessage = "无法保存：缺少记录标识。"
                     return
                 }
-                // Critical: always write original storage paths, never signed URLs / never empty wipe.
+                // Photo strategy (single primary image MVP):
+                // - unchanged: keep all original paths (no upload)
+                // - replace: upload one new path (replaces multi-image with single)
+                // - remove: empty paths
+                // Always write Storage paths, never signed URLs; always keep sourceId.
+                let photoPaths: [String]
+                if editPhotoRemoved {
+                    photoPaths = []
+                } else if let photoData = draftPhotoData {
+                    let uploaded = try await photoRepository.upload(
+                        dateKey: writeDateKey,
+                        fileName: "meal.jpg",
+                        data: photoData,
+                        contentType: ImageCompressor.allowedContentType
+                    )
+                    photoPaths = [uploaded.path]
+                    uploadedPathForRollback = uploaded.path
+                } else {
+                    photoPaths = editingPhotoPaths
+                }
                 write = FoodItemWrite(
                     dateKey: writeDateKey,
                     meal: draftMeal,
@@ -647,10 +734,17 @@ final class TodayMealsViewModel {
                     fat: fat,
                     fiber: fiber,
                     note: draftNote.trimmingCharacters(in: .whitespacesAndNewlines),
-                    photoPaths: editingPhotoPaths,
+                    photoPaths: photoPaths,
                     sourceId: editingSourceId
                 )
-                _ = try await foodRepository.update(id: id, write: write)
+                do {
+                    _ = try await foodRepository.update(id: id, write: write)
+                } catch {
+                    if let path = uploadedPathForRollback {
+                        try? await photoRepository.delete(paths: [path])
+                    }
+                    throw error
+                }
             }
 
             let dateMovedAway = foodFormMode == .edit && writeDateKey != selectedDateKey
@@ -659,6 +753,7 @@ final class TodayMealsViewModel {
             clearFoodFormSession()
             errorMessage = nil
             analysisSummary = nil
+            photoCleanupWarning = nil
             if dateMovedAway {
                 statusMessage = "已保存到 \(movedToKey)"
             } else {
@@ -668,6 +763,7 @@ final class TodayMealsViewModel {
         } catch {
             errorMessage = DataErrorMapping.map(error).userMessage
             // Keep sheet open; drafts and edit snapshot (photoPaths / sourceId) intact.
+            // New upload already rolled back when create/update failed.
         }
     }
 

@@ -118,12 +118,16 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
         updateCallCount += 1
         let payload = FoodItemMapper.insertPayload(from: write, generatedSourceId: write.sourceId)
         precondition(FoodItemMapper.assertPayloadHasNoUserId(payload))
-        return try withLock {
+
+        let previousPaths: [String] = withLock {
+            items.first(where: { $0.id == id })?.photoPaths ?? []
+        }
+        let updated: FoodItem = try withLock {
             guard let index = items.firstIndex(where: { $0.id == id }) else {
                 throw AppError.unknown(message: "记录不存在。")
             }
             let previous = items[index]
-            let updated = FoodItem(
+            let item = FoodItem(
                 id: previous.id,
                 dateKey: payload.eaten_on,
                 meal: MealType(rawValue: payload.meal)!,
@@ -136,13 +140,25 @@ final class MockFoodItemRepository: FoodItemRepositoryProtocol, @unchecked Senda
                 fiber: payload.fiber,
                 note: payload.note ?? "",
                 photoPaths: payload.photo_urls,
-                photoURLs: previous.photoURLs.isEmpty ? payload.photo_urls : previous.photoURLs,
+                photoURLs: payload.photo_urls,
                 createdAt: previous.createdAt,
                 sourceId: payload.source_id ?? previous.sourceId
             )
-            items[index] = updated
-            return updated
+            items[index] = item
+            return item
         }
+
+        let next = Set(write.photoPaths)
+        let removed = previousPaths.filter { !next.contains($0) }
+        if let photoRepository, !removed.isEmpty {
+            let orphaned = removed.filter { path in
+                !withLock { items.contains { $0.photoPaths.contains(path) } }
+            }
+            if !orphaned.isEmpty {
+                try? await photoRepository.delete(paths: orphaned)
+            }
+        }
+        return updated
     }
 
     func delete(id: String) async throws {

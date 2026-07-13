@@ -20,6 +20,10 @@ final class ReminderScheduleTests: XCTestCase {
             XCTAssertFalse(d.body.contains("kcal"))
             XCTAssertFalse(d.body.contains("HealthKit"))
             XCTAssertFalse(d.title.contains("kg"))
+            // Stage 17: kind is available for userInfo payload.
+            XCTAssertFalse(d.kind.rawValue.isEmpty)
+            let info = ReminderUserInfo.make(kind: d.kind)
+            XCTAssertEqual(info[ReminderUserInfo.kindKey] as? String, d.kind.rawValue)
         }
     }
 

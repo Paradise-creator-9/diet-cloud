@@ -778,6 +778,172 @@ final class TodayMealsViewModelTests: XCTestCase {
         XCTAssertEqual(vm.draftMeal, .lunch)
     }
 
+    // MARK: - Edit photo replace / remove / rollback (Stage 17)
+
+    func testEditUnchangedPhotoDoesNotUpload() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let paths = ["\(user.id)/2026-07-13/keep.jpg"]
+        let item = food(
+            id: "u1",
+            meal: .lunch,
+            name: "饭",
+            cal: 200,
+            protein: 5,
+            carbs: 40,
+            fat: 1,
+            paths: paths,
+            sourceId: "src-u1"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, photoRepo, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        vm.draftName = "饭改"
+        await vm.saveFoodItem()
+        XCTAssertEqual(photoRepo.uploadCallCount, 0)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.photoPaths, paths)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.sourceId, "src-u1")
+    }
+
+    func testEditReplacePhotoUploadsAndReplacesPathsKeepingSourceId() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let oldPaths = [
+            "\(user.id)/2026-07-13/old1.jpg",
+            "\(user.id)/2026-07-13/old2.jpg",
+        ]
+        let item = food(
+            id: "r1",
+            meal: .dinner,
+            name: "多图",
+            cal: 300,
+            protein: 10,
+            carbs: 30,
+            fat: 5,
+            paths: oldPaths,
+            sourceId: "src-r1"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, photoRepo, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        await vm.setDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.saveFoodItem()
+
+        XCTAssertEqual(photoRepo.uploadCallCount, 1)
+        XCTAssertEqual(foodRepo.updateCallCount, 1)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.photoPaths.count, 1)
+        XCTAssertNotEqual(foodRepo.lastUpdateWrite?.photoPaths, oldPaths)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.sourceId, "src-r1")
+        // Old unreferenced paths cleaned after successful update.
+        XCTAssertTrue(oldPaths.allSatisfy { photoRepo.deletedPaths.contains($0) })
+    }
+
+    func testEditRemovePhotoClearsPathsAndDeletesOrphan() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let paths = ["\(user.id)/2026-07-13/gone.jpg"]
+        let item = food(
+            id: "d1",
+            meal: .snack,
+            name: "零食",
+            cal: 90,
+            protein: 1,
+            carbs: 20,
+            fat: 0,
+            paths: paths,
+            sourceId: "src-d1"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, photoRepo, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        vm.markEditPhotoRemoved()
+        XCTAssertTrue(vm.editPhotoRemoved)
+        await vm.saveFoodItem()
+
+        XCTAssertEqual(photoRepo.uploadCallCount, 0)
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.photoPaths, [])
+        XCTAssertEqual(foodRepo.lastUpdateWrite?.sourceId, "src-d1")
+        XCTAssertTrue(photoRepo.deletedPaths.contains("\(user.id)/2026-07-13/gone.jpg"))
+    }
+
+    func testEditReplaceUploadSuccessUpdateFailureRollsBackNewPath() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let old = ["\(user.id)/2026-07-13/old.jpg"]
+        let item = food(
+            id: "fail-u",
+            meal: .lunch,
+            name: "旧",
+            cal: 100,
+            protein: 1,
+            carbs: 10,
+            fat: 1,
+            paths: old,
+            sourceId: "src-fail"
+        )
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [item], photoRepository: photo)
+        let (vm, foodRepo, photoRepo, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(item)
+        await vm.setDraftPhoto(rawData: Self.tinyJPEG())
+        repo.forcedError = AppError.network(message: "update down")
+        await vm.saveFoodItem()
+
+        XCTAssertEqual(photoRepo.uploadCallCount, 1)
+        // New path best-effort deleted; old path remains on item
+        XCTAssertNotNil(photoRepo.lastUploadPath)
+        if let newPath = photoRepo.lastUploadPath {
+            XCTAssertTrue(photoRepo.deletedPaths.contains(newPath))
+        }
+        repo.forcedError = nil
+        do {
+            let still = try await foodRepo.fetchById("fail-u")
+            XCTAssertEqual(still?.photoPaths, old)
+            XCTAssertEqual(still?.sourceId, "src-fail")
+        } catch {
+            XCTFail("fetchById failed: \(error)")
+        }
+        XCTAssertTrue(vm.isPresentingAddSheet)
+        XCTAssertNotNil(vm.errorMessage)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
+    }
+
+    func testAddUploadSuccessCreateFailureRollsBackNewPath() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let repo = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
+        let (vm, foodRepo, photoRepo, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openAddSheet()
+        vm.draftName = "新图"
+        vm.draftCalories = "100"
+        await vm.setDraftPhoto(rawData: Self.tinyJPEG())
+        repo.forcedError = AppError.network(message: "create down")
+        await vm.saveFoodItem()
+
+        XCTAssertEqual(photoRepo.uploadCallCount, 1)
+        XCTAssertEqual(foodRepo.createCallCount, 0) // forced before increment? check mock - forced throws before count
+        // actually mock throws at start of create so createCallCount may be 0
+        if let newPath = photoRepo.lastUploadPath {
+            XCTAssertTrue(photoRepo.deletedPaths.contains(newPath))
+        }
+        XCTAssertTrue(vm.isPresentingAddSheet)
+        XCTAssertNotNil(vm.errorMessage)
+    }
+
+    func testEditDoesNotDeleteSharedPhotoPath() async {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let shared = "\(user.id)/2026-07-13/shared.jpg"
+        let a = food(id: "a", meal: .lunch, name: "A", cal: 1, protein: 0, carbs: 0, fat: 0, paths: [shared], sourceId: "sa")
+        let b = food(id: "b", meal: .dinner, name: "B", cal: 2, protein: 0, carbs: 0, fat: 0, paths: [shared], sourceId: "sb")
+        let repo = MockFoodItemRepository(sessionUserId: user.id, seed: [a, b], photoRepository: photo)
+        let (vm, _, photoRepo, _) = makeVM(repo: repo, photo: photo)
+        await vm.load()
+        vm.openEdit(a)
+        vm.markEditPhotoRemoved()
+        await vm.saveFoodItem()
+        // Still referenced by B — must not delete Storage object.
+        XCTAssertFalse(photoRepo.deletedPaths.contains(shared))
+    }
+
     private func food(
         id: String,
         meal: MealType,

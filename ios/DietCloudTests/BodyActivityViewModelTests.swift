@@ -1,3 +1,5 @@
+import ImageIO
+import UniformTypeIdentifiers
 import XCTest
 @testable import DietCloud
 
@@ -323,6 +325,298 @@ final class BodyActivityViewModelTests: XCTestCase {
         XCTAssertNil(vm.bodyMetric)
     }
 
+    // MARK: - Body screenshot AI (Stage 16)
+
+    private func makeVMWithAnalyze(
+        dateKey: String = "2026-07-13",
+        body: MockBodyMetricsRepository? = nil,
+        analyze: MockAnalyzeAPIClient
+    ) -> (TodayMealsViewModel, MockBodyMetricsRepository, MockMealPhotoRepository, MockAnalyzeAPIClient) {
+        let photo = MockMealPhotoRepository(sessionUserId: user.id)
+        let food = MockFoodItemRepository(sessionUserId: user.id, photoRepository: photo)
+        let bodyRepo = body ?? MockBodyMetricsRepository(sessionUserId: user.id)
+        let vm = TodayMealsViewModel(
+            user: user,
+            foodRepository: food,
+            photoRepository: photo,
+            analyzeAPI: analyze,
+            bodyRepository: bodyRepo,
+            dailyActivityRepository: MockDailyActivityRepository(sessionUserId: user.id),
+            exerciseRepository: MockExerciseActivityRepository(sessionUserId: user.id),
+            dateKey: dateKey
+        )
+        return (vm, bodyRepo, photo, analyze)
+    }
+
+    private func sampleBodyAnalysis(
+        confidence: Double = 0.9,
+        date: String? = "2026-07-13",
+        weight: Double? = 72.5,
+        fat: Double? = 18.2,
+        bmi: Double? = 22.1,
+        muscle: Double? = 50,
+        bone: Double? = 2.8,
+        water: Double? = 55,
+        bmr: Double? = 1480,
+        visceral: Double? = 7,
+        notes: String = "请核对"
+    ) -> BodyAnalysisResult {
+        BodyAnalysisResult(
+            confidence: confidence,
+            date: date,
+            measuredAt: date.map { "\($0)T07:30" },
+            score: nil,
+            weightKg: weight,
+            bmi: bmi,
+            bodyFatPercent: fat,
+            bodyAge: nil,
+            bodyType: nil,
+            muscleKg: muscle,
+            skeletalMuscleKg: nil,
+            boneMassKg: bone,
+            waterPercent: water,
+            visceralFat: visceral,
+            bmrKcal: bmr,
+            proteinPercent: nil,
+            trunkFatPercent: nil,
+            trunkMuscleKg: nil,
+            leftArmFatPercent: nil,
+            leftArmMuscleKg: nil,
+            rightArmFatPercent: nil,
+            rightArmMuscleKg: nil,
+            leftLegFatPercent: nil,
+            leftLegMuscleKg: nil,
+            rightLegFatPercent: nil,
+            rightLegMuscleKg: nil,
+            notes: notes,
+            model: "mock"
+        )
+    }
+
+    func testBodyAIPrefillsWithoutUpsert() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setBodyResult(sampleBodyAnalysis())
+        let (vm, body, photo, _) = makeVMWithAnalyze(analyze: analyze)
+        await vm.load()
+        vm.openBodySheet()
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        XCTAssertNotNil(vm.bodyDraftPhotoData)
+        await vm.runBodyAIAnalysis()
+
+        XCTAssertEqual(analyze.bodyCallCount, 1)
+        XCTAssertEqual(body.upsertCallCount, 0)
+        XCTAssertEqual(photo.uploadCallCount, 0)
+        XCTAssertEqual(vm.draftWeightKg, "72.5")
+        XCTAssertEqual(vm.draftBodyFatPercent, "18.2")
+        XCTAssertEqual(vm.draftBmi, "22.1")
+        XCTAssertEqual(vm.draftMuscleKg, "50")
+        XCTAssertEqual(vm.draftBoneMassKg, "2.8")
+        XCTAssertEqual(vm.draftWaterPercent, "55")
+        XCTAssertEqual(vm.draftBmrKcal, "1480")
+        XCTAssertEqual(vm.draftVisceralFat, "7")
+        XCTAssertEqual(vm.bodyAnalysisNotes, "请核对")
+        // Notes must not overwrite user note field automatically.
+        XCTAssertEqual(vm.draftBodyNote, "")
+        XCTAssertTrue(vm.isPresentingBodySheet)
+    }
+
+    func testBodyAINullDoesNotOverwriteExistingDrafts() async {
+        let seed = makeBody(dateKey: "2026-07-13", weight: 80)
+        // Seed with fat/muscle-like values via a custom metric
+        let existing = BodyMetric(
+            id: seed.id,
+            dateKey: seed.dateKey,
+            measuredAt: seed.measuredAt,
+            score: 0,
+            weightKg: 80,
+            bmi: 24,
+            bodyFatPercent: 20,
+            bodyAge: 0,
+            bodyType: "",
+            muscleKg: 48,
+            skeletalMuscleKg: 0,
+            boneMassKg: 3,
+            waterPercent: 50,
+            visceralFat: 9,
+            bmrKcal: 1600,
+            proteinPercent: 0,
+            trunkFatPercent: 0,
+            trunkMuscleKg: 0,
+            leftArmFatPercent: 0,
+            leftArmMuscleKg: 0,
+            rightArmFatPercent: 0,
+            rightArmMuscleKg: 0,
+            leftLegFatPercent: 0,
+            leftLegMuscleKg: 0,
+            rightLegFatPercent: 0,
+            rightLegMuscleKg: 0,
+            note: "手填备注",
+            createdAt: ""
+        )
+        let bodyRepo = MockBodyMetricsRepository(sessionUserId: user.id, seed: [existing])
+        let analyze = MockAnalyzeAPIClient()
+        // Only weight present; others null
+        analyze.setBodyResult(sampleBodyAnalysis(
+            weight: 81,
+            fat: nil,
+            bmi: nil,
+            muscle: nil,
+            bone: nil,
+            water: nil,
+            bmr: nil,
+            visceral: nil,
+            notes: "AI notes"
+        ))
+        let (vm, body, photo, _) = makeVMWithAnalyze(body: bodyRepo, analyze: analyze)
+        await vm.load()
+        vm.openBodySheet()
+        XCTAssertEqual(vm.draftWeightKg, "80")
+        XCTAssertEqual(vm.draftBodyFatPercent, "20")
+        XCTAssertEqual(vm.draftBodyNote, "手填备注")
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.runBodyAIAnalysis()
+
+        XCTAssertEqual(vm.draftWeightKg, "81")
+        XCTAssertEqual(vm.draftBodyFatPercent, "20") // null did not clear
+        XCTAssertEqual(vm.draftBmi, "24")
+        XCTAssertEqual(vm.draftMuscleKg, "48")
+        XCTAssertEqual(vm.draftBodyNote, "手填备注") // notes display-only
+        XCTAssertEqual(vm.bodyAnalysisNotes, "AI notes")
+        XCTAssertEqual(body.upsertCallCount, 0)
+        XCTAssertEqual(photo.uploadCallCount, 0)
+    }
+
+    func testBodyAISaveUpsertsSelectedDateWithExtendedFields() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setBodyResult(sampleBodyAnalysis(date: "2026-07-01"))
+        let history = "2026-07-10"
+        let (vm, body, photo, _) = makeVMWithAnalyze(dateKey: history, analyze: analyze)
+        await vm.load()
+        vm.openBodySheet()
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.runBodyAIAnalysis()
+        XCTAssertEqual(vm.selectedDateKey, history)
+        XCTAssertNotNil(vm.bodyAnalysisDateHint)
+        XCTAssertTrue(vm.bodyAnalysisDateHint?.contains("2026-07-01") == true)
+        XCTAssertTrue(vm.bodyAnalysisDateHint?.contains(history) == true)
+
+        await vm.saveBodyMetric()
+        XCTAssertEqual(body.upsertCallCount, 1)
+        XCTAssertEqual(body.lastUpsertDateKey, history)
+        XCTAssertEqual(body.lastUpsertWrite?.weightKg, 72.5)
+        XCTAssertEqual(body.lastUpsertWrite?.bodyFatPercent, 18.2)
+        XCTAssertEqual(body.lastUpsertWrite?.bmi, 22.1)
+        XCTAssertEqual(body.lastUpsertWrite?.muscleKg, 50)
+        XCTAssertEqual(body.lastUpsertWrite?.boneMassKg, 2.8)
+        XCTAssertEqual(body.lastUpsertWrite?.waterPercent, 55)
+        XCTAssertEqual(body.lastUpsertWrite?.bmrKcal, 1480)
+        XCTAssertEqual(body.lastUpsertWrite?.visceralFat, 7)
+        XCTAssertEqual(photo.uploadCallCount, 0)
+        XCTAssertFalse(vm.isPresentingBodySheet)
+        XCTAssertNil(vm.bodyDraftPhotoData)
+    }
+
+    func testBodyAILowConfidenceStillAllowsSave() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setBodyResult(sampleBodyAnalysis(confidence: 0.3))
+        let (vm, body, _, _) = makeVMWithAnalyze(analyze: analyze)
+        vm.openBodySheet()
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.runBodyAIAnalysis()
+        XCTAssertTrue(vm.showBodyLowConfidenceWarning)
+        await vm.saveBodyMetric()
+        XCTAssertEqual(body.upsertCallCount, 1)
+    }
+
+    func testBodyAIErrorKeepsDraftAndNoUpsert() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setBodyError(AppError.unauthorized)
+        let (vm, body, photo, _) = makeVMWithAnalyze(analyze: analyze)
+        vm.openBodySheet()
+        vm.draftWeightKg = "70"
+        vm.draftBodyNote = "保留"
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.runBodyAIAnalysis()
+        XCTAssertEqual(body.upsertCallCount, 0)
+        XCTAssertEqual(photo.uploadCallCount, 0)
+        XCTAssertEqual(vm.draftWeightKg, "70")
+        XCTAssertEqual(vm.draftBodyNote, "保留")
+        XCTAssertNotNil(vm.errorMessage)
+        XCTAssertFalse((vm.errorMessage ?? "").contains("eyJ"))
+        XCTAssertTrue(vm.isPresentingBodySheet)
+    }
+
+    func testBodyAINetworkErrorMessageSafe() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setBodyError(AppError.network(message: "network down"))
+        let (vm, body, _, _) = makeVMWithAnalyze(analyze: analyze)
+        vm.openBodySheet()
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.runBodyAIAnalysis()
+        XCTAssertEqual(body.upsertCallCount, 0)
+        XCTAssertEqual(vm.errorMessage, AppError.network(message: "network down").userMessage)
+    }
+
+    func testBodySheetDismissClearsScreenshot() async {
+        let analyze = MockAnalyzeAPIClient()
+        let (vm, _, photo, _) = makeVMWithAnalyze(analyze: analyze)
+        vm.openBodySheet()
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        XCTAssertNotNil(vm.bodyDraftPhotoData)
+        vm.clearBodySessionAfterDismiss()
+        XCTAssertNil(vm.bodyDraftPhotoData)
+        XCTAssertNil(vm.bodyDraftPhotoPreview)
+        XCTAssertNil(vm.lastBodyAnalysis)
+        XCTAssertEqual(photo.uploadCallCount, 0)
+    }
+
+    func testBodyCancelClearsScreenshot() async {
+        let (vm, _, photo, _) = makeVMWithAnalyze(analyze: MockAnalyzeAPIClient())
+        vm.openBodySheet()
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        vm.cancelBodySheet()
+        XCTAssertNil(vm.bodyDraftPhotoData)
+        XCTAssertFalse(vm.isPresentingBodySheet)
+        XCTAssertEqual(photo.uploadCallCount, 0)
+    }
+
+    func testBodyNegativeMetricDoesNotUpsert() async {
+        let (vm, body, _, _) = makeVMWithAnalyze(analyze: MockAnalyzeAPIClient())
+        vm.openBodySheet()
+        vm.draftWeightKg = "70"
+        vm.draftMuscleKg = "-1"
+        await vm.saveBodyMetric()
+        XCTAssertEqual(body.upsertCallCount, 0)
+        XCTAssertNotNil(vm.errorMessage)
+        XCTAssertTrue(vm.isPresentingBodySheet)
+    }
+
+    func testBodyWaterOutOfRangeDoesNotUpsert() async {
+        let (vm, body, _, _) = makeVMWithAnalyze(analyze: MockAnalyzeAPIClient())
+        vm.openBodySheet()
+        vm.draftWeightKg = "70"
+        vm.draftWaterPercent = "101"
+        await vm.saveBodyMetric()
+        XCTAssertEqual(body.upsertCallCount, 0)
+        XCTAssertTrue((vm.errorMessage ?? "").contains("水分") || (vm.errorMessage ?? "").contains("0–100"))
+    }
+
+    func testBodyAIDoesNotCallPhotoUpload() async {
+        let analyze = MockAnalyzeAPIClient()
+        analyze.setBodyResult(sampleBodyAnalysis())
+        let (vm, body, photo, _) = makeVMWithAnalyze(analyze: analyze)
+        vm.openBodySheet()
+        await vm.setBodyDraftPhoto(rawData: Self.tinyJPEG())
+        await vm.runBodyAIAnalysis()
+        await vm.saveBodyMetric()
+        XCTAssertEqual(photo.uploadCallCount, 0)
+        XCTAssertTrue(photo.deletedPaths.isEmpty)
+        XCTAssertEqual(body.upsertCallCount, 1)
+        XCTAssertNotNil(analyze.lastBodyRequest)
+        XCTAssertTrue(analyze.lastBodyRequest?.isLocalDataURL == true)
+        XCTAssertFalse(analyze.lastBodyRequest?.containsRemotePhotoURL == true)
+    }
+
     // MARK: - Fixtures
 
     private func makeBody(dateKey: String, weight: Double) -> BodyMetric {
@@ -356,6 +650,41 @@ final class BodyActivityViewModelTests: XCTestCase {
             note: "",
             createdAt: ""
         )
+    }
+
+    /// Valid tiny JPEG so ImageCompressor accepts the bytes.
+    private static func tinyJPEG(width: Int = 16, height: Int = 16) -> Data {
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            fatalError("CGContext unavailable")
+        }
+        ctx.setFillColor(red: 0.3, green: 0.5, blue: 0.7, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        guard let cgImage = ctx.makeImage() else {
+            fatalError("CGImage unavailable")
+        }
+        let data = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(
+            data,
+            UTType.jpeg.identifier as CFString,
+            1,
+            nil
+        ) else {
+            fatalError("JPEG destination unavailable")
+        }
+        CGImageDestinationAddImage(dest, cgImage, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
+        guard CGImageDestinationFinalize(dest) else {
+            fatalError("JPEG finalize failed")
+        }
+        return data as Data
     }
 
     private func makeDaily(dateKey: String, steps: Double, active: Double = 0) -> DailyActivity {

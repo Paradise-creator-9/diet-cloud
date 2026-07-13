@@ -74,8 +74,14 @@ struct TodayMealsView: View {
                     AddFoodItemView(viewModel: viewModel)
                         .interactiveDismissDisabled(viewModel.isAnalyzing || viewModel.isMutating)
                 }
-                .sheet(isPresented: $viewModel.isPresentingBodySheet) {
+                .sheet(isPresented: $viewModel.isPresentingBodySheet, onDismiss: {
+                    // Swipe-dismiss: drop screenshot memory; keep no lingering AI session.
+                    if !viewModel.isPresentingBodySheet {
+                        viewModel.clearBodySessionAfterDismiss()
+                    }
+                }) {
                     BodyMetricEditView(viewModel: viewModel)
+                        .interactiveDismissDisabled(viewModel.isAnalyzingBody || viewModel.isMutating)
                 }
                 .sheet(isPresented: $viewModel.isPresentingActivitySheet) {
                     DailyActivityEditView(viewModel: viewModel)
@@ -696,17 +702,116 @@ struct ExerciseSection: View {
 struct BodyMetricEditView: View {
     @Bindable var viewModel: TodayMealsViewModel
     @Environment(\.dismiss) private var dismiss
+    @State private var pickerItem: PhotosPickerItem?
+    @State private var showMoreMetrics = false
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("身体指标 · \(viewModel.selectedDateKey)") {
+                Section {
+                    Text("当前日记日 \(viewModel.selectedDateKey)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     TextField("体重 kg", text: $viewModel.draftWeightKg)
                         .keyboardType(.decimalPad)
                     TextField("体脂 %（可选）", text: $viewModel.draftBodyFatPercent)
                         .keyboardType(.decimalPad)
                     TextField("备注", text: $viewModel.draftBodyNote)
+                } header: {
+                    Text("身体指标")
                 }
+
+                Section {
+                    if let preview = viewModel.bodyDraftPhotoPreview {
+                        Image(uiImage: preview)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 160)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .accessibilityLabel("已选截图预览")
+                    }
+                    PhotosPicker(
+                        selection: $pickerItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        Label(
+                            viewModel.bodyDraftPhotoData == nil ? "选择体脂秤截图" : "更换截图",
+                            systemImage: "photo"
+                        )
+                    }
+                    .disabled(viewModel.isAnalyzingBody || viewModel.isPreparingBodyPhoto || viewModel.isMutating)
+                    .onChange(of: pickerItem) { _, newItem in
+                        guard let newItem else { return }
+                        Task {
+                            if let data = try? await newItem.loadTransferable(type: Data.self) {
+                                await viewModel.setBodyDraftPhoto(rawData: data)
+                            } else {
+                                viewModel.reportUserFacingError("无法读取所选图片。")
+                            }
+                            pickerItem = nil
+                        }
+                    }
+
+                    Button {
+                        Task { await viewModel.runBodyAIAnalysis() }
+                    } label: {
+                        if viewModel.isAnalyzingBody || viewModel.isPreparingBodyPhoto {
+                            HStack {
+                                ProgressView()
+                                Text(viewModel.isPreparingBodyPhoto ? "处理图片…" : "AI 识别中…")
+                            }
+                        } else {
+                            Label("AI 识别截图", systemImage: "sparkles")
+                        }
+                    }
+                    .disabled(!viewModel.canRunBodyAIAnalysis)
+                    .buttonStyle(.borderedProminent)
+
+                    if viewModel.bodyDraftPhotoData != nil {
+                        Button("清除截图", role: .destructive) {
+                            viewModel.clearBodyDraftPhoto()
+                        }
+                        .disabled(viewModel.isAnalyzingBody)
+                    }
+
+                    if let hint = viewModel.bodyAnalysisDateHint {
+                        Text(hint)
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
+                    if viewModel.showBodyLowConfidenceWarning {
+                        Text("识别置信度较低，请仔细核对数值后再保存。")
+                            .font(.footnote)
+                            .foregroundStyle(.orange)
+                    }
+                    if let notes = viewModel.bodyAnalysisNotes, !notes.isEmpty {
+                        Text(notes)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("截图 AI")
+                } footer: {
+                    Text("截图仅用于识别，不会上传到照片库或永久存储。")
+                        .font(.caption2)
+                }
+
+                DisclosureGroup("更多指标", isExpanded: $showMoreMetrics) {
+                    TextField("BMI", text: $viewModel.draftBmi)
+                        .keyboardType(.decimalPad)
+                    TextField("肌肉量 kg", text: $viewModel.draftMuscleKg)
+                        .keyboardType(.decimalPad)
+                    TextField("骨量 kg", text: $viewModel.draftBoneMassKg)
+                        .keyboardType(.decimalPad)
+                    TextField("水分 %", text: $viewModel.draftWaterPercent)
+                        .keyboardType(.decimalPad)
+                    TextField("基础代谢 kcal", text: $viewModel.draftBmrKcal)
+                        .keyboardType(.decimalPad)
+                    TextField("内脏脂肪", text: $viewModel.draftVisceralFat)
+                        .keyboardType(.decimalPad)
+                }
+
                 if let error = viewModel.errorMessage {
                     Section { Text(error).foregroundStyle(.red).font(.footnote) }
                 }
@@ -719,6 +824,7 @@ struct BodyMetricEditView: View {
                         viewModel.cancelBodySheet()
                         dismiss()
                     }
+                    .disabled(viewModel.isAnalyzingBody || viewModel.isMutating)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
@@ -727,7 +833,7 @@ struct BodyMetricEditView: View {
                             if !viewModel.isPresentingBodySheet { dismiss() }
                         }
                     }
-                    .disabled(viewModel.isMutating)
+                    .disabled(viewModel.isMutating || viewModel.isAnalyzingBody)
                 }
             }
         }

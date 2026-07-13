@@ -78,6 +78,37 @@ final class TodayMealsViewModel {
     var draftWeightKg = ""
     var draftBodyFatPercent = ""
     var draftBodyNote = ""
+    // Stage 16 extended body drafts (optional metrics).
+    var draftBmi = ""
+    var draftMuscleKg = ""
+    var draftBoneMassKg = ""
+    var draftWaterPercent = ""
+    var draftBmrKcal = ""
+    var draftVisceralFat = ""
+    /// Measured-at from AI (not shown as primary date control; save still uses selectedDateKey).
+    var draftBodyMeasuredAt = ""
+
+    /// Local body-scale screenshot JPEG (memory only — never Storage).
+    private(set) var bodyDraftPhotoData: Data?
+    private(set) var bodyDraftPhotoPreview: UIImage?
+    private(set) var isPreparingBodyPhoto = false
+    private(set) var isAnalyzingBody = false
+    /// AI notes for display only (does not auto-overwrite draftBodyNote).
+    private(set) var bodyAnalysisNotes: String?
+    private(set) var bodyAnalysisConfidence: Double?
+    /// When AI date differs from selectedDateKey.
+    private(set) var bodyAnalysisDateHint: String?
+    /// Last successful analysis (segment fields applied on save when present).
+    private(set) var lastBodyAnalysis: BodyAnalysisResult?
+
+    var canRunBodyAIAnalysis: Bool {
+        bodyDraftPhotoData != nil && !isAnalyzingBody && !isPreparingBodyPhoto && !isMutating
+    }
+
+    var showBodyLowConfidenceWarning: Bool {
+        guard let c = bodyAnalysisConfidence else { return false }
+        return c < 0.5
+    }
 
     var draftSteps = ""
     var draftActiveCalories = ""
@@ -856,15 +887,121 @@ final class TodayMealsViewModel {
         draftWeightKg = bodyMetric.map { formatDraftNumber($0.weightKg) } ?? ""
         draftBodyFatPercent = bodyMetric.map { formatDraftNumber($0.bodyFatPercent) } ?? ""
         draftBodyNote = bodyMetric?.note ?? ""
+        draftBmi = bodyMetric.flatMap { $0.bmi > 0 ? formatDraftNumber($0.bmi) : nil } ?? ""
+        draftMuscleKg = bodyMetric.flatMap { $0.muscleKg > 0 ? formatDraftNumber($0.muscleKg) : nil } ?? ""
+        draftBoneMassKg = bodyMetric.flatMap { $0.boneMassKg > 0 ? formatDraftNumber($0.boneMassKg) : nil } ?? ""
+        draftWaterPercent = bodyMetric.flatMap { $0.waterPercent > 0 ? formatDraftNumber($0.waterPercent) : nil } ?? ""
+        draftBmrKcal = bodyMetric.flatMap { $0.bmrKcal > 0 ? formatDraftNumber($0.bmrKcal) : nil } ?? ""
+        draftVisceralFat = bodyMetric.flatMap { $0.visceralFat > 0 ? formatDraftNumber($0.visceralFat) : nil } ?? ""
+        draftBodyMeasuredAt = bodyMetric?.measuredAt ?? ""
+        clearBodyAnalysisSession()
         errorMessage = nil
         isPresentingBodySheet = true
     }
 
     func cancelBodySheet() {
         isPresentingBodySheet = false
-        draftWeightKg = ""
-        draftBodyFatPercent = ""
-        draftBodyNote = ""
+        clearBodyDraftFields()
+        clearBodyAnalysisSession()
+    }
+
+    /// Compresses picker data for body AI only (never uploaded to Storage).
+    func setBodyDraftPhoto(rawData: Data) async {
+        isPreparingBodyPhoto = true
+        defer { isPreparingBodyPhoto = false }
+        do {
+            let compressed = try ImageCompressor.compressToJPEG(
+                data: rawData,
+                preferredFileName: "body-scale.jpg"
+            )
+            bodyDraftPhotoData = compressed.data
+            bodyDraftPhotoPreview = UIImage(data: compressed.data)
+            errorMessage = nil
+        } catch {
+            clearBodyDraftPhoto()
+            errorMessage = DataErrorMapping.map(error).userMessage
+        }
+    }
+
+    func clearBodyDraftPhoto() {
+        bodyDraftPhotoData = nil
+        bodyDraftPhotoPreview = nil
+    }
+
+    /// Calls `/api/analyze-body` and fills draft fields only — does **not** upsert.
+    func runBodyAIAnalysis() async {
+        errorMessage = nil
+        guard let photoData = bodyDraftPhotoData else {
+            errorMessage = "请先选择身体数据截图。"
+            return
+        }
+        guard !isAnalyzingBody else { return }
+
+        isAnalyzingBody = true
+        defer { isAnalyzingBody = false }
+
+        do {
+            let request = try BodyAnalysisRequest.make(
+                jpegData: photoData,
+                contentType: ImageCompressor.allowedContentType,
+                fileName: "body-scale.jpg"
+            )
+            let result = try await analyzeAPI.analyzeBody(request)
+            applyBodyAnalysisToDraft(result)
+        } catch {
+            errorMessage = mapAnalyzeError(error).userMessage
+        }
+    }
+
+    private func applyBodyAnalysisToDraft(_ result: BodyAnalysisResult) {
+        lastBodyAnalysis = result
+        bodyAnalysisNotes = result.notes
+        bodyAnalysisConfidence = result.confidence
+
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.weightKg),
+            onto: &draftWeightKg
+        )
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.bodyFatPercent),
+            onto: &draftBodyFatPercent
+        )
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.bmi),
+            onto: &draftBmi
+        )
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.muscleKg),
+            onto: &draftMuscleKg
+        )
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.boneMassKg),
+            onto: &draftBoneMassKg
+        )
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.waterPercent),
+            onto: &draftWaterPercent
+        )
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.bmrKcal),
+            onto: &draftBmrKcal
+        )
+        BodyAnalysisFormFill.applyIfPresent(
+            BodyAnalysisFormFill.formatMetric(result.visceralFat),
+            onto: &draftVisceralFat
+        )
+        if let measured = result.measuredAt, !measured.isEmpty {
+            draftBodyMeasuredAt = measured
+        }
+
+        // Date mismatch: hint only — never change selectedDate.
+        if let aiDate = result.date, !aiDate.isEmpty, aiDate != selectedDateKey {
+            bodyAnalysisDateHint = "识别日期为 \(aiDate)，将保存到当前日 \(selectedDateKey)。"
+        } else {
+            bodyAnalysisDateHint = nil
+        }
+        // AI notes are display-only (do not overwrite draftBodyNote).
+        errorMessage = nil
     }
 
     func saveBodyMetric() async {
@@ -872,35 +1009,119 @@ final class TodayMealsViewModel {
             errorMessage = "请输入有效的体重（正数）。"
             return
         }
-        let fatText = draftBodyFatPercent.trimmingCharacters(in: .whitespacesAndNewlines)
+
         let fat: Double
-        if fatText.isEmpty {
-            fat = bodyMetric?.bodyFatPercent ?? 0
-        } else if let value = Double(fatText), value.isFinite, value >= 0, value <= 100 {
-            fat = value
-        } else {
-            errorMessage = "体脂率需在 0–100 之间。"
+        let bmi: Double?
+        let muscle: Double?
+        let bone: Double?
+        let water: Double?
+        let bmr: Double?
+        let visceral: Double?
+        do {
+            if let parsedFat = try parseOptionalPercentField(draftBodyFatPercent, name: "体脂率") {
+                fat = parsedFat
+            } else {
+                fat = bodyMetric?.bodyFatPercent ?? 0
+            }
+            bmi = try parseOptionalNonNegative(draftBmi, name: "BMI")
+            muscle = try parseOptionalNonNegative(draftMuscleKg, name: "肌肉量")
+            bone = try parseOptionalNonNegative(draftBoneMassKg, name: "骨量")
+            water = try parseOptionalPercentField(draftWaterPercent, name: "水分")
+            bmr = try parseOptionalNonNegative(draftBmrKcal, name: "基础代谢")
+            visceral = try parseOptionalNonNegative(draftVisceralFat, name: "内脏脂肪")
+        } catch let message as FoodFormValidationMessage {
+            errorMessage = message.text
+            return
+        } catch {
+            errorMessage = "输入无效，请检查后重试。"
             return
         }
 
+        guard !isMutating else { return }
         isMutating = true
         defer { isMutating = false }
         let key = selectedDateKey
         do {
-            let write = BodyMetricWrite.manual(
+            let write = BodyMetricWrite.formDraft(
                 dateKey: key,
                 weightKg: weight,
                 bodyFatPercent: fat,
-                note: draftBodyNote,
+                bmi: bmi,
+                muscleKg: muscle,
+                boneMassKg: bone,
+                waterPercent: water,
+                bmrKcal: bmr,
+                visceralFat: visceral,
+                note: draftBodyNote.trimmingCharacters(in: .whitespacesAndNewlines),
+                measuredAt: draftBodyMeasuredAt.isEmpty ? nil : draftBodyMeasuredAt,
+                analysis: lastBodyAnalysis,
                 existing: bodyMetric
             )
             _ = try await bodyRepository.upsert(write)
             isPresentingBodySheet = false
             errorMessage = nil
+            clearBodyDraftFields()
+            clearBodyAnalysisSession()
             await load()
         } catch {
             errorMessage = DataErrorMapping.map(error).userMessage
+            // Keep drafts and screenshot so user can retry.
         }
+    }
+
+    private func clearBodyDraftFields() {
+        draftWeightKg = ""
+        draftBodyFatPercent = ""
+        draftBodyNote = ""
+        draftBmi = ""
+        draftMuscleKg = ""
+        draftBoneMassKg = ""
+        draftWaterPercent = ""
+        draftBmrKcal = ""
+        draftVisceralFat = ""
+        draftBodyMeasuredAt = ""
+    }
+
+    private func clearBodyAnalysisSession() {
+        clearBodyDraftPhoto()
+        isAnalyzingBody = false
+        isPreparingBodyPhoto = false
+        bodyAnalysisNotes = nil
+        bodyAnalysisConfidence = nil
+        bodyAnalysisDateHint = nil
+        lastBodyAnalysis = nil
+    }
+
+    /// Called when body sheet is dismissed (cancel, save, or swipe). Drops screenshot from memory.
+    func clearBodySessionAfterDismiss() {
+        clearBodyAnalysisSession()
+        // Draft text fields are reset on next openBodySheet; photo must not linger.
+    }
+
+    /// Empty → nil (caller keeps existing); invalid / out of 0...100 → error.
+    private func parseOptionalPercentField(_ text: String, name: String) throws -> Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return nil }
+        guard let value = Double(trimmed.replacingOccurrences(of: ",", with: ".")), value.isFinite else {
+            throw FoodFormValidationMessage(text: "\(name)需为有效数字。")
+        }
+        if value < 0 || value > 100 {
+            throw FoodFormValidationMessage(text: "\(name)需在 0–100 之间。")
+        }
+        return value
+    }
+
+    /// Empty → nil (keep existing on write); invalid/negative → error.
+    private func parseOptionalNonNegative(_ text: String, name: String) throws -> Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return nil }
+        guard let value = Double(trimmed.replacingOccurrences(of: ",", with: ".")), value.isFinite else {
+            throw FoodFormValidationMessage(text: "\(name)需为有效数字。")
+        }
+        if value < 0 {
+            throw FoodFormValidationMessage(text: "\(name)不能为负数。")
+        }
+        return value
     }
 
     func deleteBodyMetric() async {
@@ -1168,7 +1389,14 @@ final class TodayMealsViewModel {
 
     private func parseRequiredPositive(_ text: String) -> Double? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let value = Double(trimmed), value.isFinite, value > 0 else { return nil }
+        if trimmed.isEmpty { return nil }
+        let normalized: String
+        if trimmed.contains(","), !trimmed.contains(".") {
+            normalized = trimmed.replacingOccurrences(of: ",", with: ".")
+        } else {
+            normalized = trimmed
+        }
+        guard let value = Double(normalized), value.isFinite, value > 0 else { return nil }
         return value
     }
 

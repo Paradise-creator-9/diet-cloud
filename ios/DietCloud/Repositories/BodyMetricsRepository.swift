@@ -122,6 +122,8 @@ final class MockBodyMetricsRepository: BodyMetricsRepositoryProtocol, @unchecked
     private let sessionUserId: String
     private(set) var lastUpsertUserId: String?
     private(set) var lastUpsertDateKey: String?
+    private(set) var lastUpsertWrite: BodyMetricWrite?
+    private(set) var upsertCallCount = 0
     private(set) var lastFetchDateKey: String?
     var forcedError: Error?
 
@@ -162,6 +164,8 @@ final class MockBodyMetricsRepository: BodyMetricsRepositoryProtocol, @unchecked
         let payload = BodyMetricMapper.upsertPayload(from: write, sessionUserId: sessionUserId)
         lastUpsertUserId = payload.user_id
         lastUpsertDateKey = payload.measured_on
+        lastUpsertWrite = write
+        upsertCallCount += 1
         guard payload.user_id == sessionUserId else { throw AppError.unauthorized }
         let metric = try BodyMetricMapper.domain(from: BodyMetricRow(
             id: UUID().uuidString.lowercased(),

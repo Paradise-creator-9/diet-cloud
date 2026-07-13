@@ -1,11 +1,12 @@
 import Foundation
 
-/// Client for Vercel Gemini meal analysis via existing `/api/analyze-meal`.
+/// Client for Vercel Gemini analysis via `/api/analyze-meal` and `/api/analyze-body`.
 /// Never embeds `GEMINI_API_KEY`; uses Supabase session Bearer token only.
 protocol AnalyzeAPIClienting: Sendable {
     func analyzeMealURL() -> URL
     func analyzeBodyURL() -> URL
     func analyzeMeal(_ request: MealAnalysisRequest) async throws -> MealAnalysisResult
+    func analyzeBody(_ request: BodyAnalysisRequest) async throws -> BodyAnalysisResult
 }
 
 struct AnalyzeAPIClient: AnalyzeAPIClienting {
@@ -44,13 +45,28 @@ struct AnalyzeAPIClient: AnalyzeAPIClienting {
             throw AppError.unknown(message: "AI 分析不支持远程图片地址，请使用本地照片。")
         }
 
+        let data = try await postJSON(url: analyzeMealURL(), body: request)
+        return try decodeMealSuccess(data)
+    }
+
+    func analyzeBody(_ request: BodyAnalysisRequest) async throws -> BodyAnalysisResult {
+        // Only in-memory data URLs — never remote signed/public URLs or file paths.
+        guard request.isLocalDataURL, !request.containsRemotePhotoURL else {
+            throw AppError.unknown(message: "AI 分析不支持远程图片地址，请使用本地照片。")
+        }
+
+        let data = try await postJSON(url: analyzeBodyURL(), body: request)
+        return try decodeBodySuccess(data)
+    }
+
+    private func postJSON<Body: Encodable>(url: URL, body: Body) async throws -> Data {
         let token = try await requireBearerToken()
-        var urlRequest = URLRequest(url: analyzeMealURL())
+        var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         urlRequest.timeoutInterval = 60
-        urlRequest.httpBody = try encoder.encode(request)
+        urlRequest.httpBody = try encoder.encode(body)
 
         let data: Data
         let response: URLResponse
@@ -65,7 +81,7 @@ struct AnalyzeAPIClient: AnalyzeAPIClienting {
         }
 
         if (200 ... 299).contains(http.statusCode) {
-            return try decodeSuccess(data)
+            return data
         }
         throw mapHTTPFailure(statusCode: http.statusCode, data: data)
     }
@@ -83,7 +99,7 @@ struct AnalyzeAPIClient: AnalyzeAPIClienting {
         return token
     }
 
-    private func decodeSuccess(_ data: Data) throws -> MealAnalysisResult {
+    private func decodeMealSuccess(_ data: Data) throws -> MealAnalysisResult {
         let dto: MealAnalysisAPIResponseDTO
         do {
             dto = try decoder.decode(MealAnalysisAPIResponseDTO.self, from: data)
@@ -92,6 +108,22 @@ struct AnalyzeAPIClient: AnalyzeAPIClienting {
         }
         do {
             return try MealAnalysisDTOMapper.domain(from: dto)
+        } catch let app as AppError {
+            throw app
+        } catch {
+            throw AppError.unknown(message: "AI 返回格式无效。")
+        }
+    }
+
+    private func decodeBodySuccess(_ data: Data) throws -> BodyAnalysisResult {
+        let dto: BodyAnalysisAPIResponseDTO
+        do {
+            dto = try decoder.decode(BodyAnalysisAPIResponseDTO.self, from: data)
+        } catch {
+            throw AppError.unknown(message: "AI 返回格式无效。")
+        }
+        do {
+            return try BodyAnalysisDTOMapper.domain(from: dto)
         } catch let app as AppError {
             throw app
         } catch {
@@ -140,9 +172,13 @@ struct AnalyzeAPIClient: AnalyzeAPIClienting {
 final class MockAnalyzeAPIClient: AnalyzeAPIClienting, @unchecked Sendable {
     private let lock = NSLock()
     private var _lastRequest: MealAnalysisRequest?
+    private var _lastBodyRequest: BodyAnalysisRequest?
     private var _callCount = 0
+    private var _bodyCallCount = 0
     private var _result: MealAnalysisResult?
+    private var _bodyResult: BodyAnalysisResult?
     private var _error: Error?
+    private var _bodyError: Error?
     private let mealURL: URL
     private let bodyURL: URL
 
@@ -151,9 +187,19 @@ final class MockAnalyzeAPIClient: AnalyzeAPIClienting, @unchecked Sendable {
         return _lastRequest
     }
 
+    var lastBodyRequest: BodyAnalysisRequest? {
+        lock.lock(); defer { lock.unlock() }
+        return _lastBodyRequest
+    }
+
     var callCount: Int {
         lock.lock(); defer { lock.unlock() }
         return _callCount
+    }
+
+    var bodyCallCount: Int {
+        lock.lock(); defer { lock.unlock() }
+        return _bodyCallCount
     }
 
     init(
@@ -169,9 +215,19 @@ final class MockAnalyzeAPIClient: AnalyzeAPIClienting, @unchecked Sendable {
         _result = result
     }
 
+    func setBodyResult(_ result: BodyAnalysisResult?) {
+        lock.lock(); defer { lock.unlock() }
+        _bodyResult = result
+    }
+
     func setError(_ error: Error?) {
         lock.lock(); defer { lock.unlock() }
         _error = error
+    }
+
+    func setBodyError(_ error: Error?) {
+        lock.lock(); defer { lock.unlock() }
+        _bodyError = error
     }
 
     func analyzeMealURL() -> URL { mealURL }
@@ -195,6 +251,48 @@ final class MockAnalyzeAPIClient: AnalyzeAPIClienting, @unchecked Sendable {
             ),
             items: [],
             notes: "mock",
+            model: "mock-model"
+        )
+    }
+
+    func analyzeBody(_ request: BodyAnalysisRequest) async throws -> BodyAnalysisResult {
+        lock.lock()
+        _bodyCallCount += 1
+        _lastBodyRequest = request
+        let error = _bodyError
+        let result = _bodyResult
+        lock.unlock()
+
+        if let error { throw error }
+        if let result { return result }
+        return BodyAnalysisResult(
+            confidence: 0.8,
+            date: nil,
+            measuredAt: nil,
+            score: nil,
+            weightKg: 70,
+            bmi: 22,
+            bodyFatPercent: 18,
+            bodyAge: nil,
+            bodyType: nil,
+            muscleKg: 50,
+            skeletalMuscleKg: nil,
+            boneMassKg: 3,
+            waterPercent: 55,
+            visceralFat: 8,
+            bmrKcal: 1500,
+            proteinPercent: nil,
+            trunkFatPercent: nil,
+            trunkMuscleKg: nil,
+            leftArmFatPercent: nil,
+            leftArmMuscleKg: nil,
+            rightArmFatPercent: nil,
+            rightArmMuscleKg: nil,
+            leftLegFatPercent: nil,
+            leftLegMuscleKg: nil,
+            rightLegFatPercent: nil,
+            rightLegMuscleKg: nil,
+            notes: "mock body",
             model: "mock-model"
         )
     }

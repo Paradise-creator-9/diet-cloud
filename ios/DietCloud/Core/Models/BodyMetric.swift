@@ -69,34 +69,78 @@ struct BodyMetricWrite: Equatable, Sendable {
         note: String = "",
         existing: BodyMetric? = nil
     ) -> BodyMetricWrite {
-        BodyMetricWrite(
+        formDraft(
             dateKey: dateKey,
-            measuredAt: existing?.measuredAt.isEmpty == false
-                ? existing!.measuredAt
-                : "\(dateKey)T12:00:00",
-            score: existing?.score ?? 0,
             weightKg: weightKg,
-            bmi: existing?.bmi ?? 0,
             bodyFatPercent: bodyFatPercent,
-            bodyAge: existing?.bodyAge ?? 0,
-            bodyType: existing?.bodyType ?? "",
-            muscleKg: existing?.muscleKg ?? 0,
-            skeletalMuscleKg: existing?.skeletalMuscleKg ?? 0,
-            boneMassKg: existing?.boneMassKg ?? 0,
-            waterPercent: existing?.waterPercent ?? 0,
-            visceralFat: existing?.visceralFat ?? 0,
-            bmrKcal: existing?.bmrKcal ?? 0,
-            proteinPercent: existing?.proteinPercent ?? 0,
-            trunkFatPercent: existing?.trunkFatPercent ?? 0,
-            trunkMuscleKg: existing?.trunkMuscleKg ?? 0,
-            leftArmFatPercent: existing?.leftArmFatPercent ?? 0,
-            leftArmMuscleKg: existing?.leftArmMuscleKg ?? 0,
-            rightArmFatPercent: existing?.rightArmFatPercent ?? 0,
-            rightArmMuscleKg: existing?.rightArmMuscleKg ?? 0,
-            leftLegFatPercent: existing?.leftLegFatPercent ?? 0,
-            leftLegMuscleKg: existing?.leftLegMuscleKg ?? 0,
-            rightLegFatPercent: existing?.rightLegFatPercent ?? 0,
-            rightLegMuscleKg: existing?.rightLegMuscleKg ?? 0,
+            bmi: nil,
+            muscleKg: nil,
+            boneMassKg: nil,
+            waterPercent: nil,
+            bmrKcal: nil,
+            visceralFat: nil,
+            note: note,
+            measuredAt: nil,
+            analysis: nil,
+            existing: existing
+        )
+    }
+
+    /// Form save including Stage 16 extended metrics.
+    /// - Parameters:
+    ///   - Optional metrics: when `nil`, keep `existing` (or 0); never invent AI zeros.
+    ///   - `analysis`: optional last AI result for segment fields when present.
+    static func formDraft(
+        dateKey: String,
+        weightKg: Double,
+        bodyFatPercent: Double,
+        bmi: Double?,
+        muscleKg: Double?,
+        boneMassKg: Double?,
+        waterPercent: Double?,
+        bmrKcal: Double?,
+        visceralFat: Double?,
+        note: String,
+        measuredAt: String?,
+        analysis: BodyAnalysisResult? = nil,
+        existing: BodyMetric? = nil
+    ) -> BodyMetricWrite {
+        let measured: String = {
+            if let measuredAt, !measuredAt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return measuredAt
+            }
+            if let existing, !existing.measuredAt.isEmpty {
+                return existing.measuredAt
+            }
+            return "\(dateKey)T12:00:00"
+        }()
+
+        return BodyMetricWrite(
+            dateKey: dateKey,
+            measuredAt: measured,
+            score: analysis?.score ?? existing?.score ?? 0,
+            weightKg: weightKg,
+            bmi: bmi ?? existing?.bmi ?? 0,
+            bodyFatPercent: bodyFatPercent,
+            bodyAge: analysis?.bodyAge ?? existing?.bodyAge ?? 0,
+            bodyType: analysis?.bodyType ?? existing?.bodyType ?? "",
+            muscleKg: muscleKg ?? existing?.muscleKg ?? 0,
+            skeletalMuscleKg: analysis?.skeletalMuscleKg ?? existing?.skeletalMuscleKg ?? 0,
+            boneMassKg: boneMassKg ?? existing?.boneMassKg ?? 0,
+            waterPercent: waterPercent ?? existing?.waterPercent ?? 0,
+            visceralFat: visceralFat ?? existing?.visceralFat ?? 0,
+            bmrKcal: bmrKcal ?? existing?.bmrKcal ?? 0,
+            proteinPercent: analysis?.proteinPercent ?? existing?.proteinPercent ?? 0,
+            trunkFatPercent: analysis?.trunkFatPercent ?? existing?.trunkFatPercent ?? 0,
+            trunkMuscleKg: analysis?.trunkMuscleKg ?? existing?.trunkMuscleKg ?? 0,
+            leftArmFatPercent: analysis?.leftArmFatPercent ?? existing?.leftArmFatPercent ?? 0,
+            leftArmMuscleKg: analysis?.leftArmMuscleKg ?? existing?.leftArmMuscleKg ?? 0,
+            rightArmFatPercent: analysis?.rightArmFatPercent ?? existing?.rightArmFatPercent ?? 0,
+            rightArmMuscleKg: analysis?.rightArmMuscleKg ?? existing?.rightArmMuscleKg ?? 0,
+            leftLegFatPercent: analysis?.leftLegFatPercent ?? existing?.leftLegFatPercent ?? 0,
+            leftLegMuscleKg: analysis?.leftLegMuscleKg ?? existing?.leftLegMuscleKg ?? 0,
+            rightLegFatPercent: analysis?.rightLegFatPercent ?? existing?.rightLegFatPercent ?? 0,
+            rightLegMuscleKg: analysis?.rightLegMuscleKg ?? existing?.rightLegMuscleKg ?? 0,
             note: note
         )
     }

@@ -36,6 +36,7 @@
 		47B2DCD492D27E087E7AFFE8 /* AccessTokenProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = A97D0C67760110133D6EB084 /* AccessTokenProviding.swift */; };
 		48270AE9F881437CCB5F0CBC /* MealAnalysisDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B38DE8CF29E57260531F4B4 /* MealAnalysisDTO.swift */; };
 		4B634F994C1D3EE554DC9934 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C4B2FB2471164D47F87342 /* AppConfigTests.swift */; };
+		51CD321EDE64F3C7A35F9BA7 /* BodyAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3900CC276E6EE414CDBA0F86 /* BodyAnalysis.swift */; };
 		524E5FEB2BE280CBA2DA1337 /* AnalyzeAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */; };
 		5366F1D757F2A43D8E6E59CF /* AuthViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD20A4FB837E36B1E20F0A9 /* AuthViews.swift */; };
 		539971DF9206A4CA89AFABFC /* SecureCredentialStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BB9B55B44E0A75DCF26F75 /* SecureCredentialStoring.swift */; };
@@ -60,6 +61,7 @@
 		8C81510F9CC102B8B7A84EBD /* TrendsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A85C722A141C441C67AA99AF /* TrendsViewModelTests.swift */; };
 		8D5D90C3AD76AF42D3A99DAF /* FavoriteFoodsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E72A2394BC7D49118296976 /* FavoriteFoodsStoreTests.swift */; };
 		970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */; };
+		9779D661871103D1EA4B9C5A /* BodyAnalysisMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A525B390FD7CCC05C5DFBC9 /* BodyAnalysisMapperTests.swift */; };
 		9BB251DA8901631C9E532FCC /* TodayMealsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFAB48C59D565787CD10749D /* TodayMealsViewModel.swift */; };
 		9BC4C552AC2BF98BBDB031FB /* AuthRepositoryParametersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 287FC63E509A3D21B3A21A93 /* AuthRepositoryParametersTests.swift */; };
 		9C2F85F496D4176BCD66DB4A /* FavoriteFoodsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E5CB976ED8AB025708228C0 /* FavoriteFoodsStore.swift */; };
@@ -73,6 +75,7 @@
 		A7A7CB908708902FEFF140E8 /* TrendAggregatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452224BB6B81D4768807D806 /* TrendAggregatorTests.swift */; };
 		A7CBF2CD128EF17D1E69FCD1 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B4D896438CDEA91930486C /* SettingsView.swift */; };
 		AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */; };
+		ABE3FB6CB411F30077C5AA4D /* BodyAnalysisDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43B53077871EA276B7D0691 /* BodyAnalysisDTO.swift */; };
 		B10296039BACEFB61B7DC408 /* DietCloudApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EEE3FE745F33987ED05C4CB /* DietCloudApp.swift */; };
 		B7C6783097E209890ADBAE6C /* FoodItemRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E3960AA4F8B4D4F03E1727 /* FoodItemRepositoryTests.swift */; };
 		BA22C21DECBA63074F1D8813 /* ReminderScheduleApplier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E7189F47163AD4A2CB049C /* ReminderScheduleApplier.swift */; };
@@ -129,6 +132,7 @@
 		3762E293F50FF63036987FC7 /* DiaryCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiaryCalendar.swift; sourceTree = "<group>"; };
 		37FB025D57FBD426814C83EC /* HealthKitModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitModels.swift; sourceTree = "<group>"; };
 		38007A1DABD0C603A8489C27 /* BodyMetricsRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMetricsRepository.swift; sourceTree = "<group>"; };
+		3900CC276E6EE414CDBA0F86 /* BodyAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAnalysis.swift; sourceTree = "<group>"; };
 		3AF80B513DC7A8DD01777D0C /* MockNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNotificationScheduler.swift; sourceTree = "<group>"; };
 		3B3F98D657C4C27D4669F495 /* ActivityMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMapperTests.swift; sourceTree = "<group>"; };
 		408833F9E547197115F04318 /* SupabaseClientProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClientProvider.swift; sourceTree = "<group>"; };
@@ -144,6 +148,7 @@
 		565E62F2F164A98BB038B28A /* MealType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealType.swift; sourceTree = "<group>"; };
 		5891F5697ED9209FFDA07DE8 /* PhotoLibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryModels.swift; sourceTree = "<group>"; };
 		5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityDTO.swift; sourceTree = "<group>"; };
+		5A525B390FD7CCC05C5DFBC9 /* BodyAnalysisMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAnalysisMapperTests.swift; sourceTree = "<group>"; };
 		5A5FA52A42111D1489A20DE2 /* ReminderSettingsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderSettingsStoreTests.swift; sourceTree = "<group>"; };
 		5BF3912BBA371114BDBBBD8C /* MealPhotoRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealPhotoRepository.swift; sourceTree = "<group>"; };
 		5E5CB976ED8AB025708228C0 /* FavoriteFoodsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteFoodsStore.swift; sourceTree = "<group>"; };
@@ -202,6 +207,7 @@
 		F216D2AF3548F82EF5277DC5 /* ImageCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCompressor.swift; sourceTree = "<group>"; };
 		F234446D8F1EBBE70E05E142 /* AnalyzeAPIErrorMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIErrorMapping.swift; sourceTree = "<group>"; };
 		F2539D27A65C3FF5ACDA30A7 /* AppErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppErrorTests.swift; sourceTree = "<group>"; };
+		F43B53077871EA276B7D0691 /* BodyAnalysisDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyAnalysisDTO.swift; sourceTree = "<group>"; };
 		F50F17C701E94F79C5405C45 /* BodyActivityViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyActivityViewModelTests.swift; sourceTree = "<group>"; };
 		F6CDFB9B64FCA7696F4E2DB3 /* AnalyzeAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzeAPIClient.swift; sourceTree = "<group>"; };
 		F7FED1D03128CC0B6FBDDAE9 /* AuthErrorSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthErrorSanitizer.swift; sourceTree = "<group>"; };
@@ -335,6 +341,7 @@
 			children = (
 				B5A2988B0C48DB63AD0C82D0 /* DTO */,
 				DA8E9785419E54129E0EE487 /* ActivityModels.swift */,
+				3900CC276E6EE414CDBA0F86 /* BodyAnalysis.swift */,
 				2938AEB5BC8A6EFB25BD4370 /* BodyMetric.swift */,
 				1F589EC305863550A8C98F02 /* DailyNutritionSummary.swift */,
 				A931928902FF7BFE0916186F /* FoodItem.swift */,
@@ -436,6 +443,7 @@
 			isa = PBXGroup;
 			children = (
 				5A2F5F53336B96BC58603C4B /* ActivityDTO.swift */,
+				F43B53077871EA276B7D0691 /* BodyAnalysisDTO.swift */,
 				ED97D6293611E5D896A4BE52 /* BodyMetricDTO.swift */,
 				D803A31EB953E909706DAAA8 /* FoodItemDTO.swift */,
 				1B38DE8CF29E57260531F4B4 /* MealAnalysisDTO.swift */,
@@ -455,6 +463,7 @@
 				924B9CCCA5740CC40F0642B9 /* AuthUserTests.swift */,
 				51578621B12841023EA296BA /* AuthViewModelTests.swift */,
 				F50F17C701E94F79C5405C45 /* BodyActivityViewModelTests.swift */,
+				5A525B390FD7CCC05C5DFBC9 /* BodyAnalysisMapperTests.swift */,
 				DCAD2C1465311164B8F22D7D /* BodyMetricMapperTests.swift */,
 				960AF5B153CD69F3B2AB39C9 /* CredentialStoreTests.swift */,
 				B70FC9CA4D807D5CCFF0CE91 /* DependencyContainerTests.swift */,
@@ -641,6 +650,8 @@
 				E3FCA953FE00662D53869C50 /* AuthRepository.swift in Sources */,
 				D79A32118F3018A0D65F6799 /* AuthViewModel.swift in Sources */,
 				5366F1D757F2A43D8E6E59CF /* AuthViews.swift in Sources */,
+				51CD321EDE64F3C7A35F9BA7 /* BodyAnalysis.swift in Sources */,
+				ABE3FB6CB411F30077C5AA4D /* BodyAnalysisDTO.swift in Sources */,
 				E46903CF2B296FFC093B62E4 /* BodyMetric.swift in Sources */,
 				6C5D1C99091E5C7ABCB6C324 /* BodyMetricDTO.swift in Sources */,
 				63915502CC2DFF2A223FAF77 /* BodyMetricsRepository.swift in Sources */,
@@ -704,6 +715,7 @@
 				970FEF1761FD67CE9D353D57 /* AuthUserTests.swift in Sources */,
 				D62E64746D379E3F1726ADBF /* AuthViewModelTests.swift in Sources */,
 				59DBB02330C67AA20418D03C /* BodyActivityViewModelTests.swift in Sources */,
+				9779D661871103D1EA4B9C5A /* BodyAnalysisMapperTests.swift in Sources */,
 				E5CC5D294F96DED704CEBCF2 /* BodyMetricMapperTests.swift in Sources */,
 				AB142E48E6DCAB59A12CE2AB /* CredentialStoreTests.swift in Sources */,
 				10B72269E2ED85C9F29D51A7 /* DependencyContainerTests.swift in Sources */,

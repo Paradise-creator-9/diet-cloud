@@ -268,7 +268,117 @@ final class AnalyzeAPIClientTests: XCTestCase {
         XCTAssertEqual(client.analyzeBodyURL().absoluteString, "https://example.invalid/api/analyze-body")
     }
 
+    // MARK: - Body analyze (Stage 16)
+
+    func testBodyRequestIsDataURLAndHitsAnalyzeBody() async throws {
+        let session = MockHTTPSession()
+        session.setResponse(statusCode: 200, json: Self.bodySuccessJSON())
+        let client = makeClient(session: session)
+        let jpeg = Data(repeating: 0xCD, count: 24)
+        let request = try BodyAnalysisRequest.make(jpegData: jpeg)
+        let result = try await client.analyzeBody(request)
+
+        XCTAssertEqual(result.weightKg, 72.5)
+        XCTAssertEqual(session.lastRequest?.url?.absoluteString, "https://example.invalid/api/analyze-body")
+        XCTAssertEqual(
+            session.lastRequest?.value(forHTTPHeaderField: "Authorization"),
+            "Bearer test-access-token-not-a-secret"
+        )
+        let body = try XCTUnwrap(session.lastRequest?.httpBody)
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let screenshot = try XCTUnwrap(json?["screenshot"] as? [String: Any])
+        let dataUrl = try XCTUnwrap(screenshot["dataUrl"] as? String)
+        XCTAssertTrue(dataUrl.hasPrefix("data:image/jpeg;base64,"))
+        XCTAssertFalse(dataUrl.hasPrefix("http"))
+    }
+
+    func testBodyRejectsRemoteHTTPURLBeforeNetwork() async {
+        let session = MockHTTPSession()
+        let client = makeClient(session: session)
+        let remote = BodyAnalysisRequest(
+            screenshot: BodyAnalysisScreenshotPayload(
+                fileName: "x.jpg",
+                contentType: "image/jpeg",
+                dataUrl: "https://cdn.example/body.jpg"
+            )
+        )
+        do {
+            _ = try await client.analyzeBody(remote)
+            XCTFail("expected reject")
+        } catch let error as AppError {
+            XCTAssertTrue(error.userMessage.contains("本地") || error.userMessage.contains("远程"))
+            XCTAssertNil(session.lastRequest)
+        } catch {
+            XCTFail("unexpected \(error)")
+        }
+    }
+
+    func testBodyHTTP401MapsToUnauthorized() async {
+        let session = MockHTTPSession()
+        session.setResponse(statusCode: 401, json: ["error": "Invalid session"])
+        let client = makeClient(session: session)
+        do {
+            _ = try await client.analyzeBody(try BodyAnalysisRequest.make(jpegData: Data([0x01])))
+            XCTFail("expected 401")
+        } catch let error as AppError {
+            XCTAssertEqual(error, .unauthorized)
+            XCTAssertFalse(error.userMessage.contains("eyJ"))
+        } catch {
+            XCTFail("unexpected \(error)")
+        }
+    }
+
+    func testBodyHTTP413And429MapSafely() async {
+        let session413 = MockHTTPSession()
+        session413.setResponse(statusCode: 413, json: ["error": "too large"])
+        let client413 = makeClient(session: session413)
+        do {
+            _ = try await client413.analyzeBody(try BodyAnalysisRequest.make(jpegData: Data([0x02])))
+            XCTFail("expected 413")
+        } catch let error as AppError {
+            XCTAssertEqual(error.userMessage, AnalyzeAPIErrorMapping.imageTooLargeMessage)
+        } catch {
+            XCTFail("unexpected \(error)")
+        }
+
+        let session429 = MockHTTPSession()
+        session429.setResponse(statusCode: 429, json: ["error": "rate limited", "code": "rate_limited"])
+        let client429 = makeClient(session: session429)
+        do {
+            _ = try await client429.analyzeBody(try BodyAnalysisRequest.make(jpegData: Data([0x03])))
+            XCTFail("expected 429")
+        } catch let error as AppError {
+            if case .rateLimited = error {} else {
+                XCTFail("expected rateLimited, got \(error)")
+            }
+            XCTAssertFalse(error.userMessage.contains("base64"))
+        } catch {
+            XCTFail("unexpected \(error)")
+        }
+    }
+
     // MARK: - Helpers
+
+    private static func bodySuccessJSON() -> [String: Any] {
+        [
+            "ok": true,
+            "model": "stub",
+            "analysis": [
+                "confidence": 0.88,
+                "date": "2026-07-13",
+                "weightKg": 72.5,
+                "bmi": 22.0,
+                "bodyFatPercent": 18.0,
+                "muscleKg": 50.0,
+                "boneMassKg": 2.9,
+                "waterPercent": 55.0,
+                "visceralFat": 7.0,
+                "bmrKcal": 1500.0,
+                "notes": "请核对",
+            ] as [String: Any],
+        ]
+    }
+
 
     private func assertStatus(
         _ status: Int,

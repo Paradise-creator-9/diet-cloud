@@ -135,13 +135,44 @@ const defaultFavoriteFoods: FavoriteFood[] = [
   { id: "fav-broccoli", name: "西兰花", meal: "dinner", grams: 200, calories: 70, protein: 6, carbs: 12, fat: 1, fiber: 6, note: "常用估算：清炒或水煮一碗。" },
 ];
 
-function ModalPortal({ children }: { children: React.ReactNode }) {
+function ModalPortal({ children, onClose }: { children: React.ReactNode; onClose?: () => void }) {
   useEffect(() => {
     document.body.classList.add("modal-open");
     return () => document.body.classList.remove("modal-open");
   }, []);
 
+  useEffect(() => {
+    if (!onClose) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose?.();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return createPortal(children, document.body);
+}
+
+// 桌面浏览器点击透明覆盖的 date input 只会聚焦、不会弹出日历面板（手机 Safari 才会弹），
+// 所以点击时要显式调用 showPicker()；不支持或已打开时退化为 focus。
+function openNativeDatePicker(input: HTMLInputElement | null) {
+  if (!input) return;
+  try {
+    input.showPicker();
+  } catch {
+    input.focus();
+  }
+}
+
+function DateFieldControl({ onChange, value }: { onChange: (next: string) => void; value: string }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="dateFieldControl" onClick={() => openNativeDatePicker(inputRef.current)}>
+      <CalendarDays size={15} />
+      <span>{value}</span>
+      <input aria-label="选择日期" onChange={(event) => onChange(event.target.value)} ref={inputRef} type="date" value={value} />
+    </div>
+  );
 }
 
 function getInitialTheme(): ThemeMode {
@@ -207,6 +238,7 @@ function App() {
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
   const appleHealthInputRef = useRef<HTMLInputElement>(null);
+  const headerDateInputRef = useRef<HTMLInputElement>(null);
   const appleHealthImportMonthsRef = useRef(3);
   const toastTimerRef = useRef<number | null>(null);
 
@@ -214,6 +246,10 @@ function App() {
     document.documentElement.dataset.theme = themeMode;
     document.documentElement.style.colorScheme = themeMode;
     window.localStorage.setItem("diet-cloud-theme", themeMode);
+    // 手动切换主题时同步 theme-color，让 iOS Safari 状态栏和地址栏跟着变色。
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+      meta.setAttribute("content", themeMode === "dark" ? "#000000" : "#f5f5f7");
+    });
   }, [themeMode]);
 
   useEffect(() => {
@@ -416,8 +452,9 @@ function App() {
   }
 
   function showMobileInfo() {
-    const body = "手机打开这个地址即可查看：https://diet-cloud.vercel.app。登录一次后 Safari 会记住状态，也可以用分享菜单添加到主屏幕。";
-    navigator.clipboard?.writeText("https://diet-cloud.vercel.app").catch(() => undefined);
+    const siteUrl = window.location.origin;
+    const body = `手机打开这个地址即可查看：${siteUrl}。登录一次后 Safari 会记住状态，也可以用分享菜单添加到主屏幕。`;
+    navigator.clipboard?.writeText(siteUrl).catch(() => undefined);
     setNotice({ title: "手机查看", body: `${body}\n\n我也已经尝试把网址复制到剪贴板。` });
   }
 
@@ -429,7 +466,7 @@ function App() {
   }
 
   function showShortcutInfo() {
-    const endpoint = "https://diet-cloud.vercel.app/api/activity-ingest";
+    const endpoint = `${window.location.origin}/api/activity-ingest`;
     navigator.clipboard?.writeText(endpoint).catch(() => undefined);
     setNotice({
       title: "iPhone 快捷指令同步",
@@ -543,9 +580,14 @@ function App() {
           <h1 className="appTitle">{formatDateLabel(selectedDate)}</h1>
         </div>
         <div className="appHeaderActions headerToolbar">
-          <label aria-label="选择日期" className="iconButton datePickerButton" title="选择日期">
+          <label
+            aria-label="选择日期"
+            className="iconButton datePickerButton"
+            onClick={() => openNativeDatePicker(headerDateInputRef.current)}
+            title="选择日期"
+          >
             <CalendarDays size={18} />
-            <input value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} type="date" />
+            <input ref={headerDateInputRef} value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} type="date" />
           </label>
           <button aria-label="新增食物" className="iconButton" onClick={() => openRecordNotice("snack")} title="新增食物" type="button"><Plus size={19} /></button>
           <button
@@ -583,7 +625,7 @@ function App() {
             totals={totals}
           />
         )}
-        {activeView === "detail" && <Detail items={dayItems} onDeleteItem={confirmDeleteItem} onEditItem={openEditItem} />}
+        {activeView === "detail" && <Detail items={dayItems} onDeleteItem={confirmDeleteItem} onEditItem={openEditItem} onRecordMeal={openRecordNotice} />}
         {activeView === "trend" && <Trend bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={items} selectedDate={selectedDate} />}
         {activeView === "photos" && <PhotoLibrary items={items} />}
         {activeView === "body" && (
@@ -991,18 +1033,35 @@ function Toast({ toast, onClose }: { toast: ToastMessage | null; onClose: () => 
 }
 
 function GoalsDialog({ goals, onClose, onSave }: { goals: UserGoals; onClose: () => void; onSave: (goals: UserGoals) => void }) {
-  const [draft, setDraft] = useState<UserGoals>(goals);
+  // 输入框用字符串草稿，保存时再转数字。直接把 state 存成 number 会让 "68." 这种
+  // 中间输入态被 Number() 吃掉，导致小数点永远打不出来，也没法临时清空输入框。
+  const [draft, setDraft] = useState(() => ({
+    targetWeightKg: String(goals.targetWeightKg),
+    targetDate: goals.targetDate,
+    dailyCalories: String(goals.dailyCalories),
+    protein: String(goals.protein),
+    fiber: String(goals.fiber),
+    weeklyLossKg: String(goals.weeklyLossKg),
+  }));
 
-  function updateGoal<K extends keyof UserGoals>(key: K, value: UserGoals[K]) {
+  function updateDraft(key: keyof typeof draft, value: string) {
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
-  function numberValue(value: string) {
-    return Number(value || 0);
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    onSave({
+      targetWeightKg: Number(draft.targetWeightKg) || 0,
+      targetDate: draft.targetDate,
+      dailyCalories: Number(draft.dailyCalories) || 0,
+      protein: Number(draft.protein) || 0,
+      fiber: Number(draft.fiber) || 0,
+      weeklyLossKg: Number(draft.weeklyLossKg) || 0,
+    });
   }
 
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div className="modalBackdrop" role="presentation" onClick={onClose}>
         <section aria-modal="true" className="entryDialog compactDialog goalDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
           <div className="entryHead">
@@ -1012,16 +1071,16 @@ function GoalsDialog({ goals, onClose, onSave }: { goals: UserGoals; onClose: ()
             </div>
             <button aria-label="关闭" onClick={onClose} type="button">×</button>
           </div>
-          <form className="entryForm" onSubmit={(event) => { event.preventDefault(); onSave(draft); }}>
-            <label><span>目标体重 kg</span><input inputMode="decimal" value={draft.targetWeightKg} onChange={(event) => updateGoal("targetWeightKg", numberValue(event.target.value))} /></label>
-            <label><span>目标日期</span><input value={draft.targetDate} onChange={(event) => updateGoal("targetDate", event.target.value)} type="date" /></label>
-            <label><span>每日热量 kcal</span><input inputMode="decimal" value={draft.dailyCalories} onChange={(event) => updateGoal("dailyCalories", numberValue(event.target.value))} /></label>
-            <label><span>蛋白质 g</span><input inputMode="decimal" value={draft.protein} onChange={(event) => updateGoal("protein", numberValue(event.target.value))} /></label>
-            <label><span>膳食纤维 g</span><input inputMode="decimal" value={draft.fiber} onChange={(event) => updateGoal("fiber", numberValue(event.target.value))} /></label>
-            <label><span>期望周降 kg</span><input inputMode="decimal" value={draft.weeklyLossKg} onChange={(event) => updateGoal("weeklyLossKg", numberValue(event.target.value))} /></label>
+          <form className="entryForm" onSubmit={handleSubmit}>
+            <label><span>目标体重 kg</span><input inputMode="decimal" value={draft.targetWeightKg} onChange={(event) => updateDraft("targetWeightKg", event.target.value)} /></label>
+            <label><span>目标日期</span><input value={draft.targetDate} onChange={(event) => updateDraft("targetDate", event.target.value)} type="date" /></label>
+            <label><span>每日热量 kcal</span><input inputMode="decimal" value={draft.dailyCalories} onChange={(event) => updateDraft("dailyCalories", event.target.value)} /></label>
+            <label><span>蛋白质 g</span><input inputMode="decimal" value={draft.protein} onChange={(event) => updateDraft("protein", event.target.value)} /></label>
+            <label><span>膳食纤维 g</span><input inputMode="decimal" value={draft.fiber} onChange={(event) => updateDraft("fiber", event.target.value)} /></label>
+            <label><span>期望周降 kg</span><input inputMode="decimal" value={draft.weeklyLossKg} onChange={(event) => updateDraft("weeklyLossKg", event.target.value)} /></label>
             <div className="goalPreview wide">
               <span>推荐节奏</span>
-              <strong>{draft.weeklyLossKg.toFixed(1)}kg / 周</strong>
+              <strong>{(Number(draft.weeklyLossKg) || 0).toFixed(1)}kg / 周</strong>
               <p>如果实际体重连续两周不动，优先检查记录完整度、加餐和活动量。</p>
             </div>
             <div className="entryActions">
@@ -1035,22 +1094,56 @@ function GoalsDialog({ goals, onClose, onSave }: { goals: UserGoals; onClose: ()
   );
 }
 
-function FavoriteFoodsDialog({ favoriteFoods, onClose, onSave }: { favoriteFoods: FavoriteFood[]; onClose: () => void; onSave: (foods: FavoriteFood[]) => void }) {
-  const [foods, setFoods] = useState<FavoriteFood[]>(favoriteFoods);
+type FavoriteFoodDraft = {
+  id: string;
+  name: string;
+  meal: MealType;
+  grams: string;
+  calories: string;
+  protein: string;
+  carbs: string;
+  fat: string;
+  fiber: string;
+  note: string;
+};
 
-  function updateFood(index: number, patch: Partial<FavoriteFood>) {
+function FavoriteFoodsDialog({ favoriteFoods, onClose, onSave }: { favoriteFoods: FavoriteFood[]; onClose: () => void; onSave: (foods: FavoriteFood[]) => void }) {
+  // 数字列用字符串草稿编辑，保存时统一转数字，避免受控 number 输入吃掉小数点和空值中间态。
+  const [foods, setFoods] = useState<FavoriteFoodDraft[]>(() => favoriteFoods.map((food) => ({
+    ...food,
+    grams: String(food.grams),
+    calories: String(food.calories),
+    protein: String(food.protein),
+    carbs: String(food.carbs),
+    fat: String(food.fat),
+    fiber: String(food.fiber),
+  })));
+
+  function updateFood(index: number, patch: Partial<FavoriteFoodDraft>) {
     setFoods((current) => current.map((food, foodIndex) => foodIndex === index ? { ...food, ...patch } : food));
   }
 
   function addFood() {
     setFoods((current) => [
       ...current,
-      { id: `fav-${Date.now()}`, name: "新的常吃食物", meal: "snack", grams: 100, calories: 100, protein: 0, carbs: 0, fat: 0, fiber: 0, note: "" },
+      { id: `fav-${Date.now()}`, name: "新的常吃食物", meal: "snack", grams: "100", calories: "100", protein: "0", carbs: "0", fat: "0", fiber: "0", note: "" },
     ]);
   }
 
+  function handleSave() {
+    onSave(foods.filter((food) => food.name.trim()).map((food) => ({
+      ...food,
+      grams: Number(food.grams) || 0,
+      calories: Number(food.calories) || 0,
+      protein: Number(food.protein) || 0,
+      carbs: Number(food.carbs) || 0,
+      fat: Number(food.fat) || 0,
+      fiber: Number(food.fiber) || 0,
+    })));
+  }
+
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div className="modalBackdrop" role="presentation" onClick={onClose}>
         <section aria-modal="true" className="entryDialog compactDialog favoritesDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
           <div className="entryHead">
@@ -1067,12 +1160,12 @@ function FavoriteFoodsDialog({ favoriteFoods, onClose, onSave }: { favoriteFoods
                 <select value={food.meal} onChange={(event) => updateFood(index, { meal: event.target.value as MealType })}>
                   {mealMeta.map((meal) => <option key={meal.key} value={meal.key}>{meal.title}</option>)}
                 </select>
-                <input inputMode="decimal" value={food.grams} onChange={(event) => updateFood(index, { grams: Number(event.target.value || 0) })} />
-                <input inputMode="decimal" value={food.calories} onChange={(event) => updateFood(index, { calories: Number(event.target.value || 0) })} />
-                <input inputMode="decimal" value={food.protein} onChange={(event) => updateFood(index, { protein: Number(event.target.value || 0) })} />
-                <input inputMode="decimal" value={food.carbs} onChange={(event) => updateFood(index, { carbs: Number(event.target.value || 0) })} />
-                <input inputMode="decimal" value={food.fat} onChange={(event) => updateFood(index, { fat: Number(event.target.value || 0) })} />
-                <input inputMode="decimal" value={food.fiber} onChange={(event) => updateFood(index, { fiber: Number(event.target.value || 0) })} />
+                <input inputMode="decimal" value={food.grams} onChange={(event) => updateFood(index, { grams: event.target.value })} />
+                <input inputMode="decimal" value={food.calories} onChange={(event) => updateFood(index, { calories: event.target.value })} />
+                <input inputMode="decimal" value={food.protein} onChange={(event) => updateFood(index, { protein: event.target.value })} />
+                <input inputMode="decimal" value={food.carbs} onChange={(event) => updateFood(index, { carbs: event.target.value })} />
+                <input inputMode="decimal" value={food.fat} onChange={(event) => updateFood(index, { fat: event.target.value })} />
+                <input inputMode="decimal" value={food.fiber} onChange={(event) => updateFood(index, { fiber: event.target.value })} />
                 <button aria-label="删除常吃食物" onClick={() => setFoods((current) => current.filter((_, foodIndex) => foodIndex !== index))} type="button"><Trash2 size={14} /></button>
               </article>
             ))}
@@ -1083,7 +1176,7 @@ function FavoriteFoodsDialog({ favoriteFoods, onClose, onSave }: { favoriteFoods
           <div className="entryActions">
             <button className="secondaryButton" onClick={addFood} type="button"><Plus size={15} />添加食物</button>
             <button className="secondaryButton" onClick={onClose} type="button">取消</button>
-            <button onClick={() => onSave(foods.filter((food) => food.name.trim()))} type="button">保存食物库</button>
+            <button onClick={handleSave} type="button">保存食物库</button>
           </div>
         </section>
       </div>
@@ -1108,7 +1201,7 @@ function countPhotosUploadedToday(items: FoodItem[]) {
 
 function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode = "manual", onClose, onSaved }: { defaultDate: string; defaultMeal: MealType; editingItem?: FoodItem; items: FoodItem[]; mode?: "manual" | "ai"; onClose: () => void; onSaved: (savedDate: string) => Promise<void> }) {
   const remainingPhotoQuota = Math.max(0, DAILY_PHOTO_LIMIT - countPhotosUploadedToday(items));
-  const [date, setDate] = useState(editingItem?.date || dateKey(new Date()));
+  const [date, setDate] = useState(editingItem?.date || defaultDate);
   const [meal, setMeal] = useState<MealType>(editingItem?.meal || defaultMeal);
   const [name, setName] = useState(editingItem?.name || "");
   const [grams, setGrams] = useState(editingItem ? String(round(editingItem.grams)) : "");
@@ -1298,7 +1391,7 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
   }
 
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div className="modalBackdrop" role="presentation" onClick={onClose}>
       <section aria-modal="true" className="entryDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
         <div className="entryHead">
@@ -1311,11 +1404,7 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
         <form className={`entryForm ${isAiMode ? "aiEntryForm" : ""}`} onSubmit={handleSubmit}>
           <label className="dateField">
             <span>日期</span>
-            <div className="dateFieldControl">
-              <CalendarDays size={15} />
-              <span>{date}</span>
-              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
-            </div>
+            <DateFieldControl onChange={setDate} value={date} />
           </label>
           <label>
             <span>餐次</span>
@@ -1441,7 +1530,8 @@ function ManualEntryDialog({ defaultDate, defaultMeal, editingItem, items, mode 
               </div>
               <div className="analysisItemList">
                 {analysisItems.map((item, index) => (
-                  <article className="analysisItem" key={`${item.name}-${index}`}>
+                  // key 只用 index：名称是可编辑的，如果 key 里带 name，输入一个字就会让整块重挂载、输入框失焦。
+                  <article className="analysisItem" key={index}>
                     <div className="analysisItemTop">
                       <input value={item.name} onChange={(event) => updateAnalysisItem(index, { name: event.target.value })} />
                       <button aria-label="删除这个食物" onClick={() => applyAnalysisItems(analysisItems.filter((_, itemIndex) => itemIndex !== index))} type="button"><Trash2 size={14} /></button>
@@ -1573,17 +1663,17 @@ function Overview({
       <div className="heroGrid">
         <RingsHeroCard goals={goals} onOpenGoals={onOpenGoals} totals={totals} />
         <div className="heroSideCol">
-          <MacroBarsCard totals={totals} />
+          <MacroBarsCard goals={goals} totals={totals} />
           <AIInsightCard insight={report.insights[0]} />
         </div>
       </div>
-      <MacroStatsRow totals={totals} />
+      <MacroStatsRow goals={goals} totals={totals} />
       <div className="overviewSectionHead">
         <h2>今日饮食</h2>
       </div>
       <MealsGrid items={items} onRecordMeal={onRecordMeal} />
       <FavoriteFoodsPanel favoriteFoods={favoriteFoods} onManage={onManageFavorites} onQuickAdd={onQuickAddFavorite} />
-      <ReflectionBox />
+      <ReflectionBox date={selectedDate} />
       <PeriodReportCard bodyMetrics={bodyMetrics} dailyActivities={dailyActivities} exerciseActivities={exerciseActivities} goals={goals} items={allItems} selectedDate={selectedDate} />
     </section>
   );
@@ -1784,9 +1874,10 @@ function RingsHeroCard({ goals, onOpenGoals, totals }: { goals: UserGoals; onOpe
   );
 }
 
-function MacroBarsCard({ totals }: { totals: ReturnType<typeof totalsFor> }) {
+function MacroBarsCard({ goals, totals }: { goals: UserGoals; totals: ReturnType<typeof totalsFor> }) {
+  // 蛋白质跟随用户自定义目标；碳水、脂肪暂时没有独立目标设置，沿用参考值。
   const rows = [
-    { key: "protein", label: "蛋白质", value: totals.protein, target: nutrientTargets.protein },
+    { key: "protein", label: "蛋白质", value: totals.protein, target: goals.protein },
     { key: "carbs", label: "碳水化合物", value: totals.carbs, target: nutrientTargets.carbs },
     { key: "fat", label: "脂肪", value: totals.fat, target: nutrientTargets.fat },
   ];
@@ -1847,12 +1938,12 @@ function MiniRingStat({ color, icon, label, percent, unit, value }: { color: str
   );
 }
 
-function MacroStatsRow({ totals }: { totals: ReturnType<typeof totalsFor> }) {
+function MacroStatsRow({ goals, totals }: { goals: UserGoals; totals: ReturnType<typeof totalsFor> }) {
   const rows = [
-    { key: "protein", label: "蛋白质", value: totals.protein, target: nutrientTargets.protein, unit: "g", color: "var(--ov-emerald)", icon: <Dumbbell size={16} /> },
+    { key: "protein", label: "蛋白质", value: totals.protein, target: goals.protein, unit: "g", color: "var(--ov-emerald)", icon: <Dumbbell size={16} /> },
     { key: "carbs", label: "碳水", value: totals.carbs, target: nutrientTargets.carbs, unit: "g", color: "var(--ov-cyan)", icon: <Wheat size={16} /> },
     { key: "fat", label: "脂肪", value: totals.fat, target: nutrientTargets.fat, unit: "g", color: "var(--ov-amber)", icon: <Droplets size={16} /> },
-    { key: "fiber", label: "膳食纤维", value: totals.fiber, target: nutrientTargets.fiber, unit: "g", color: "var(--ov-violet)", icon: <Leaf size={16} /> },
+    { key: "fiber", label: "膳食纤维", value: totals.fiber, target: goals.fiber, unit: "g", color: "var(--ov-violet)", icon: <Leaf size={16} /> },
   ];
   return (
     <div className="statsRow">
@@ -1914,18 +2005,47 @@ function MealGridCard({ hint, items, meal, onRecordMeal, title }: { hint: string
   );
 }
 
-function ReflectionBox() {
+const reflectionStorageKey = "diet-cloud-reflections-v1";
+
+function readReflections(): Record<string, string> {
+  return readStoredJson<Record<string, string>>(reflectionStorageKey, {});
+}
+
+function ReflectionBox({ date }: { date: string }) {
+  const [text, setText] = useState(() => readReflections()[date] || "");
   const [saved, setSaved] = useState(false);
+  const savedTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setText(readReflections()[date] || "");
+    setSaved(false);
+  }, [date]);
+
+  useEffect(() => () => {
+    if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+  }, []);
 
   function handleSave() {
+    const all = readReflections();
+    if (text.trim()) all[date] = text.trim();
+    else delete all[date];
+    writeStoredJson(reflectionStorageKey, all);
     setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
+    if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = window.setTimeout(() => setSaved(false), 1800);
   }
 
   return (
     <GlassCard className="reflectionBox">
       <ListChecks size={18} />
-      <span>{saved ? "已保存这个提醒。" : "今天的饮食感受如何？记录一下吧..."}</span>
+      <input
+        aria-label="今天的饮食感受"
+        maxLength={200}
+        onChange={(event) => { setText(event.target.value); setSaved(false); }}
+        onKeyDown={(event) => { if (event.key === "Enter") handleSave(); }}
+        placeholder="今天的饮食感受如何？记录一下吧..."
+        value={text}
+      />
       <button onClick={handleSave} type="button">{saved ? "已保存" : "保存"}</button>
     </GlassCard>
   );
@@ -2328,7 +2448,7 @@ function MetricHistoryDialog({ currentDate, definition, records, onClose }: { cu
   const totalDelta = latest && first ? latest.value - first.value : 0;
 
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div className="modalBackdrop" role="presentation" onClick={onClose}>
       <section aria-modal="true" className="metricHistoryDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
         <div className="metricHistoryHead">
@@ -2375,7 +2495,7 @@ function MetricHistoryDialog({ currentDate, definition, records, onClose }: { cu
                 {linePath && <path className="metricHistoryLine" d={linePath} style={{ stroke: definition.color }} />}
                 {points.map((point) => (
                   <g className={point.date === currentDate ? "active" : ""} key={point.id}>
-                    <circle cx={point.x} cy={point.y} r={point.date === currentDate ? 6 : 4} style={{ fill: point.date === currentDate ? definition.color : "#fff", stroke: definition.color }} />
+                    <circle cx={point.x} cy={point.y} r={point.date === currentDate ? 6 : 4} style={{ fill: point.date === currentDate ? definition.color : "var(--surface)", stroke: definition.color }} />
                     {point.date === currentDate && <text x={point.x} y={point.y - 13}>{definition.format(point.value)}{definition.unit}</text>}
                   </g>
                 ))}
@@ -2413,36 +2533,39 @@ function MetricLine({ label, status, value }: { label: string; status: string; v
   );
 }
 
+function currentTimeInput() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
 function BodyMetricDialog({ defaultDate, metric, onClose, onSaved }: { defaultDate: string; metric?: BodyMetric; onClose: () => void; onSaved: (savedDate: string) => Promise<void> }) {
-  const useScreenshotDefaults = !metric && defaultDate === "2026-06-30";
   const screenshotInputRef = useRef<HTMLInputElement>(null);
-  const nowInput = `${defaultDate}T16:48`;
   const [date, setDate] = useState(metric?.date || defaultDate);
-  const [measuredAt, setMeasuredAt] = useState(toDateTimeLocal(metric?.measuredAt) || nowInput);
-  const [score, setScore] = useState(metric ? String(round(metric.score)) : useScreenshotDefaults ? "65" : "");
-  const [weightKg, setWeightKg] = useState(metric ? String(metric.weightKg) : useScreenshotDefaults ? "75.05" : "");
-  const [bmi, setBmi] = useState(metric ? String(metric.bmi) : useScreenshotDefaults ? "24.2" : "");
-  const [bodyFatPercent, setBodyFatPercent] = useState(metric ? String(metric.bodyFatPercent) : useScreenshotDefaults ? "20.8" : "");
-  const [bodyAge, setBodyAge] = useState(metric ? String(round(metric.bodyAge)) : useScreenshotDefaults ? "29" : "");
-  const [bodyType, setBodyType] = useState(metric?.bodyType || (useScreenshotDefaults ? "肥胖" : ""));
-  const [muscleKg, setMuscleKg] = useState(metric ? String(metric.muscleKg) : useScreenshotDefaults ? "56.6" : "");
-  const [skeletalMuscleKg, setSkeletalMuscleKg] = useState(metric ? String(metric.skeletalMuscleKg) : useScreenshotDefaults ? "56.6" : "");
-  const [boneMassKg, setBoneMassKg] = useState(metric ? String(metric.boneMassKg) : useScreenshotDefaults ? "2.8" : "");
-  const [waterPercent, setWaterPercent] = useState(metric ? String(metric.waterPercent) : useScreenshotDefaults ? "55.0" : "");
-  const [visceralFat, setVisceralFat] = useState(metric ? String(metric.visceralFat) : useScreenshotDefaults ? "8.5" : "");
-  const [bmrKcal, setBmrKcal] = useState(metric ? String(metric.bmrKcal) : useScreenshotDefaults ? "1701" : "");
-  const [proteinPercent, setProteinPercent] = useState(metric ? String(metric.proteinPercent) : useScreenshotDefaults ? "20.4" : "");
-  const [trunkFatPercent, setTrunkFatPercent] = useState(metric ? String(metric.trunkFatPercent) : useScreenshotDefaults ? "22.93" : "");
-  const [trunkMuscleKg, setTrunkMuscleKg] = useState(metric ? String(metric.trunkMuscleKg) : useScreenshotDefaults ? "28.93" : "");
-  const [leftArmFatPercent, setLeftArmFatPercent] = useState(metric ? String(metric.leftArmFatPercent) : useScreenshotDefaults ? "16.04" : "");
-  const [leftArmMuscleKg, setLeftArmMuscleKg] = useState(metric ? String(metric.leftArmMuscleKg) : useScreenshotDefaults ? "2.70" : "");
-  const [rightArmFatPercent, setRightArmFatPercent] = useState(metric ? String(metric.rightArmFatPercent) : useScreenshotDefaults ? "15.01" : "");
-  const [rightArmMuscleKg, setRightArmMuscleKg] = useState(metric ? String(metric.rightArmMuscleKg) : useScreenshotDefaults ? "2.91" : "");
-  const [leftLegFatPercent, setLeftLegFatPercent] = useState(metric ? String(metric.leftLegFatPercent) : useScreenshotDefaults ? "19.19" : "");
-  const [leftLegMuscleKg, setLeftLegMuscleKg] = useState(metric ? String(metric.leftLegMuscleKg) : useScreenshotDefaults ? "10.55" : "");
-  const [rightLegFatPercent, setRightLegFatPercent] = useState(metric ? String(metric.rightLegFatPercent) : useScreenshotDefaults ? "19.42" : "");
-  const [rightLegMuscleKg, setRightLegMuscleKg] = useState(metric ? String(metric.rightLegMuscleKg) : useScreenshotDefaults ? "10.56" : "");
-  const [note, setNote] = useState(metric?.note || (useScreenshotDefaults ? "来自 2026-06-30 体脂秤截图录入。" : ""));
+  const [measuredAt, setMeasuredAt] = useState(toDateTimeLocal(metric?.measuredAt) || `${metric?.date || defaultDate}T${currentTimeInput()}`);
+  const [score, setScore] = useState(metric ? String(round(metric.score)) : "");
+  const [weightKg, setWeightKg] = useState(metric ? String(metric.weightKg) : "");
+  const [bmi, setBmi] = useState(metric ? String(metric.bmi) : "");
+  const [bodyFatPercent, setBodyFatPercent] = useState(metric ? String(metric.bodyFatPercent) : "");
+  const [bodyAge, setBodyAge] = useState(metric ? String(round(metric.bodyAge)) : "");
+  const [bodyType, setBodyType] = useState(metric?.bodyType || "");
+  const [muscleKg, setMuscleKg] = useState(metric ? String(metric.muscleKg) : "");
+  const [skeletalMuscleKg, setSkeletalMuscleKg] = useState(metric ? String(metric.skeletalMuscleKg) : "");
+  const [boneMassKg, setBoneMassKg] = useState(metric ? String(metric.boneMassKg) : "");
+  const [waterPercent, setWaterPercent] = useState(metric ? String(metric.waterPercent) : "");
+  const [visceralFat, setVisceralFat] = useState(metric ? String(metric.visceralFat) : "");
+  const [bmrKcal, setBmrKcal] = useState(metric ? String(metric.bmrKcal) : "");
+  const [proteinPercent, setProteinPercent] = useState(metric ? String(metric.proteinPercent) : "");
+  const [trunkFatPercent, setTrunkFatPercent] = useState(metric ? String(metric.trunkFatPercent) : "");
+  const [trunkMuscleKg, setTrunkMuscleKg] = useState(metric ? String(metric.trunkMuscleKg) : "");
+  const [leftArmFatPercent, setLeftArmFatPercent] = useState(metric ? String(metric.leftArmFatPercent) : "");
+  const [leftArmMuscleKg, setLeftArmMuscleKg] = useState(metric ? String(metric.leftArmMuscleKg) : "");
+  const [rightArmFatPercent, setRightArmFatPercent] = useState(metric ? String(metric.rightArmFatPercent) : "");
+  const [rightArmMuscleKg, setRightArmMuscleKg] = useState(metric ? String(metric.rightArmMuscleKg) : "");
+  const [leftLegFatPercent, setLeftLegFatPercent] = useState(metric ? String(metric.leftLegFatPercent) : "");
+  const [leftLegMuscleKg, setLeftLegMuscleKg] = useState(metric ? String(metric.leftLegMuscleKg) : "");
+  const [rightLegFatPercent, setRightLegFatPercent] = useState(metric ? String(metric.rightLegFatPercent) : "");
+  const [rightLegMuscleKg, setRightLegMuscleKg] = useState(metric ? String(metric.rightLegMuscleKg) : "");
+  const [note, setNote] = useState(metric?.note || "");
   const [screenshotName, setScreenshotName] = useState("");
   const [analyzingScreenshot, setAnalyzingScreenshot] = useState(false);
   const [screenshotSummary, setScreenshotSummary] = useState("");
@@ -2451,6 +2574,12 @@ function BodyMetricDialog({ defaultDate, metric, onClose, onSaved }: { defaultDa
 
   function numberValue(value: string) {
     return Number(value || 0);
+  }
+
+  // 改日期时，把测量时间的日期部分同步过去，避免 measured_at 和 measured_on 指向不同的天。
+  function handleDateChange(nextDate: string) {
+    setDate(nextDate);
+    if (nextDate) setMeasuredAt((current) => `${nextDate}T${current.slice(11, 16) || currentTimeInput()}`);
   }
 
   function stringMetric(value: unknown, digits?: number) {
@@ -2585,7 +2714,7 @@ function BodyMetricDialog({ defaultDate, metric, onClose, onSaved }: { defaultDa
   }
 
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div className="modalBackdrop" role="presentation" onClick={onClose}>
       <section aria-modal="true" className="entryDialog bodyDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
         <div className="entryHead">
@@ -2598,11 +2727,7 @@ function BodyMetricDialog({ defaultDate, metric, onClose, onSaved }: { defaultDa
         <form className="entryForm bodyForm" onSubmit={handleSubmit}>
           <label className="dateField">
             <span>日期</span>
-            <div className="dateFieldControl">
-              <CalendarDays size={15} />
-              <span>{date}</span>
-              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
-            </div>
+            <DateFieldControl onChange={handleDateChange} value={date} />
           </label>
           <label><span>测量时间</span><input value={measuredAt} onChange={(event) => setMeasuredAt(event.target.value)} type="datetime-local" /></label>
           <label><span>体重 kg</span><input inputMode="decimal" value={weightKg} onChange={(event) => setWeightKg(event.target.value)} placeholder="75.05" /></label>
@@ -2736,7 +2861,10 @@ function ExerciseDashboard({
         <div className="exerciseHeroActions">
           <div className="exerciseImportGroup">
             <span className="exerciseImportLabel">Apple 健康导入</span>
-            <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button">{appleHealthImporting ? "导入中" : "1 个月"}</button>
+            <div className="exerciseImportButtons">
+              <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(1)} type="button">{appleHealthImporting ? "导入中" : "近 1 个月"}</button>
+              <button className="glassButton" disabled={appleHealthImporting} onClick={() => onImportAppleHealth(3)} type="button">{appleHealthImporting ? "导入中" : "近 3 个月"}</button>
+            </div>
           </div>
           <button className="glassButton" onClick={onOpenShortcutInfo} type="button"><Smartphone size={16} />快捷同步</button>
           <button className="glassButton" onClick={onOpenDaily} type="button"><Watch size={16} />记录活动摘要</button>
@@ -2936,6 +3064,15 @@ function AppleHealthMetricsPanel({ activity }: { activity?: DailyActivity }) {
   const firstCategoryWithData = categories.find((category) => categoryHasMetrics(grouped[category], metrics)) || categories[0];
   const [selectedCategory, setSelectedCategory] = useState(firstCategoryWithData);
   const selectedDefinitions = grouped[selectedCategory] || [];
+
+  // 切换日期后，如果当前选中的分类在新的一天没有数据，自动跳到第一个有数据的分类。
+  useEffect(() => {
+    setSelectedCategory((current) => {
+      const currentDefinitions = grouped[current];
+      if (currentDefinitions && categoryHasMetrics(currentDefinitions, activity?.rawMetrics || {})) return current;
+      return firstCategoryWithData;
+    });
+  }, [activity?.id]);
 
   return (
     <article className="lg-glass lg-card appleHealthPanel">
@@ -3192,7 +3329,7 @@ function DailyActivityDialog({ activity, defaultDate, onClose, onSaved }: { acti
   }
 
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div className="modalBackdrop" role="presentation" onClick={onClose}>
       <section aria-modal="true" className="entryDialog exerciseDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
         <div className="entryHead">
@@ -3205,11 +3342,7 @@ function DailyActivityDialog({ activity, defaultDate, onClose, onSaved }: { acti
         <form className="entryForm bodyForm" onSubmit={handleSubmit}>
           <label className="dateField">
             <span>日期</span>
-            <div className="dateFieldControl">
-              <CalendarDays size={15} />
-              <span>{date}</span>
-              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
-            </div>
+            <DateFieldControl onChange={setDate} value={date} />
           </label>
           <label><span>来源</span><select value={source} onChange={(event) => setSource(event.target.value)}>{activitySourceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
           <label><span>步数</span><input inputMode="numeric" value={steps} onChange={(event) => setSteps(event.target.value)} placeholder="8500" /></label>
@@ -3255,6 +3388,12 @@ function WorkoutDialog({ defaultDate, onClose, onSaved, workout }: { defaultDate
     return Number(value || 0);
   }
 
+  // 改日期时同步开始时间的日期部分，避免 started_at 和 activity_on 指向不同的天。
+  function handleDateChange(nextDate: string) {
+    setDate(nextDate);
+    if (nextDate) setStartedAt((current) => `${nextDate}T${current.slice(11, 16) || "18:00"}`);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!date || !type) {
@@ -3289,7 +3428,7 @@ function WorkoutDialog({ defaultDate, onClose, onSaved, workout }: { defaultDate
   }
 
   return (
-    <ModalPortal>
+    <ModalPortal onClose={onClose}>
       <div className="modalBackdrop" role="presentation" onClick={onClose}>
       <section aria-modal="true" className="entryDialog exerciseDialog" role="dialog" onClick={(event) => event.stopPropagation()}>
         <div className="entryHead">
@@ -3302,11 +3441,7 @@ function WorkoutDialog({ defaultDate, onClose, onSaved, workout }: { defaultDate
         <form className="entryForm bodyForm" onSubmit={handleSubmit}>
           <label className="dateField">
             <span>日期</span>
-            <div className="dateFieldControl">
-              <CalendarDays size={15} />
-              <span>{date}</span>
-              <input value={date} onChange={(event) => setDate(event.target.value)} type="date" />
-            </div>
+            <DateFieldControl onChange={handleDateChange} value={date} />
           </label>
           <label><span>开始时间</span><input value={startedAt} onChange={(event) => setStartedAt(event.target.value)} type="datetime-local" /></label>
           <label><span>来源</span><select value={source} onChange={(event) => setSource(event.target.value)}>{activitySourceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
@@ -3331,7 +3466,7 @@ function WorkoutDialog({ defaultDate, onClose, onSaved, workout }: { defaultDate
   );
 }
 
-function Detail({ items, onDeleteItem, onEditItem }: { items: FoodItem[]; onDeleteItem: (item: FoodItem) => void; onEditItem: (item: FoodItem) => void }) {
+function Detail({ items, onDeleteItem, onEditItem, onRecordMeal }: { items: FoodItem[]; onDeleteItem: (item: FoodItem) => void; onEditItem: (item: FoodItem) => void; onRecordMeal: (meal: MealType) => void }) {
   const [expandedMeal, setExpandedMeal] = useState<MealType | null>(null);
 
   return (
@@ -3362,57 +3497,64 @@ function Detail({ items, onDeleteItem, onEditItem }: { items: FoodItem[]; onDele
             </button>
             {isExpanded && (
               <div className="ledgerBody">
-                <PhotoStrip photos={uniquePhotos(mealItems)} empty="本餐暂无照片" />
                 {mealItems.length ? (
-                  <div className="mobileFoodDetailList">
-                    {mealItems.map((item) => (
-                      <div className={item.calories >= 400 ? "mobileFoodDetail highCalorie" : "mobileFoodDetail"} key={item.id}>
-                        <div className="mobileFoodMain">
-                          <span className="foodDot" />
-                          <div>
-                            <strong>{item.name}</strong>
-                            <small>{round(item.grams)}g · 蛋白质 {round(item.protein)}g · 碳水 {round(item.carbs)}g · 脂肪 {round(item.fat)}g · 膳食纤维 {round(item.fiber)}g</small>
-                            {item.note && <em>{item.note}</em>}
+                  <>
+                    <PhotoStrip photos={uniquePhotos(mealItems)} empty="本餐暂无照片" />
+                    <div className="mobileFoodDetailList">
+                      {mealItems.map((item) => (
+                        <div className={item.calories >= 400 ? "mobileFoodDetail highCalorie" : "mobileFoodDetail"} key={item.id}>
+                          <div className="mobileFoodMain">
+                            <span className="foodDot" />
+                            <div>
+                              <strong>{item.name}</strong>
+                              <small>
+                                <span>{round(item.grams)}g</span> · <span>蛋白质 {round(item.protein)}g</span> · <span>碳水 {round(item.carbs)}g</span> · <span>脂肪 {round(item.fat)}g</span> · <span>膳食纤维 {round(item.fiber)}g</span>
+                              </small>
+                              {item.note && <em>{item.note}</em>}
+                            </div>
+                          </div>
+                          <div className="mobileFoodActions">
+                            <b>{round(item.calories)} kcal</b>
+                            <button aria-label={`编辑 ${item.name}`} onClick={() => onEditItem(item)} type="button"><PenLine size={13} /></button>
+                            <button aria-label={`删除 ${item.name}`} onClick={() => onDeleteItem(item)} type="button"><Trash2 size={13} /></button>
                           </div>
                         </div>
-                        <div className="mobileFoodActions">
-                          <b>{round(item.calories)} kcal</b>
-                          <button aria-label={`编辑 ${item.name}`} onClick={() => onEditItem(item)} type="button"><PenLine size={13} /></button>
-                          <button aria-label={`删除 ${item.name}`} onClick={() => onDeleteItem(item)} type="button"><Trash2 size={13} /></button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                    <div className="tableWrap">
+                      <table>
+                        <thead>
+                          <tr><th>食物</th><th>重量</th><th>热量</th><th>蛋白质</th><th>碳水</th><th>脂肪</th><th>膳食纤维</th><th>操作</th></tr>
+                        </thead>
+                        <tbody>
+                          {mealItems.map((item) => (
+                            <tr className={item.calories >= 400 ? "highCalorieRow" : ""} key={item.id}>
+                              <td>
+                                <details className="foodNote">
+                                  <summary><span className="foodDot" />{item.name}</summary>
+                                  <span>{item.note}</span>
+                                </details>
+                              </td>
+                              <td>{round(item.grams)}g</td><td><b className="calorieCell">{round(item.calories)}</b></td><td>{round(item.protein)}g</td>
+                              <td>{round(item.carbs)}g</td><td>{round(item.fat)}g</td><td>{round(item.fiber)}g</td>
+                              <td>
+                                <div className="rowActions">
+                                  <button className="rowEditButton" onClick={() => onEditItem(item)} type="button"><PenLine size={13} />编辑</button>
+                                  <button className="rowDeleteButton" onClick={() => onDeleteItem(item)} type="button"><Trash2 size={13} />删除</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 ) : (
-                  <div className="mobileFoodEmpty">还没有明细</div>
+                  <div className="ledgerEmptyAction">
+                    <span>{meal.hint}，还没有记录。</span>
+                    <button onClick={() => onRecordMeal(meal.key)} type="button"><Plus size={14} />记录{meal.title}</button>
+                  </div>
                 )}
-                <div className="tableWrap">
-                  <table>
-                    <thead>
-                      <tr><th>食物</th><th>重量</th><th>热量</th><th>蛋白质</th><th>碳水</th><th>脂肪</th><th>膳食纤维</th><th>操作</th></tr>
-                    </thead>
-                    <tbody>
-                      {mealItems.length ? mealItems.map((item) => (
-                        <tr className={item.calories >= 400 ? "highCalorieRow" : ""} key={item.id}>
-                          <td>
-                            <details className="foodNote">
-                              <summary><span className="foodDot" />{item.name}</summary>
-                              <span>{item.note}</span>
-                            </details>
-                          </td>
-                          <td>{round(item.grams)}g</td><td><b className="calorieCell">{round(item.calories)}</b></td><td>{round(item.protein)}g</td>
-                          <td>{round(item.carbs)}g</td><td>{round(item.fat)}g</td><td>{round(item.fiber)}g</td>
-                          <td>
-                            <div className="rowActions">
-                              <button className="rowEditButton" onClick={() => onEditItem(item)} type="button"><PenLine size={13} />编辑</button>
-                              <button className="rowDeleteButton" onClick={() => onDeleteItem(item)} type="button"><Trash2 size={13} />删除</button>
-                            </div>
-                          </td>
-                        </tr>
-                      )) : <tr><td colSpan={8}>还没有明细</td></tr>}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             )}
           </article>
@@ -3550,10 +3692,18 @@ function StatTile({ icon, label, tone, value }: { icon: React.ReactNode; label: 
   );
 }
 
+type LightboxPhoto = {
+  url: string;
+  date: string;
+  meal?: MealType;
+  mealTitle: string;
+  calories: number;
+};
+
 function PhotoLibrary({ items, compact = false }: { items: FoodItem[]; compact?: boolean }) {
   const photoGroups = buildPhotoGroups(items);
   const [dateFilter, setDateFilter] = useState("all");
-  const [expandedPhotoUrl, setExpandedPhotoUrl] = useState<string | null>(null);
+  const [lightboxPhoto, setLightboxPhoto] = useState<LightboxPhoto | null>(null);
   const visibleGroups = dateFilter === "all" ? photoGroups : photoGroups.filter((group) => group.date === dateFilter);
   return (
     <section className={compact ? "photoLibrary compact" : "viewPanel photoLibrary"}>
@@ -3576,29 +3726,38 @@ function PhotoLibrary({ items, compact = false }: { items: FoodItem[]; compact?:
         <div className="photoDay" key={group.date}>
           {!compact && <h3>{formatDateLabel(group.date)}</h3>}
           <div className="photoDayGrid">
-            {group.photos.map((photo) => {
-              const isExpanded = expandedPhotoUrl === photo.url;
-              return (
-              <figure className={isExpanded ? "photoCard expanded" : "photoCard"} data-meal={photo.meal} key={photo.url}>
+            {group.photos.map((photo) => (
+              <figure className="photoCard" data-meal={photo.meal} key={photo.url}>
                 <button
-                  aria-expanded={isExpanded}
                   className="photoPreviewButton"
-                  onClick={() => setExpandedPhotoUrl(isExpanded ? null : photo.url)}
+                  onClick={() => setLightboxPhoto({ ...photo, date: group.date })}
                   type="button"
                 >
-                  <img src={photo.url} alt={`${photo.mealTitle}餐食照片`} />
+                  <img loading="lazy" src={photo.url} alt={`${photo.mealTitle}餐食照片`} />
                   <figcaption>
                     <span>{photo.mealTitle}</span>
                     <strong>{round(photo.calories)} kcal</strong>
-                    {isExpanded && <em className="photoCloseHint">点击收起</em>}
                   </figcaption>
                 </button>
               </figure>
-              );
-            })}
+            ))}
           </div>
         </div>
       )) : <p>还没有照片。</p>}
+      {lightboxPhoto && (
+        <ModalPortal onClose={() => setLightboxPhoto(null)}>
+          <div className="photoLightbox" role="presentation" onClick={() => setLightboxPhoto(null)}>
+            <figure data-meal={lightboxPhoto.meal} onClick={(event) => event.stopPropagation()}>
+              <img src={lightboxPhoto.url} alt={`${lightboxPhoto.mealTitle}餐食照片大图`} />
+              <figcaption>
+                <span>{formatDateLabel(lightboxPhoto.date)} · {lightboxPhoto.mealTitle}</span>
+                <strong>{round(lightboxPhoto.calories)} kcal</strong>
+              </figcaption>
+            </figure>
+            <button aria-label="关闭大图" className="photoLightboxClose" onClick={() => setLightboxPhoto(null)} type="button">×</button>
+          </div>
+        </ModalPortal>
+      )}
     </section>
   );
 }
